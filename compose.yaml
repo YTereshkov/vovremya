@@ -1,0 +1,152 @@
+name: vovremya
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "${APP_HTTP_PORT:-8080}:8000"
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql://vovremya:vovremya@postgres:5432/vovremya?serverVersion=17&charset=utf8
+      REDIS_URL: redis://redis:6379
+      MESSENGER_TRANSPORT_DSN: redis://redis:6379
+      MESSENGER_CONSUMER_NAME: vovremya_php
+      INFRASTRUCTURE_HEARTBEAT_INTERVAL: 5 minutes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - "exit(@file_get_contents('http://127.0.0.1:8000/health') === false ? 1 : 0);"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+
+  messenger:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    working_dir: /app
+    command:
+      - php
+      - bin/console
+      - messenger:consume
+      - async
+      - --time-limit=3600
+      - --memory-limit=256M
+      - --keepalive=30
+      - --no-interaction
+    volumes:
+      - .:/app
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql://vovremya:vovremya@postgres:5432/vovremya?serverVersion=17&charset=utf8
+      REDIS_URL: redis://redis:6379
+      MESSENGER_TRANSPORT_DSN: redis://redis:6379
+      MESSENGER_CONSUMER_NAME: vovremya_messenger_1
+      INFRASTRUCTURE_HEARTBEAT_INTERVAL: 5 minutes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        HOST_UID: "${HOST_UID:-1000}"
+        HOST_GID: "${HOST_GID:-1000}"
+    working_dir: /app
+    command:
+      - php
+      - bin/console
+      - messenger:consume
+      - scheduler_infrastructure
+      - --time-limit=3600
+      - --memory-limit=128M
+      - --no-interaction
+    volumes:
+      - .:/app
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: postgresql://vovremya:vovremya@postgres:5432/vovremya?serverVersion=17&charset=utf8
+      REDIS_URL: redis://redis:6379
+      MESSENGER_TRANSPORT_DSN: redis://redis:6379
+      MESSENGER_CONSUMER_NAME: vovremya_scheduler_1
+      INFRASTRUCTURE_HEARTBEAT_INTERVAL: 5 minutes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+
+  node:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    command: ["sleep", "infinity"]
+    volumes:
+      - .:/app
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    healthcheck:
+      test: ["CMD", "node", "--version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    init: true
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: vovremya
+      POSTGRES_USER: vovremya
+      POSTGRES_PASSWORD: vovremya
+    ports:
+      - "${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vovremya -d vovremya"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-63799}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:

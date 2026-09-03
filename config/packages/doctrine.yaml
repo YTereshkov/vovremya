@@ -1,0 +1,84 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        server_version: '17'
+        profiling_collect_backtrace: '%kernel.debug%'
+    orm:
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        auto_mapping: false
+        controller_resolver:
+            auto_mapping: false
+        mappings:
+            Identity:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Identity/Domain/Model'
+                prefix: 'App\Module\Identity\Domain\Model'
+                alias: Identity
+            Organization:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Organization/Domain/Model'
+                prefix: 'App\Module\Organization\Domain\Model'
+                alias: Organization
+            Workforce:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Workforce/Domain/Model'
+                prefix: 'App\Module\Workforce\Domain\Model'
+                alias: Workforce
+            Catalog:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Catalog/Domain/Model'
+                prefix: 'App\Module\Catalog\Domain\Model'
+                alias: Catalog
+            Clients:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Clients/Domain/Model'
+                prefix: 'App\Module\Clients\Domain\Model'
+                alias: Clients
+            Scheduling:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Scheduling/Domain/Model'
+                prefix: 'App\Module\Scheduling\Domain\Model'
+                alias: Scheduling
+            Waiting:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Waiting/Domain/Model'
+                prefix: 'App\Module\Waiting\Domain\Model'
+                alias: Waiting
+            Communications:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Module/Communications/Domain/Model'
+                prefix: 'App\Module\Communications\Domain\Model'
+                alias: Communications
+
+when@test:
+    doctrine:
+        dbal:
+            # "TEST_TOKEN" is typically set by ParaTest
+            dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

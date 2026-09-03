@@ -1,0 +1,39 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    stream: vovremya_async
+                    group: vovremya_async
+                    consumer: '%env(MESSENGER_CONSUMER_NAME)%'
+                    auto_setup: true
+                    delete_after_ack: true
+                    delete_after_reject: true
+                    stream_max_entries: 10000
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 4000
+            failed:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    stream: vovremya_failed
+                    group: vovremya_failed
+                    consumer: '%env(MESSENGER_CONSUMER_NAME)%'
+                    auto_setup: true
+                    delete_after_ack: true
+                    delete_after_reject: true
+
+        routing:
+            'App\Shared\Infrastructure\Messenger\AsyncMessage': async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'
+                failed: 'in-memory://'
