@@ -22,5 +22,10 @@ services:
             - '../src/Kernel.php'
             - '../src/Module/*/Domain/Model/'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    Symfony\Component\PasswordHasher\Hasher\NativePasswordHasher: ~
+
+    App\Module\Identity\Application\AdministratorPasswordHasher:
+        alias: App\Module\Identity\Infrastructure\Security\SymfonyAdministratorPasswordHasher
+
+    App\Module\Identity\Application\AdministratorProvisioningStore:
+        alias: App\Module\Identity\Infrastructure\Persistence\DoctrineAdministratorProvisioningStore

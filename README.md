@@ -81,11 +81,18 @@ Frontend visual conventions are documented in
 
 ## Build and tests
 
-Create the isolated PHPUnit database once, then run backend tests:
+Run backend tests. The command creates the isolated test database when needed
+and applies pending migrations before PHPUnit starts:
 
 ```bash
-docker compose exec php composer test:db:create
 docker compose exec php composer test:backend
+```
+
+Create the first organization administrator. The password is requested twice
+through hidden interactive input and is never accepted as a CLI argument:
+
+```bash
+docker compose exec php php bin/console app:admin:create
 ```
 
 Check and build the React application:
