@@ -23,6 +23,12 @@ Open the backend health endpoint:
 http://localhost:8080/health
 ```
 
+Open the React application:
+
+```text
+http://localhost:5173
+```
+
 Run Symfony console commands:
 
 ```bash
@@ -70,6 +76,30 @@ Module ownership and dependency rules are documented in
 [`docs/architecture/modules.md`](docs/architecture/modules.md).
 Infrastructure conventions are documented in
 [`docs/architecture/infrastructure.md`](docs/architecture/infrastructure.md).
+Frontend visual conventions are documented in
+[`docs/frontend/design-system.md`](docs/frontend/design-system.md).
+
+## Build and tests
+
+Create the isolated PHPUnit database once, then run backend tests:
+
+```bash
+docker compose exec php composer test:db:create
+docker compose exec php composer test:backend
+```
+
+Check and build the React application:
+
+```bash
+docker compose exec node npm run typecheck
+docker compose exec node npm run build
+```
+
+Run Playwright smoke tests in the dedicated Compose profile:
+
+```bash
+docker compose --profile test run --rm playwright npm run test:e2e
+```
 
 Stop the environment without deleting database or Redis data:
 

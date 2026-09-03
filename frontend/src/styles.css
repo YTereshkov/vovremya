@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-primary: #3431d8;
+  --color-primary-soft: #ececfc;
+  --color-ink: #101827;
+  --color-muted: #495b73;
+  --color-border: #d6dddc;
+  --color-success: #008f68;
+  --color-warning: #df6500;
+  --color-danger: #f01822;
+  --shadow-surface: 0 1px 1px rgb(16 24 39 / 0.03);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    background: #f7f9f7;
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: #f7f9f7;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .app-backdrop {
+    background:
+      radial-gradient(circle at 17% 18%, rgb(213 231 222 / 0.42), transparent 31rem),
+      radial-gradient(circle at 90% 84%, rgb(222 232 226 / 0.36), transparent 34rem),
+      #f8faf8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

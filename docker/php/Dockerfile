@@ -9,10 +9,12 @@ RUN apt-get update \
         $PHPIZE_DEPS \
         git \
         libicu-dev \
+        libonig-dev \
         libpq-dev \
+        libxml2-dev \
         libzip-dev \
         unzip \
-    && docker-php-ext-install -j"$(nproc)" intl opcache pcntl pdo_pgsql zip \
+    && docker-php-ext-install -j"$(nproc)" dom intl mbstring opcache pcntl pdo_pgsql xml xmlwriter zip \
     && pecl install "redis-${PHP_REDIS_VERSION}" \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
