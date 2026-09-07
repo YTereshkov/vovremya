@@ -11,6 +11,7 @@ export interface AuthUser {
 interface CsrfResponse {
   token: string
   logoutToken: string
+  mutationToken: string
 }
 
 async function readJson<T>(response: Response): Promise<T> {

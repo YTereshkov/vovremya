@@ -108,6 +108,23 @@ Run Playwright smoke tests in the dedicated Compose profile:
 docker compose --profile test run --rm playwright npm run test:e2e
 ```
 
+Run authenticated specialist and working-hours scenarios on desktop and mobile:
+
+```bash
+bash bin/test-workforce-e2e
+```
+
+This runner migrates the development database, creates disposable test
+organizations, runs Playwright, and removes only those marked organizations on
+exit. Without the runner, authenticated Workforce scenarios are skipped; the
+public smoke tests still run. Do not use these fixtures against production.
+
+Specialist profiles, weekly working hours, per-day lunches, and additional
+working days are available under **Settings → Specialists**. Link a specialist
+to the signed-in administrator to use **My schedule**. The Workforce model and
+API conventions are documented in
+[`docs/architecture/workforce.md`](docs/architecture/workforce.md).
+
 Stop the environment without deleting database or Redis data:
 
 ```bash

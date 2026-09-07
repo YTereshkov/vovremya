@@ -24,6 +24,7 @@ final class AuthenticationController
         return new JsonResponse([
             'token' => $csrfTokenManager->getToken('authenticate')->getValue(),
             'logoutToken' => $csrfTokenManager->getToken('logout')->getValue(),
+            'mutationToken' => $csrfTokenManager->getToken('mutation')->getValue(),
         ]);
     }
 

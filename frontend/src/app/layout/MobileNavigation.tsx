@@ -14,7 +14,7 @@ export function MobileNavigation() {
       className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-white/95 px-1 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl lg:hidden"
     >
       {mobileNavigation.map(({ icon: Icon, label, to }) => {
-        const selected = to === '/settings' ? moreRoutes.has(location.pathname) : location.pathname === to
+        const selected = to === '/settings' ? [...moreRoutes].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`)) : location.pathname === to
 
         return (
           <NavLink

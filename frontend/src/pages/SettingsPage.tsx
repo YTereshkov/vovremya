@@ -1,5 +1,6 @@
 import { LogOut } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/features/auth/AuthProvider'
 import { Button } from '@/shared/ui/Button'
@@ -24,6 +25,7 @@ export function SettingsPage() {
   return (
     <section className="mx-auto min-h-screen w-full max-w-[1306px] px-5 pb-28 pt-[calc(env(safe-area-inset-top)+36px)] sm:px-8 lg:px-7 lg:py-8">
       <h1 className="text-[32px] font-semibold leading-tight lg:text-[36px]">Настройки</h1>
+      <div className="mt-6 flex flex-wrap gap-4"><Link className="text-primary" to="/specialists">Специалисты</Link><Link className="text-primary" to="/my-schedule">Моё расписание</Link></div>
 
       <div className="mt-8 max-w-xl border-t border-border pt-6">
         <h2 className="text-lg font-semibold">Аккаунт</h2>

@@ -33,6 +33,9 @@ services:
     App\Module\Identity\Application\AdministratorAccountReader:
         alias: App\Module\Identity\Infrastructure\Persistence\DoctrineAdministratorAccountReader
 
+    App\Module\Workforce\Application\WorkforceStore:
+        alias: App\Module\Workforce\Infrastructure\Persistence\DoctrineWorkforceStore
+
     App\Module\Organization\Application\OrganizationContext:
         alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
 

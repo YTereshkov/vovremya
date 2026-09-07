@@ -6,6 +6,9 @@ import { SectionPlaceholderPage } from '@/pages/SectionPlaceholderPage'
 import { TodayPage } from '@/pages/TodayPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { SettingsPage } from '@/pages/SettingsPage'
+import { SpecialistsPage } from '@/pages/SpecialistsPage'
+import { SpecialistPage } from '@/pages/SpecialistPage'
+import { WorkingHoursPage, MySchedulePage } from '@/pages/WorkingHoursPage'
 
 export function App() {
   return (
@@ -18,10 +21,12 @@ export function App() {
           <Route path="clients" element={<SectionPlaceholderPage title="Клиенты" />} />
           <Route path="waiting" element={<SectionPlaceholderPage title="Ожидание" />} />
           <Route path="notifications" element={<SectionPlaceholderPage title="Уведомления" />} />
-          <Route path="specialists" element={<SectionPlaceholderPage title="Специалисты" />} />
+          <Route path="specialists" element={<SpecialistsPage />} />
+          <Route path="specialists/:id" element={<SpecialistPage />} />
+          <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />
           <Route path="statistics" element={<SectionPlaceholderPage title="Статистика" />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="my-schedule" element={<SectionPlaceholderPage title="Моё расписание" />} />
+          <Route path="my-schedule" element={<MySchedulePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>

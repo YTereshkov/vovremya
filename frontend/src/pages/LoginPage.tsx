@@ -19,7 +19,7 @@ export function LoginPage() {
   }
 
   if (user) {
-    return <Navigate to="/" replace />
+    return <Navigate to={destination} replace />
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
