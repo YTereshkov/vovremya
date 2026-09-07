@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Scheduling\Infrastructure\Persistence;
 
 use App\Module\Organization\Application\OrganizationContext;
+use App\Module\Scheduling\Application\AllocationInterval;
 use App\Module\Scheduling\Application\ScheduleAllocationStore;
 use App\Module\Scheduling\Domain\AvailabilityConflict;
 use App\Module\Scheduling\Domain\Model\ScheduleAllocation;
@@ -45,6 +46,35 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
         );
 
         return true === $conflict || '1' === $conflict;
+    }
+
+    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array
+    {
+        $windowStart = $startsAt->modify('-15 minutes');
+        $windowEnd = $endsAt->modify('+15 minutes');
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+                SELECT starts_at, ends_at
+                FROM schedule_allocations
+                WHERE organization_id = :organization_id
+                  AND specialist_id = :specialist_id
+                  AND released_at IS NULL
+                  AND starts_at < CAST(:window_end AS TIMESTAMPTZ)
+                  AND ends_at > CAST(:window_start AS TIMESTAMPTZ)
+                ORDER BY starts_at, ends_at
+                SQL,
+            [
+                'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
+                'specialist_id' => $specialistId->toRfc4122(),
+                'window_start' => $windowStart->format(\DateTimeInterface::RFC3339_EXTENDED),
+                'window_end' => $windowEnd->format(\DateTimeInterface::RFC3339_EXTENDED),
+            ],
+        );
+
+        return array_map(static fn (array $row): AllocationInterval => new AllocationInterval(
+            new \DateTimeImmutable((string) $row['starts_at']),
+            new \DateTimeImmutable((string) $row['ends_at']),
+        ), $rows);
     }
 
     public function save(ScheduleAllocation $allocation): void

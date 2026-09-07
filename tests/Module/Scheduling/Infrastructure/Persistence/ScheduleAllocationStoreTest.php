@@ -75,6 +75,22 @@ final class ScheduleAllocationStoreTest extends WebTestCase
         self::assertTrue($this->store->hasActiveConflict($this->specialist->id(), $this->instant('10:30'), $this->instant('10:45')));
     }
 
+    public function testFindsOnlyActiveAllocationsInsideTheWarningWindow(): void
+    {
+        $near = $this->allocation($this->specialist, '10:00', '11:00');
+        $released = $this->allocation($this->specialist, '11:15', '12:00');
+        $far = $this->allocation($this->specialist, '13:00', '14:00');
+        $released->release();
+        $this->store->save($near);
+        $this->store->save($released);
+        $this->store->save($far);
+
+        $intervals = $this->store->activeNear($this->specialist->id(), $this->instant('11:10'), $this->instant('11:30'));
+
+        self::assertCount(1, $intervals);
+        self::assertSame('10:00', $intervals[0]->startsAt->setTimezone(new \DateTimeZone('Europe/Moscow'))->format('H:i'));
+    }
+
     public function testReleasedAllocationStopsBlockingTime(): void
     {
         $first = $this->allocation($this->specialist, '10:00', '11:00');

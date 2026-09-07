@@ -1,5 +1,12 @@
 import { getCsrfTokens } from '@/features/auth/api/auth'
 
+export class ApiError<T = unknown> extends Error {
+  constructor(public readonly status: number, public readonly payload: T & { message?: string }) {
+    super(payload.message ?? 'Не удалось сохранить изменения.')
+    this.name = 'ApiError'
+  }
+}
+
 export async function apiRequest<T>(url: string, method = 'GET', data?: unknown, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (method !== 'GET') {
@@ -17,7 +24,7 @@ export async function apiRequest<T>(url: string, method = 'GET', data?: unknown,
   if (response.status === 204) return undefined as T
 
   const payload = await response.json() as T & { message?: string }
-  if (!response.ok) throw new Error(payload.message ?? 'Не удалось сохранить изменения.')
+  if (!response.ok) throw new ApiError(response.status, payload)
 
   return payload
 }

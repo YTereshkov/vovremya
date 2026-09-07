@@ -120,6 +120,12 @@ Run authenticated service and client-directory scenarios:
 bash bin/test-catalog-clients-e2e
 ```
 
+Run one-off appointment creation, soft-warning, and hard-conflict scenarios:
+
+```bash
+bash bin/test-appointments-e2e
+```
+
 This runner migrates the development database, creates disposable test
 organizations, runs Playwright, and removes only those marked organizations on
 exit. Without the runner, authenticated Workforce scenarios are skipped; the

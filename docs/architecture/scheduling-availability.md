@@ -1,4 +1,4 @@
-# Scheduling availability: parts 19–20
+# Scheduling and availability: parts 19–22
 
 ## Concrete occupancy
 
@@ -73,3 +73,35 @@ the transactional allocation insert is authoritative.
 PHPUnit covers working boundaries, days off, additional days, lunch behavior,
 released allocations, tenant isolation, adjacent intervals, and a real two-
 transaction race in which exactly one overlapping insert succeeds.
+
+## One-off appointment creation
+
+`POST /api/appointments` accepts tenant-scoped specialist, client, and active
+service identifiers plus a local date and start time. Local values are resolved
+in the organization timezone. `durationMinutes` may be omitted to use the
+service default; an explicit value must remain inside the service minimum and
+maximum when those bounds exist.
+
+Appointment creation copies the service name and duration settings into an
+immutable snapshot. A service removed through the user-facing delete action is
+soft-deleted, cannot be selected for new appointments, and remains referenced
+by historical appointments. The appointment, its `APPOINTMENT` allocation, and
+any warning audit event commit in one short transaction.
+
+The application checks hard availability before the transaction. PostgreSQL's
+exclusion constraint still decides concurrent races: SQLSTATE `23P01` becomes a
+`HARD_CONFLICT` response with HTTP 409. No additional specialist/date lock is
+used.
+
+## Soft warnings
+
+Lunch overlap and a break shorter than 15 minutes return HTTP 409 with
+`kind: SOFT_WARNING` and stable warning codes. They do not occupy or reject the
+interval. The caller may repeat the same create command with the current codes
+in `acceptedWarnings`.
+
+The backend recalculates warnings on every attempt. A warning that is currently
+present but was not explicitly accepted prevents creation; newly appearing
+warnings therefore cannot be bypassed by stale UI state. Accepted warnings are
+recorded as a `SOFT_WARNINGS_ACCEPTED` appointment event. Actual overlap remains
+a hard conflict regardless of `acceptedWarnings`.

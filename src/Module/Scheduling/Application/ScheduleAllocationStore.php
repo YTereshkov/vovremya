@@ -11,5 +11,8 @@ interface ScheduleAllocationStore
 {
     public function hasActiveConflict(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): bool;
 
+    /** @return list<AllocationInterval> */
+    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
+
     public function save(ScheduleAllocation $allocation): void;
 }
