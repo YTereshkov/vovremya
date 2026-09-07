@@ -1,9 +1,10 @@
-import { LogOut } from 'lucide-react'
+import { ChevronRight, ClipboardList, LogOut, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/features/auth/AuthProvider'
 import { Button } from '@/shared/ui/Button'
+import { resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
 export function SettingsPage() {
   const { logout, user } = useAuth()
@@ -25,7 +26,11 @@ export function SettingsPage() {
   return (
     <section className="mx-auto min-h-screen w-full max-w-[1306px] px-5 pb-28 pt-[calc(env(safe-area-inset-top)+36px)] sm:px-8 lg:px-7 lg:py-8">
       <h1 className="text-[32px] font-semibold leading-tight lg:text-[36px]">Настройки</h1>
-      <div className="mt-6 flex flex-wrap gap-4"><Link className="text-primary" to="/specialists">Специалисты</Link><Link className="text-primary" to="/my-schedule">Моё расписание</Link></div>
+      <nav aria-label="Настройки справочников" className={`${resourceSurfaceClass} mt-6 max-w-xl divide-y divide-border p-0`}>
+        <Link className="flex min-h-16 items-center gap-3 px-5" to="/specialists"><UserRound className="size-5 text-primary" /><span className="flex-1">Специалисты</span><ChevronRight className="size-5 text-muted" /></Link>
+        <Link className="flex min-h-16 items-center gap-3 px-5" to="/settings/services"><ClipboardList className="size-5 text-primary" /><span className="flex-1">Услуги</span><ChevronRight className="size-5 text-muted" /></Link>
+        <Link className="flex min-h-16 items-center gap-3 px-5" to="/my-schedule"><UserRound className="size-5 text-primary" /><span className="flex-1">Моё расписание</span><ChevronRight className="size-5 text-muted" /></Link>
+      </nav>
 
       <div className="mt-8 max-w-xl border-t border-border pt-6">
         <h2 className="text-lg font-semibold">Аккаунт</h2>

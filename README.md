@@ -114,6 +114,12 @@ Run authenticated specialist and working-hours scenarios on desktop and mobile:
 bash bin/test-workforce-e2e
 ```
 
+Run authenticated service and client-directory scenarios:
+
+```bash
+bash bin/test-catalog-clients-e2e
+```
+
 This runner migrates the development database, creates disposable test
 organizations, runs Playwright, and removes only those marked organizations on
 exit. Without the runner, authenticated Workforce scenarios are skipped; the
@@ -124,6 +130,11 @@ working days are available under **Settings → Specialists**. Link a specialist
 to the signed-in administrator to use **My schedule**. The Workforce model and
 API conventions are documented in
 [`docs/architecture/workforce.md`](docs/architecture/workforce.md).
+
+Service definitions are managed under **Settings → Services**. The **Clients**
+section provides client search, optional contact people, channel metadata, and
+primary-recipient selection. Catalog and Clients ownership rules are documented
+in [`docs/architecture/catalog-clients.md`](docs/architecture/catalog-clients.md).
 
 Stop the environment without deleting database or Redis data:
 

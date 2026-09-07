@@ -33,6 +33,12 @@ services:
     App\Module\Identity\Application\AdministratorAccountReader:
         alias: App\Module\Identity\Infrastructure\Persistence\DoctrineAdministratorAccountReader
 
+    App\Module\Catalog\Application\ServiceStore:
+        alias: App\Module\Catalog\Infrastructure\Persistence\DoctrineServiceStore
+
+    App\Module\Clients\Application\ClientStore:
+        alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
+
     App\Module\Workforce\Application\WorkforceStore:
         alias: App\Module\Workforce\Infrastructure\Persistence\DoctrineWorkforceStore
 

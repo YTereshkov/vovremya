@@ -9,6 +9,11 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { SpecialistsPage } from '@/pages/SpecialistsPage'
 import { SpecialistPage } from '@/pages/SpecialistPage'
 import { WorkingHoursPage, MySchedulePage } from '@/pages/WorkingHoursPage'
+import { ServicesPage } from '@/pages/ServicesPage'
+import { ServiceFormPage } from '@/pages/ServiceFormPage'
+import { ClientsPage } from '@/pages/ClientsPage'
+import { ClientFormPage } from '@/pages/ClientFormPage'
+import { ClientPage } from '@/pages/ClientPage'
 
 export function App() {
   return (
@@ -18,7 +23,10 @@ export function App() {
         <Route element={<AppShell />}>
           <Route index element={<TodayPage />} />
           <Route path="calendar" element={<SectionPlaceholderPage title="Календарь" />} />
-          <Route path="clients" element={<SectionPlaceholderPage title="Клиенты" />} />
+          <Route path="clients" element={<ClientsPage />} />
+          <Route path="clients/new" element={<ClientFormPage />} />
+          <Route path="clients/:id" element={<ClientPage />} />
+          <Route path="clients/:id/edit" element={<ClientFormPage />} />
           <Route path="waiting" element={<SectionPlaceholderPage title="Ожидание" />} />
           <Route path="notifications" element={<SectionPlaceholderPage title="Уведомления" />} />
           <Route path="specialists" element={<SpecialistsPage />} />
@@ -26,6 +34,9 @@ export function App() {
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />
           <Route path="statistics" element={<SectionPlaceholderPage title="Статистика" />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/services" element={<ServicesPage />} />
+          <Route path="settings/services/new" element={<ServiceFormPage />} />
+          <Route path="settings/services/:id" element={<ServiceFormPage />} />
           <Route path="my-schedule" element={<MySchedulePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

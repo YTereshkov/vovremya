@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { getCsrfTokens } from '@/features/auth/api/auth'
+import { apiRequest } from '@/shared/api/request'
 
 export interface Interval { start: string; end: string }
 export interface Weekday { weekday: number; enabled: boolean; work: Interval | null; lunch: Interval | null }
@@ -18,19 +18,7 @@ export interface Specialist {
 export interface ProfileInput { name: string; specialization: string; administratorId: string | null }
 
 export async function workforceRequest<T>(path: string, method = 'GET', data?: unknown, signal?: AbortSignal): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  if (method !== 'GET') {
-    headers['X-CSRF-Token'] = (await getCsrfTokens()).mutationToken
-    headers['Content-Type'] = 'application/json'
-  }
-  const response = await fetch(`/api/specialists${path}`, {
-    method, headers, credentials: 'same-origin', signal,
-    body: data === undefined ? undefined : JSON.stringify(data),
-  })
-  if (response.status === 204) return undefined as T
-  const payload = await response.json() as T & { message?: string }
-  if (!response.ok) throw new Error(payload.message ?? 'Не удалось сохранить изменения.')
-  return payload
+  return apiRequest<T>(`/api/specialists${path}`, method, data, signal)
 }
 
 export function useWorkforceKey() {
