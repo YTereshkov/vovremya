@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Identity\Domain\Model;
 
 use App\Module\Organization\Domain\Model\Organization;
+use App\Shared\Domain\MultiTenancy\OrganizationOwned;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -15,8 +16,9 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Entity]
 #[ORM\Table(name: 'administrator_accounts')]
 #[ORM\UniqueConstraint(name: 'uniq_administrator_accounts_normalized_email', columns: ['normalized_email'])]
+#[ORM\UniqueConstraint(name: 'uniq_administrator_accounts_organization_id_id', columns: ['organization_id', 'id'])]
 #[ORM\Index(name: 'idx_administrator_accounts_organization_id', columns: ['organization_id'])]
-final class AdministratorAccount implements UserInterface, PasswordAuthenticatedUserInterface
+final class AdministratorAccount implements OrganizationOwned, UserInterface, PasswordAuthenticatedUserInterface
 {
     private function __construct(
         #[ORM\Id]
@@ -81,6 +83,11 @@ final class AdministratorAccount implements UserInterface, PasswordAuthenticated
     public function organization(): Organization
     {
         return $this->organization;
+    }
+
+    public function organizationId(): Ulid
+    {
+        return $this->organization->id();
     }
 
     public function email(): string

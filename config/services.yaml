@@ -29,3 +29,12 @@ services:
 
     App\Module\Identity\Application\AdministratorProvisioningStore:
         alias: App\Module\Identity\Infrastructure\Persistence\DoctrineAdministratorProvisioningStore
+
+    App\Module\Identity\Application\AdministratorAccountReader:
+        alias: App\Module\Identity\Infrastructure\Persistence\DoctrineAdministratorAccountReader
+
+    App\Module\Organization\Application\OrganizationContext:
+        alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
+
+    App\Module\Organization\Application\OrganizationExistenceChecker:
+        alias: App\Module\Organization\Infrastructure\Persistence\DoctrineOrganizationExistenceChecker

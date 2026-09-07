@@ -2,6 +2,11 @@ framework:
     messenger:
         failure_transport: failed
 
+        buses:
+            messenger.bus.default:
+                middleware:
+                    - App\Module\Organization\Infrastructure\Messenger\OrganizationContextMiddleware
+
         transports:
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
