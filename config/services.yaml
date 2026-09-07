@@ -42,6 +42,12 @@ services:
     App\Module\Workforce\Application\WorkforceStore:
         alias: App\Module\Workforce\Infrastructure\Persistence\DoctrineWorkforceStore
 
+    App\Module\Workforce\Application\WorkforceAvailabilityReader:
+        alias: App\Module\Workforce\Infrastructure\Persistence\DoctrineWorkforceAvailabilityReader
+
+    App\Module\Scheduling\Application\ScheduleAllocationStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineScheduleAllocationStore
+
     App\Module\Organization\Application\OrganizationContext:
         alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
 

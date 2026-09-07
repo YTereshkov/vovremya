@@ -136,6 +136,10 @@ section provides client search, optional contact people, channel metadata, and
 primary-recipient selection. Catalog and Clients ownership rules are documented
 in [`docs/architecture/catalog-clients.md`](docs/architecture/catalog-clients.md).
 
+Scheduling occupancy and hard availability are backed by PostgreSQL exclusion
+constraints. The check endpoint and concurrency guarantees are documented in
+[`docs/architecture/scheduling-availability.md`](docs/architecture/scheduling-availability.md).
+
 Stop the environment without deleting database or Redis data:
 
 ```bash
