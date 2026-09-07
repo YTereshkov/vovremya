@@ -1,10 +1,13 @@
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, LogOut } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 import { desktopNavigation } from '@/app/layout/navigation'
+import { useAuth } from '@/features/auth/AuthProvider'
 import { cn } from '@/shared/lib/cn'
 
 export function DesktopSidebar() {
+  const { logout, user } = useAuth()
+
   return (
     <aside className="hidden min-h-screen border-r border-border bg-white/55 px-3.5 py-8 backdrop-blur-xl lg:flex lg:flex-col">
       <div className="px-3 text-[29px] font-semibold tracking-[-0.035em] text-primary">Vovremya</div>
@@ -41,6 +44,17 @@ export function DesktopSidebar() {
         <CalendarDays aria-hidden="true" className="size-6" strokeWidth={1.8} />
         Моё расписание
       </NavLink>
+      <div className="mt-5 border-t border-border pt-4">
+        <div className="truncate px-3 text-sm text-muted">{user?.email ?? 'Гость'}</div>
+        <button
+          className="mt-2 flex min-h-11 w-full items-center rounded-xl px-3 text-left text-sm font-medium text-muted transition-colors hover:bg-primary-soft hover:text-primary"
+          onClick={() => void logout()}
+          type="button"
+        >
+          <LogOut aria-hidden="true" className="size-5" />
+          Выйти
+        </button>
+      </div>
     </aside>
   )
 }

@@ -8,13 +8,15 @@ use App\Module\Organization\Domain\Model\Organization;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Ulid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'administrator_accounts')]
 #[ORM\UniqueConstraint(name: 'uniq_administrator_accounts_normalized_email', columns: ['normalized_email'])]
 #[ORM\Index(name: 'idx_administrator_accounts_organization_id', columns: ['organization_id'])]
-final class AdministratorAccount
+final class AdministratorAccount implements UserInterface, PasswordAuthenticatedUserInterface
 {
     private function __construct(
         #[ORM\Id]
@@ -99,6 +101,35 @@ final class AdministratorAccount
     public function isEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    public function disable(): void
+    {
+        $this->enabled = false;
+    }
+
+    public function enable(): void
+    {
+        $this->enabled = true;
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->normalizedEmail;
+    }
+
+    public function getRoles(): array
+    {
+        return ['ROLE_ADMIN'];
+    }
+
+    public function getPassword(): string
+    {
+        return $this->passwordHash;
+    }
+
+    public function eraseCredentials(): void
+    {
     }
 
     public function createdAt(): DateTimeImmutable
