@@ -51,7 +51,8 @@ separate namespaced Redis pools. Messenger uses separate Redis Streams for the
 The default Compose stack runs two background processes:
 
 - `messenger` consumes application messages from `async`;
-- `scheduler` produces scheduled messages from `scheduler_infrastructure`.
+- `scheduler` produces scheduled messages from `scheduler_infrastructure` and
+  `scheduler_regular_scheduling`.
 
 Inspect queues and the schedule:
 
@@ -132,6 +133,12 @@ Run responsive calendar, specialist-filter, and appointment-details scenarios:
 bash bin/test-calendar-e2e
 ```
 
+Run regular-schedule creation, day changes, materialization, and termination:
+
+```bash
+bash bin/test-regular-schedules-e2e
+```
+
 This runner migrates the development database, creates disposable test
 organizations, runs Playwright, and removes only those marked organizations on
 exit. Without the runner, authenticated Workforce scenarios are skipped; the
@@ -152,7 +159,9 @@ Scheduling occupancy and hard availability are backed by PostgreSQL exclusion
 constraints. The check endpoint and concurrency guarantees are documented in
 [`docs/architecture/scheduling-availability.md`](docs/architecture/scheduling-availability.md).
 The calendar read model, organization-timezone boundaries, and responsive views
-are documented in the same architecture note.
+are documented in the same architecture note. The same note documents regular
+rules, configurable `REGULAR_SCHEDULE_HORIZON_DAYS`, materialization, and
+`ScheduleGenerationIssue`.
 
 Stop the environment without deleting database or Redis data:
 

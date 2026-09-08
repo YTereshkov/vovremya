@@ -145,7 +145,7 @@ export function AppointmentFormPage() {
 
       <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-white/75 p-2">
         <span className="flex h-14 items-center justify-center gap-2 rounded-xl bg-primary-soft font-medium text-primary"><CalendarDays className="size-5" />Разовое</span>
-        <span aria-disabled="true" className="flex h-14 items-center justify-center gap-2 text-muted"><RefreshCcw className="size-5" />Регулярное</span>
+        <Link className="flex h-14 items-center justify-center gap-2 text-muted" to="/regular-schedules/new"><RefreshCcw className="size-5" />Регулярное</Link>
       </div>
 
       <form className="mt-6 space-y-4" onSubmit={submit}>

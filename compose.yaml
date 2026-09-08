@@ -83,6 +83,7 @@ services:
       - bin/console
       - messenger:consume
       - scheduler_infrastructure
+      - scheduler_regular_scheduling
       - --time-limit=3600
       - --memory-limit=128M
       - --no-interaction
@@ -95,6 +96,7 @@ services:
       MESSENGER_TRANSPORT_DSN: redis://redis:6379
       MESSENGER_CONSUMER_NAME: vovremya_scheduler_1
       INFRASTRUCTURE_HEARTBEAT_INTERVAL: 5 minutes
+      REGULAR_SCHEDULE_HORIZON_DAYS: "${REGULAR_SCHEDULE_HORIZON_DAYS:-60}"
     depends_on:
       postgres:
         condition: service_healthy

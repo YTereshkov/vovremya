@@ -34,6 +34,7 @@ final readonly class DoctrineCalendarQuery implements CalendarQuery
         $rows = $this->entityManager->getConnection()->fetchAllAssociative(
             $this->selectSql().' '.<<<SQL
                 WHERE a.organization_id = :organization_id
+                  AND a.planning_status = 'PLANNED'
                   AND a.starts_at >= CAST(:from AS TIMESTAMPTZ)
                   AND a.starts_at < CAST(:until AS TIMESTAMPTZ)
                 {$specialistFilter}

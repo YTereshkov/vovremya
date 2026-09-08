@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 10 завершена',
-    currentBatch: 11,
-    currentPart: 25,
-    currentItem: 'Регулярное расписание · ожидает старта',
+    state: 'Пачка 11 завершена',
+    currentBatch: 12,
+    currentPart: 28,
+    currentItem: 'Communications foundation · ожидает старта',
     updatedAt: '2026-09-08',
   },
   statusLabels: {
@@ -15,15 +15,15 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 11 · Часть 25',
+    title: 'Пачка 12 · Часть 28',
     items: [
-      'Следующий шаг: начать модель и API регулярного расписания.',
-      'Пачка 10 завершена и готова к отдельному коммиту.',
+      'Пачка 11 завершена: регулярные правила управляются от формы до календаря.',
+      'Следующий шаг: Communications foundation, шаблоны и подключения каналов.',
     ],
-    description: 'Часть 25 ещё не начата. Calendar API, «Сегодня», карточка занятия и responsive day/week views завершены.',
-    outcome: 'После старта части 25 появится управляемое регулярное расписание без преждевременной materialization.',
+    description: 'Части 25–27 завершены: разные времена по дням, rolling materialization, ScheduleGenerationIssue, изменение и завершение правил.',
+    outcome: 'Регулярные занятия создаются в конфигурируемом горизонте; конфликтные даты видимы, а история заменённых занятий сохраняется.',
   },
-  nextPartNumbers: [25, 26, 27, 28, 29],
+  nextPartNumbers: [28, 29, 30, 31, 32],
   batches: [
     {
       number: 1,
@@ -113,9 +113,9 @@ window.PROJECT_PROGRESS = {
       number: 11,
       title: 'Регулярное расписание и materialization',
       parts: [
-        { number: 25, title: 'Регулярное расписание', status: 'pending' },
-        { number: 26, title: 'Materialization и конфигурируемый rolling horizon', status: 'pending' },
-        { number: 27, title: 'ScheduleGenerationIssue и изменение регулярных правил', status: 'pending' },
+        { number: 25, title: 'Регулярное расписание', status: 'done', completedAt: '2026-09-08', result: 'Добавлены правила с отдельным временем и длительностью по дням, API и responsive UI.' },
+        { number: 26, title: 'Materialization и конфигурируемый rolling horizon', status: 'done', completedAt: '2026-09-08', result: 'Занятия и allocations создаются до REGULAR_SCHEDULE_HORIZON_DAYS и ежедневно продлеваются через Scheduler/Messenger.' },
+        { number: 27, title: 'ScheduleGenerationIssue и изменение регулярных правил', status: 'done', completedAt: '2026-09-08', result: 'Конфликтные даты не пропускаются молча; правила изменяются версионно, старые занятия остаются историей.' },
       ],
     },
     {

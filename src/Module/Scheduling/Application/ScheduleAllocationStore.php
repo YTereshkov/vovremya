@@ -15,4 +15,6 @@ interface ScheduleAllocationStore
     public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
 
     public function save(ScheduleAllocation $allocation): void;
+
+    public function releaseForAppointment(Ulid $appointmentId): void;
 }

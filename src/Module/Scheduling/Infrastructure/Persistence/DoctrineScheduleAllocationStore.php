@@ -84,8 +84,28 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
         }
 
         try {
-            $this->entityManager->persist($allocation);
-            $this->entityManager->flush();
+            $this->entityManager->getConnection()->executeStatement(
+                <<<'SQL'
+                    INSERT INTO schedule_allocations (
+                        id, organization_id, specialist_id, source_id, allocation_type,
+                        starts_at, ends_at, released_at, created_at
+                    ) VALUES (
+                        :id, :organization_id, :specialist_id, :source_id, :allocation_type,
+                        :starts_at, :ends_at, :released_at, CURRENT_TIMESTAMP
+                    )
+                    ON CONFLICT (id) DO UPDATE SET released_at = EXCLUDED.released_at
+                    SQL,
+                [
+                    'id' => $allocation->id()->toRfc4122(),
+                    'organization_id' => $allocation->organizationId()->toRfc4122(),
+                    'specialist_id' => $allocation->specialistId()->toRfc4122(),
+                    'source_id' => $allocation->sourceId()->toRfc4122(),
+                    'allocation_type' => $allocation->type()->value,
+                    'starts_at' => $allocation->startsAt()->format(\DateTimeInterface::RFC3339_EXTENDED),
+                    'ends_at' => $allocation->endsAt()->format(\DateTimeInterface::RFC3339_EXTENDED),
+                    'released_at' => $allocation->releasedAt()?->format(\DateTimeInterface::RFC3339_EXTENDED),
+                ],
+            );
         } catch (DriverException $exception) {
             if ('23P01' === $exception->getSQLState()) {
                 throw new TimeUnavailable(AvailabilityConflict::timeAlreadyUnavailable(), $exception);
@@ -93,5 +113,23 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
 
             throw $exception;
         }
+    }
+
+    public function releaseForAppointment(Ulid $appointmentId): void
+    {
+        $this->entityManager->getConnection()->executeStatement(
+            <<<'SQL'
+                UPDATE schedule_allocations
+                SET released_at = CURRENT_TIMESTAMP
+                WHERE organization_id = :organization_id
+                  AND allocation_type = 'APPOINTMENT'
+                  AND source_id = :appointment_id
+                  AND released_at IS NULL
+                SQL,
+            [
+                'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
+                'appointment_id' => $appointmentId->toRfc4122(),
+            ],
+        );
     }
 }

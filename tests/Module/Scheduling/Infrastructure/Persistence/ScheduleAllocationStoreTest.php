@@ -6,6 +6,7 @@ namespace App\Tests\Module\Scheduling\Infrastructure\Persistence;
 
 use App\Module\Identity\Application\CreateAdministrator\CreateAdministratorHandler;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
+use App\Module\Scheduling\Application\AppointmentStore;
 use App\Module\Organization\Domain\Model\Organization;
 use App\Module\Scheduling\Application\ScheduleAllocationStore;
 use App\Module\Scheduling\Domain\Model\ScheduleAllocation;
@@ -59,6 +60,23 @@ final class ScheduleAllocationStoreTest extends WebTestCase
         } catch (TimeUnavailable $exception) {
             self::assertSame('TIME_ALREADY_UNAVAILABLE', $exception->conflict->code);
         }
+    }
+
+    public function testConflictInsideApplicationTransactionKeepsEntityManagerUsable(): void
+    {
+        $this->store->save($this->allocation($this->specialist, '10:00', '11:00'));
+
+        try {
+            self::getContainer()->get(AppointmentStore::class)->transactional(
+                fn () => $this->store->save($this->allocation($this->specialist, '10:30', '11:30')),
+            );
+            self::fail('Overlapping allocation was accepted.');
+        } catch (TimeUnavailable) {
+        }
+
+        self::assertTrue($this->entityManager->isOpen());
+        $this->store->save($this->allocation($this->specialist, '11:00', '12:00'));
+        self::assertTrue($this->store->hasActiveConflict($this->specialist->id(), $this->instant('11:30'), $this->instant('11:45')));
     }
 
     public function testBoundariesAndDifferentSpecialistsDoNotConflict(): void

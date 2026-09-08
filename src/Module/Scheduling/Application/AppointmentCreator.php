@@ -76,7 +76,6 @@ final readonly class AppointmentCreator
         }
 
         return $this->appointments->transactional(function () use ($actor, $appointment, $warnings): Appointment {
-            $this->appointments->save($appointment);
             $this->allocations->save(ScheduleAllocation::forAppointment(
                 $actor->organization(),
                 $appointment->specialistId(),
@@ -84,6 +83,7 @@ final readonly class AppointmentCreator
                 $appointment->startsAt(),
                 $appointment->endsAt(),
             ));
+            $this->appointments->save($appointment);
             if ([] !== $warnings) {
                 $this->appointments->save(AppointmentEvent::softWarningsAccepted(
                     $appointment,

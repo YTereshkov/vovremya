@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–24
+# Scheduling and availability: parts 19–27
 
 ## Concrete occupancy
 
@@ -128,3 +128,37 @@ Mobile calendar rendering uses day and agenda-week views. Desktop rendering
 uses day columns, a week time grid, an optional specialist filter, and a
 fullscreen week mode. A single-specialist organization is presented directly
 without a redundant filter.
+
+## Regular schedules and materialization
+
+`RegularSchedule` owns the client, specialist, service snapshot, start date and
+optional first inactive date. `RegularScheduleDay` keeps one weekday, local
+start time, duration and its own active date interval. Different weekdays may
+therefore use different times and durations. Rule changes create a new day
+version; old versions remain available for history.
+
+Concrete appointments are materialized only inside the rolling horizon set by
+`REGULAR_SCHEDULE_HORIZON_DAYS`. The default is `60`, but this is a technical
+configuration value, not a domain invariant. The daily
+`scheduler_regular_scheduling` schedule dispatches materialization through the
+existing async Messenger transport for every organization under an explicit
+tenant context.
+
+Initial creation checks every occurrence currently inside the horizon. Any hard
+conflict rejects the whole rule and returns the concrete dates through HTTP
+409. Later materialization checks availability again before every insert. An
+unavailable date creates or refreshes a tenant-owned `ScheduleGenerationIssue`;
+it is never silently skipped. Retrying an issue reruns current availability and
+resolves the issue only after the appointment and allocation exist.
+
+A generated appointment references both its schedule and day version. Changing
+or ending a rule marks affected future appointments as
+`REMOVED_FROM_SCHEDULE`, releases their allocations, and keeps the appointment
+rows for history. Calendar range queries include only `PLANNED` appointments.
+The partial unique index permits one planned occurrence per schedule/date while
+allowing removed historical versions to coexist with a replacement.
+
+Materialization follows the same concurrency boundary as one-off creation:
+availability is advisory, and the transactional allocation insert is final.
+PostgreSQL's exclusion constraint remains the authoritative protection from
+double booking; no specialist/date transaction lock is used.

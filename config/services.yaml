@@ -54,8 +54,14 @@ services:
     App\Module\Scheduling\Application\CalendarQuery:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineCalendarQuery
 
+    App\Module\Scheduling\Application\RegularScheduleStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineRegularScheduleStore
+
     App\Module\Organization\Application\OrganizationContext:
         alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
 
     App\Module\Organization\Application\OrganizationExistenceChecker:
         alias: App\Module\Organization\Infrastructure\Persistence\DoctrineOrganizationExistenceChecker
+
+    App\Module\Organization\Application\OrganizationDirectory:
+        alias: App\Module\Organization\Infrastructure\Persistence\DoctrineOrganizationDirectory

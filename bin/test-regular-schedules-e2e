@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+run_id="$(date +%s)-$$"
+trap 'docker compose exec -T php php tests/Fixtures/calendar.php remove "$run_id"' EXIT
+docker compose exec -T php php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec -T php php tests/Fixtures/calendar.php create "$run_id"
+docker compose --profile test run --rm -e REGULAR_SCHEDULES_E2E_RUN="$run_id" playwright npm run test:e2e -- --grep "creates and manages a regular schedule"

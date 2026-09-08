@@ -79,6 +79,9 @@ foreach (['desktop', 'mobile'] as $device) {
             $connection->executeStatement('DELETE FROM appointment_events WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM schedule_allocations WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointments WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM schedule_generation_issues WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM regular_schedule_days WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM regular_schedules WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM clients WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM services WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM specialists WHERE organization_id = ?', [$id]);

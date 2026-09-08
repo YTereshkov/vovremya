@@ -18,6 +18,8 @@ import { ClientPage } from '@/pages/ClientPage'
 import { AppointmentFormPage } from '@/pages/AppointmentFormPage'
 import { AppointmentPage } from '@/pages/AppointmentPage'
 import { CalendarPage } from '@/pages/CalendarPage'
+import { RegularScheduleFormPage } from '@/pages/RegularScheduleFormPage'
+import { RegularSchedulePage } from '@/pages/RegularSchedulePage'
 
 export function App() {
   return (
@@ -27,10 +29,12 @@ export function App() {
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireAuthentication />}>
         <Route path="appointments/new" element={<AppointmentFormPage />} />
+        <Route path="regular-schedules/new" element={<RegularScheduleFormPage />} />
         <Route element={<AppShell />}>
           <Route index element={<TodayPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="appointments/:id" element={<AppointmentPage />} />
+          <Route path="regular-schedules/:id" element={<RegularSchedulePage />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/new" element={<ClientFormPage />} />
           <Route path="clients/:id" element={<ClientPage />} />
