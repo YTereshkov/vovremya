@@ -51,6 +51,9 @@ services:
     App\Module\Scheduling\Application\AppointmentStore:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentStore
 
+    App\Module\Scheduling\Application\CalendarQuery:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineCalendarQuery
+
     App\Module\Organization\Application\OrganizationContext:
         alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
 

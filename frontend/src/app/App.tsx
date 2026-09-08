@@ -1,6 +1,7 @@
-import { Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { AppShell } from '@/app/layout/AppShell'
+import { ScrollToTop } from '@/app/ScrollToTop'
 import { RequireAuthentication } from '@/features/auth/RequireAuthentication'
 import { SectionPlaceholderPage } from '@/pages/SectionPlaceholderPage'
 import { TodayPage } from '@/pages/TodayPage'
@@ -15,17 +16,21 @@ import { ClientsPage } from '@/pages/ClientsPage'
 import { ClientFormPage } from '@/pages/ClientFormPage'
 import { ClientPage } from '@/pages/ClientPage'
 import { AppointmentFormPage } from '@/pages/AppointmentFormPage'
-import { Button } from '@/shared/ui/Button'
+import { AppointmentPage } from '@/pages/AppointmentPage'
+import { CalendarPage } from '@/pages/CalendarPage'
 
 export function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireAuthentication />}>
         <Route path="appointments/new" element={<AppointmentFormPage />} />
         <Route element={<AppShell />}>
           <Route index element={<TodayPage />} />
-          <Route path="calendar" element={<SectionPlaceholderPage title="Календарь" action={<Button asChild size="compact"><Link to="/appointments/new">Новое занятие</Link></Button>} />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="appointments/:id" element={<AppointmentPage />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/new" element={<ClientFormPage />} />
           <Route path="clients/:id" element={<ClientPage />} />
@@ -44,6 +49,7 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, ChevronRight, Clock3, Hourglass, RefreshCcw, UserRound, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -74,6 +74,7 @@ function DecisionDialog({
 
 export function AppointmentFormPage() {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const specialists = useSpecialists()
   const clients = useClients('')
   const services = useServices()
@@ -105,6 +106,7 @@ export function AppointmentFormPage() {
     onSuccess: (appointment) => {
       setDecision(null)
       setCreated(appointment)
+      void queryClient.invalidateQueries({ queryKey: ['calendar', user?.organization.id] })
     },
     onError: (error) => {
       setCreated(null)
@@ -168,7 +170,7 @@ export function AppointmentFormPage() {
 
         {loading ? <p role="status" className="text-muted">Загружаем данные...</p> : null}
         {!loading && !ready ? <p role="alert" className="text-danger">Для занятия нужны специалист, клиент и услуга.</p> : null}
-        {created ? <div role="status" className="rounded-xl border border-success/30 bg-white/75 p-4 text-success">Занятие «{created.service.name}» создано.</div> : null}
+        {created ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-white/75 p-4 text-success"><span>Занятие «{created.service.name}» создано.</span><Link className="font-medium underline" to={`/appointments/${created.id}`}>Открыть занятие</Link></div> : null}
         <ResourceFeedback error={error} />
         <Button className="w-full" disabled={loading || !ready || mutation.isPending} type="submit">{mutation.isPending ? 'Создаём...' : 'Создать занятие'}</Button>
         <Button asChild className="w-full" variant="outline"><Link to="/calendar">Отмена</Link></Button>

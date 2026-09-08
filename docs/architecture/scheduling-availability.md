@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–22
+# Scheduling and availability: parts 19–24
 
 ## Concrete occupancy
 
@@ -105,3 +105,26 @@ present but was not explicitly accepted prevents creation; newly appearing
 warnings therefore cannot be bypassed by stale UI state. Accepted warnings are
 recorded as a `SOFT_WARNINGS_ACCEPTED` appointment event. Actual overlap remains
 a hard conflict regardless of `acceptedWarnings`.
+
+## Calendar read model
+
+`GET /api/calendar?from=YYYY-MM-DD&to=YYYY-MM-DD` returns concrete appointments
+for an inclusive local-date range of at most 31 days. Optional `specialistId`
+filters one specialist. Date boundaries use the authenticated organization's
+timezone and are converted to instants before querying `timestamptz` columns.
+
+The DBAL reader executes one tenant-scoped query joining appointment, client,
+and specialist data. Results are ordered by start instant, specialist name, and
+appointment identifier. Existing `(organization_id, starts_at, id)` and
+`(organization_id, specialist_id, starts_at)` indexes match the unfiltered and
+filtered range queries. No per-row lookups are used.
+
+Calendar responses use the appointment's immutable service snapshot. Renaming
+or soft-deleting the catalog service therefore does not rewrite historical
+calendar entries. `GET /api/appointments/{id}` exposes the same read model for
+the appointment details screen and returns 404 for another tenant's identifier.
+
+Mobile calendar rendering uses day and agenda-week views. Desktop rendering
+uses day columns, a week time grid, an optional specialist filter, and a
+fullscreen week mode. A single-specialist organization is presented directly
+without a redundant filter.

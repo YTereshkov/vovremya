@@ -126,6 +126,12 @@ Run one-off appointment creation, soft-warning, and hard-conflict scenarios:
 bash bin/test-appointments-e2e
 ```
 
+Run responsive calendar, specialist-filter, and appointment-details scenarios:
+
+```bash
+bash bin/test-calendar-e2e
+```
+
 This runner migrates the development database, creates disposable test
 organizations, runs Playwright, and removes only those marked organizations on
 exit. Without the runner, authenticated Workforce scenarios are skipped; the
@@ -145,6 +151,8 @@ in [`docs/architecture/catalog-clients.md`](docs/architecture/catalog-clients.md
 Scheduling occupancy and hard availability are backed by PostgreSQL exclusion
 constraints. The check endpoint and concurrency guarantees are documented in
 [`docs/architecture/scheduling-availability.md`](docs/architecture/scheduling-availability.md).
+The calendar read model, organization-timezone boundaries, and responsive views
+are documented in the same architecture note.
 
 Stop the environment without deleting database or Redis data:
 
