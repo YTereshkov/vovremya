@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 11 завершена',
+    state: 'Часть 28 завершена',
     currentBatch: 12,
-    currentPart: 28,
-    currentItem: 'Communications foundation · ожидает старта',
+    currentPart: 29,
+    currentItem: 'Шаблоны сообщений · ожидают старта',
     updatedAt: '2026-09-08',
   },
   statusLabels: {
@@ -15,15 +15,16 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 12 · Часть 28',
+    title: 'Пачка 12 · Часть 29',
     items: [
       'Пачка 11 завершена: регулярные правила управляются от формы до календаря.',
-      'Следующий шаг: Communications foundation, шаблоны и подключения каналов.',
+      'Communications foundation завершён: outbox, webhook inbox и provider contracts готовы.',
+      'Следующий шаг: шаблоны сообщений и подключения каналов.',
     ],
-    description: 'Части 25–27 завершены: разные времена по дням, rolling materialization, ScheduleGenerationIssue, изменение и завершение правил.',
-    outcome: 'Регулярные занятия создаются в конфигурируемом горизонте; конфликтные даты видимы, а история заменённых занятий сохраняется.',
+    description: 'Часть 28 завершена: provider-neutral notification intents, transactional outbox, idempotent webhook inbox и Messenger/Scheduler handlers.',
+    outcome: 'Бизнес-модули могут надёжно ставить сообщения в очередь без зависимости от API конкретного мессенджера.',
   },
-  nextPartNumbers: [28, 29, 30, 31, 32],
+  nextPartNumbers: [29, 30, 31, 32, 33],
   batches: [
     {
       number: 1,
@@ -122,7 +123,7 @@ window.PROJECT_PROGRESS = {
       number: 12,
       title: 'Communications foundation, шаблоны и подключения',
       parts: [
-        { number: 28, title: 'Communications foundation', status: 'pending' },
+        { number: 28, title: 'Communications foundation', status: 'done', completedAt: '2026-09-08', result: 'Добавлены notification intents, transactional outbox, конкурентно-идемпотентный webhook inbox, authenticated provider contracts, processing leases и scheduled recovery.' },
         { number: 29, title: 'Шаблоны сообщений', status: 'pending' },
         { number: 30, title: 'Подключение каналов и capabilities', status: 'pending' },
       ],
@@ -207,6 +208,7 @@ window.PROJECT_PROGRESS = {
         'Добавлены specialist filter, fullscreen week и disposable E2E flow создания и открытия занятия.',
         'Добавлен scroll restoration при переходе из прокрученного календаря в карточку.',
         'Добавлен статический project progress dashboard и правило его обязательного сопровождения.',
+        'Завершена часть 28: Communications foundation с outbox/inbox, tenant-scoped Messenger handlers и provider-neutral adapters.',
       ],
     },
     {
@@ -235,6 +237,11 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-08', title: 'Зависшая обработка восстанавливается по lease', text: 'Outbound и webhook claims имеют пятиминутный processing lease; Scheduler повторно публикует необработанные и просроченные записи без потери tenant scope.' },
+    { date: '2026-09-08', title: 'Webhook аутентифицируется до сохранения', text: 'Настроенный provider проверяет raw body и headers до JSON decode и записи inbox; endpoint ограничен rate limit и размером 256 KiB.' },
+    { date: '2026-09-08', title: 'Сообщения проходят через transactional outbox', text: 'NotificationIntent и OutboundMessage сохраняются одной транзакцией; scheduler публикует pending-записи, а Redis/Messenger не являются источником истины.' },
+    { date: '2026-09-08', title: 'Webhook inbox идемпотентен', text: 'Повтор одного provider event определяется уникальным (organization_id, provider, external_event_id) и возвращает исходную запись без дубля.' },
+    { date: '2026-09-08', title: 'Провайдеры подключаются через общий контракт', text: 'ChannelProvider и registry изолируют бизнес-логику от MAX, Telegram и WhatsApp; capability flags не выдумывают delivery/read статусы.' },
     { date: '2026-09-08', title: 'Календарь читает snapshot занятия', text: 'Calendar query одним tenant-scoped JOIN получает клиента и специалиста, но название и параметры услуги берёт из неизменяемого Appointment snapshot.' },
     { date: '2026-09-08', title: 'Границы календаря задаёт timezone организации', text: 'Локальные from/to преобразуются в UTC instants на backend; browser timezone не определяет состав календарного дня.' },
     { date: '2026-09-07', title: 'Database-level защита расписания', text: 'Availability check остаётся advisory. Финальную защиту от конкурентного двойного бронирования обеспечивает PostgreSQL exclusion constraint; дополнительные specialist/date locks не вводятся.' },

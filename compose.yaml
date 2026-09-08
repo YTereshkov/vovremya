@@ -84,6 +84,7 @@ services:
       - messenger:consume
       - scheduler_infrastructure
       - scheduler_regular_scheduling
+      - scheduler_communications
       - --time-limit=3600
       - --memory-limit=128M
       - --no-interaction

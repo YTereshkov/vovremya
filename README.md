@@ -51,8 +51,8 @@ separate namespaced Redis pools. Messenger uses separate Redis Streams for the
 The default Compose stack runs two background processes:
 
 - `messenger` consumes application messages from `async`;
-- `scheduler` produces scheduled messages from `scheduler_infrastructure` and
-  `scheduler_regular_scheduling`.
+- `scheduler` produces scheduled messages from `scheduler_infrastructure`,
+  `scheduler_regular_scheduling`, and `scheduler_communications`.
 
 Inspect queues and the schedule:
 
@@ -162,6 +162,10 @@ The calendar read model, organization-timezone boundaries, and responsive views
 are documented in the same architecture note. The same note documents regular
 rules, configurable `REGULAR_SCHEDULE_HORIZON_DAYS`, materialization, and
 `ScheduleGenerationIssue`.
+
+Provider-neutral notification intents, transactional outbox delivery, and
+idempotent webhook ingestion are documented in
+[`docs/architecture/communications.md`](docs/architecture/communications.md).
 
 Stop the environment without deleting database or Redis data:
 
