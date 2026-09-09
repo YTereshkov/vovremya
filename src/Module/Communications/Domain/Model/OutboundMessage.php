@@ -76,6 +76,10 @@ final class OutboundMessage implements OrganizationOwned
         array $metadata = [],
         ?DateTimeImmutable $availableAt = null,
     ): self {
+        if (null === $channelConnectionId) {
+            throw new \DomainException('Для внешнего сообщения требуется подключённый канал.');
+        }
+        self::assertMetadata($metadata);
         $recipientAddress = trim($recipientAddress);
         $body = trim($body);
         if ('' === $recipientAddress || 254 < strlen($recipientAddress)) {
@@ -155,4 +159,17 @@ final class OutboundMessage implements OrganizationOwned
     public function metadata(): array { return $this->metadata; }
     public function status(): OutboundMessageStatus { return $this->status; }
     public function attempts(): int { return $this->attempts; }
+
+    /** @param array<string, mixed> $metadata */
+    public static function assertMetadata(array $metadata): void
+    {
+        foreach ($metadata as $key => $value) {
+            // Part 31 has no provider-specific safe metadata contract yet.
+            // Keep only the foundation's diagnostic source marker and reject
+            // nested/unknown values before they can reach durable storage.
+            if ('source' !== $key || !is_string($value) || '' === trim($value) || 100 < strlen($value)) {
+                throw new \InvalidArgumentException('Разрешено только безопасное текстовое поле metadata source.');
+            }
+        }
+    }
 }

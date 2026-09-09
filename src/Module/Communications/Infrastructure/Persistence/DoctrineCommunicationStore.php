@@ -116,15 +116,16 @@ final readonly class DoctrineCommunicationStore implements CommunicationStore
         $insertedId = $this->entityManager->getConnection()->fetchOne(
             <<<'SQL'
                 INSERT INTO communication_webhook_inbox
-                    (id, organization_id, provider, external_event_id, payload, status, attempts, received_at)
+                    (id, organization_id, channel_connection_id, provider, external_event_id, payload, status, attempts, received_at)
                 VALUES
-                    (:id, :organization_id, :provider, :external_event_id, CAST(:payload AS JSONB), 'RECEIVED', 0, :received_at)
+                    (:id, :organization_id, :channel_connection_id, :provider, :external_event_id, CAST(:payload AS JSONB), 'RECEIVED', 0, :received_at)
                 ON CONFLICT (organization_id, provider, external_event_id) DO NOTHING
                 RETURNING id
                 SQL,
             [
                 'id' => $inbox->id()->toRfc4122(),
                 'organization_id' => $inbox->organizationId()->toRfc4122(),
+                'channel_connection_id' => $inbox->channelConnectionId()?->toRfc4122(),
                 'provider' => $inbox->provider()->value,
                 'external_event_id' => $inbox->externalEventId(),
                 'payload' => json_encode($inbox->payload(), JSON_THROW_ON_ERROR),

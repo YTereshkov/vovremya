@@ -173,6 +173,18 @@ final readonly class ClientController
         });
     }
 
+    #[Route('/{id}/channels/{channelId}/webhook-secret', methods: ['PUT'])]
+    public function webhookSecret(string $id, string $channelId, Request $request): JsonResponse
+    {
+        return $this->respond(function () use ($id, $channelId, $request): array {
+            $client = $this->owned($id);
+            $data = $this->body($request, ['secret']);
+            $this->directory->configureChannelWebhookSecret($client, $channelId, $this->string($data, 'secret'));
+
+            return $this->directory->details($client);
+        });
+    }
+
     private function owned(string $id, string $permission = OrganizationPermission::EDIT): Client
     {
         $client = $this->directory->find($id);

@@ -48,7 +48,8 @@ not advertise it.
 `communication_webhook_inbox` is an append-once ingress log keyed by
 `(organization_id, provider, external_event_id)`. `WebhookInboxRecorder` uses
 PostgreSQL `INSERT ... ON CONFLICT`, so concurrent duplicates return the
-original row and receive the same `202` acknowledgement.
+original row and receive the same acknowledgement (`200` for MAX, `202` for
+providers using the generic response).
 
 Only a configured provider adapter can activate its endpoint. The adapter must
 authenticate the original request body and headers before anything is stored;
@@ -68,3 +69,37 @@ All tables carry `organization_id`, composite tenant foreign keys, and indexes
 starting with the tenant column. Messenger messages that carry tenant data
 implement `OrganizationAwareMessage`, so the existing middleware re-checks the
 organization before the handler runs.
+
+## MAX adapter (part 31)
+
+`MaxChannelProvider` is the first concrete adapter. It uses the MAX REST API
+through `MaxApiClient`; the transport endpoint and credentials come from
+`MAX_API_BASE_URL` and the protected provider bot credential. Webhook secrets
+are stored as hashes on the tenant-owned channel connection, never as one
+global secret. Credentials are kept out of message bodies and URLs.
+
+Outbound messages are rendered as MAX `text` plus an inline keyboard with
+callback or link buttons. The adapter exposes buttons and deep links as
+capabilities; message editing remains disabled until the provider-neutral
+contract has a real edit operation. Delivered/read statuses are deliberately
+not exposed because MAX does not document corresponding update events. The
+outbox id remains an internal retry/deduplication key; MAX's documented API
+does not guarantee idempotency for a custom request header, so ambiguous
+transport success is not presented as exactly-once delivery.
+
+MAX webhook requests are authenticated with `X-Max-Bot-Api-Secret` before they
+are persisted. The controller acknowledges MAX with HTTP 200 as required by
+the platform. Callback updates become normalized button events; ordinary text
+updates are marked unsupported and never interpreted as a business command.
+
+New channel connections start in `PENDING` state. The tenant-scoped client API
+stores the webhook secret hash, while a matching MAX `bot_started` event is the
+external recipient confirmation that moves the connection to `ACTIVE`. Outbound
+messages require an active, verified connection; deactivated connections remain
+disabled. Normalized events have their own claim/retry/processed lifecycle and
+are dispatched through the provider-neutral Messenger contract.
+
+Outbound metadata currently has a strict allowlist containing only the safe
+diagnostic `source` string. Unknown, nested, credential-like, or recipient
+override values are rejected before persistence and the surviving safe metadata
+is passed unchanged to the provider adapter.

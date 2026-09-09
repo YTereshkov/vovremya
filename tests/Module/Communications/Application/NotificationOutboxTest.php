@@ -14,6 +14,8 @@ use App\Module\Communications\Domain\Model\NotificationIntent;
 use App\Module\Communications\Domain\Model\OutboundMessage;
 use App\Module\Identity\Application\CreateAdministrator\CreateAdministratorHandler;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
+use App\Module\Clients\Domain\Model\ChannelConnection;
+use App\Module\Clients\Domain\Model\Client;
 use App\Module\Organization\Application\OrganizationContext;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -26,6 +28,7 @@ final class NotificationOutboxTest extends KernelTestCase
     private OrganizationContext $context;
     private CommunicationStore $store;
     private NotificationOutbox $outbox;
+    private ChannelConnection $channel;
 
     protected function setUp(): void
     {
@@ -34,9 +37,21 @@ final class NotificationOutboxTest extends KernelTestCase
         $this->entityManager->getConnection()->beginTransaction();
         $this->administrator = self::getContainer()->get(CreateAdministratorHandler::class)
             ->create('Outbox test', 'outbox-'.bin2hex(random_bytes(4)).'@example.test', 'test-password', 'Europe/Moscow');
+        $client = Client::create($this->administrator->organization(), 'Outbox recipient', 'ADULT', null, null);
+        $this->entityManager->persist($client);
+        $this->entityManager->flush();
+        $this->channel = ChannelConnection::create($client, null, 'MAX', '123456789');
+        $this->channel->activate();
+        $this->entityManager->persist($this->channel);
+        $this->entityManager->flush();
         $this->context = self::getContainer()->get(OrganizationContext::class);
         $this->store = self::getContainer()->get(CommunicationStore::class);
-        $this->outbox = new NotificationOutbox($this->entityManager, $this->store, $this->context);
+        $this->outbox = new NotificationOutbox(
+            $this->entityManager,
+            $this->store,
+            $this->context,
+            self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
+        );
     }
 
     protected function tearDown(): void
@@ -94,11 +109,56 @@ final class NotificationOutboxTest extends KernelTestCase
         self::assertNull($this->context->runWith($this->administrator->organizationId(), fn () => $this->store->claimOutbound($message->id())));
     }
 
+    public function testCredentialsCannotBePersistedInOutboxMetadata(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->outbox->queue(
+            'MAX_TEST',
+            $this->channel->id(),
+            CommunicationProvider::MAX,
+            $this->channel->address(),
+            'Текст',
+            metadata: ['accessToken' => 'must-not-be-stored'],
+        ));
+    }
+
+    public function testUnknownAndNestedMetadataCannotBePersisted(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->outbox->queue(
+            'MAX_TEST',
+            $this->channel->id(),
+            CommunicationProvider::MAX,
+            $this->channel->address(),
+            'Текст',
+            metadata: ['max' => ['authorization' => 'secret']],
+        ));
+    }
+
+    public function testInactiveChannelCannotBeQueued(): void
+    {
+        $this->channel->deactivate();
+        $this->entityManager->flush();
+
+        $this->expectException(\DomainException::class);
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->outbox->queue(
+            'MAX_TEST',
+            $this->channel->id(),
+            CommunicationProvider::MAX,
+            $this->channel->address(),
+            'Текст',
+        ));
+    }
+
     public function testSendHandlerRetriesAndUsesStableIdempotencyKey(): void
     {
         $message = $this->queue();
         $provider = new FakeChannelProvider();
-        $handler = new SendOutboundMessageHandler($this->store, new ChannelProviderRegistry([$provider]));
+        $handler = new SendOutboundMessageHandler(
+            $this->store,
+            new ChannelProviderRegistry([$provider]),
+            self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
+        );
         $command = new SendOutboundMessage($this->administrator->organizationId(), $message->id());
         $provider->sendFailure = new \RuntimeException('Temporary provider failure.');
 
@@ -117,6 +177,7 @@ final class NotificationOutboxTest extends KernelTestCase
         $this->context->runWith($this->administrator->organizationId(), fn () => $handler($command));
         self::assertCount(1, $provider->sent);
         self::assertSame($message->id()->toRfc4122(), $provider->sent[0]->idempotencyKey);
+        self::assertSame(['source' => 'test'], $provider->sent[0]->metadata);
 
         $sent = $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->findOutbound($message->id()));
         self::assertSame('SENT', $sent?->status()->value);
@@ -127,9 +188,9 @@ final class NotificationOutboxTest extends KernelTestCase
     {
         return $this->context->runWith($this->administrator->organizationId(), fn () => $this->outbox->queue(
             'APPOINTMENT_REMINDER',
-            null,
+            $this->channel->id(),
             CommunicationProvider::MAX,
-            '+79990000000',
+            '123456789',
             'Напоминание о занятии',
             ['date' => '2026-09-10'],
             [['label' => 'Будем', 'action' => 'confirm']],

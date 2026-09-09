@@ -18,6 +18,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\UniqueConstraint(name: 'uniq_communication_webhook_event', columns: ['organization_id', 'provider', 'external_event_id'])]
 #[ORM\Index(name: 'idx_communication_webhook_status', columns: ['organization_id', 'status', 'received_at'])]
 #[ORM\Index(name: 'idx_communication_webhook_processing', columns: ['organization_id', 'status', 'processing_started_at'])]
+#[ORM\Index(name: 'idx_communication_webhook_connection', columns: ['organization_id', 'channel_connection_id'])]
 final class WebhookInbox implements OrganizationOwned
 {
     private function __construct(
@@ -33,6 +34,8 @@ final class WebhookInbox implements OrganizationOwned
         private string $externalEventId,
         #[ORM\Column(type: 'jsonb')]
         private array $payload,
+        #[ORM\Column(name: 'channel_connection_id', type: 'ulid', nullable: true)]
+        private ?Ulid $channelConnectionId,
         #[ORM\Column(enumType: WebhookInboxStatus::class, length: 16)]
         private WebhookInboxStatus $status,
         #[ORM\Column]
@@ -54,6 +57,7 @@ final class WebhookInbox implements OrganizationOwned
         CommunicationProvider $provider,
         string $externalEventId,
         array $payload,
+        ?Ulid $channelConnectionId = null,
     ): self {
         $externalEventId = trim($externalEventId);
         if ('' === $externalEventId || 200 < strlen($externalEventId)) {
@@ -66,6 +70,7 @@ final class WebhookInbox implements OrganizationOwned
             $provider->value,
             $externalEventId,
             $payload,
+            $channelConnectionId,
             WebhookInboxStatus::RECEIVED,
             0,
             new DateTimeImmutable('now', new DateTimeZone('UTC')),
@@ -104,6 +109,7 @@ final class WebhookInbox implements OrganizationOwned
     /** @return array<string, mixed> */
     public function payload(): array { return $this->payload; }
     public function status(): WebhookInboxStatus { return $this->status; }
+    public function channelConnectionId(): ?Ulid { return $this->channelConnectionId; }
     public function attempts(): int { return $this->attempts; }
     public function receivedAt(): DateTimeImmutable { return $this->receivedAt; }
 }

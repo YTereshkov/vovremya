@@ -166,6 +166,13 @@ final readonly class ClientDirectory
         $this->store->save($client);
     }
 
+    public function configureChannelWebhookSecret(Client $client, string $channelId, string $secret): void
+    {
+        $channel = $this->channel($client, $channelId);
+        $channel->configureWebhookSecret($secret);
+        $this->store->save($channel);
+    }
+
     /** @return array<string, mixed> */
     public function details(Client $client): array
     {
@@ -199,6 +206,7 @@ final readonly class ClientDirectory
                 'id' => $channel->id()->toRfc4122(),
                 'provider' => $channel->provider(),
                 'address' => $channel->address(),
+                'status' => $channel->state(),
                 'recipientType' => null === $channel->contactPersonId() ? 'CLIENT' : 'CONTACT_PERSON',
                 'recipientId' => $channel->contactPersonId()?->toRfc4122() ?? $client->id()->toRfc4122(),
                 'recipientName' => null === $channel->contactPersonId()

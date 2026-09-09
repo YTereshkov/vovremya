@@ -42,5 +42,21 @@ final class CommunicationsSchemaConstraints
         $schema->getTable('communication_webhook_inbox')->addForeignKeyConstraint(
             'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_communication_webhook_organization',
         );
+        if ($schema->hasTable('channel_connections')) {
+            $schema->getTable('communication_webhook_inbox')->addForeignKeyConstraint(
+                'channel_connections', ['organization_id', 'channel_connection_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_communication_webhook_channel_tenant',
+            );
+        }
+
+        if ($schema->hasTable('communication_normalized_events')) {
+            $schema->getTable('communication_normalized_events')->addForeignKeyConstraint(
+                'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_normalized_events_organization',
+            );
+            if ($schema->hasTable('channel_connections')) {
+                $schema->getTable('communication_normalized_events')->addForeignKeyConstraint(
+                    'channel_connections', ['organization_id', 'channel_connection_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_normalized_events_channel_tenant',
+                );
+            }
+        }
     }
 }

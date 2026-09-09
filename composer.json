@@ -8,6 +8,7 @@
     "require": {
         "php": "8.4.*",
         "ext-ctype": "*",
+        "ext-curl": "*",
         "ext-iconv": "*",
         "ext-redis": "*",
         "doctrine/doctrine-bundle": "^3.3",

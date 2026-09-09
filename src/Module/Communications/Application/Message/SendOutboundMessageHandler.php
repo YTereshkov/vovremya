@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Communications\Application\Message;
 
+use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Communications\Application\ChannelProviderRegistry;
 use App\Module\Communications\Application\CommunicationStore;
 use App\Module\Communications\Application\OutboundMessageRequest;
@@ -15,6 +16,7 @@ final readonly class SendOutboundMessageHandler
     public function __construct(
         private CommunicationStore $store,
         private ChannelProviderRegistry $providers,
+        private ChannelConnectionResolver $connections,
     ) {
     }
 
@@ -26,6 +28,14 @@ final readonly class SendOutboundMessageHandler
         }
 
         try {
+            $channelId = $outbound->channelConnectionId();
+            $connection = null === $channelId ? null : $this->connections->findChannelForTenant($channelId);
+            if (null === $connection || !$connection->isActive()) {
+                throw new \DomainException('Канал получателя не найден или отключён.');
+            }
+            if ($connection->provider() !== $outbound->provider()->value || $connection->address() !== $outbound->recipientAddress()) {
+                throw new \DomainException('Канал получателя изменился или не соответствует сообщению.');
+            }
             $result = $this->providers->get($outbound->provider())->send(new OutboundMessageRequest(
                 $outbound->provider(),
                 $outbound->recipientAddress(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Clients\Infrastructure\Persistence;
 
+use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Clients\Application\ClientStore;
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
@@ -16,7 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class DoctrineClientStore implements ClientStore
+final readonly class DoctrineClientStore implements ClientStore, ChannelConnectionResolver
 {
     public function __construct(private EntityManagerInterface $entityManager, private OrganizationContext $organizationContext)
     {
@@ -62,6 +63,28 @@ final readonly class DoctrineClientStore implements ClientStore
     {
         $result = $this->children(ChannelConnection::class, $clientId)
             ->andWhere('item.id = :id')->setParameter('id', $channelId, 'ulid')->getQuery()->getOneOrNullResult();
+
+        return $result instanceof ChannelConnection ? $result : null;
+    }
+
+    public function findChannelForTenant(Ulid $id): ?ChannelConnection
+    {
+        $result = $this->query(ChannelConnection::class)
+            ->andWhere('item.id = :id')->setParameter('id', $id, 'ulid')
+            ->getQuery()->getOneOrNullResult();
+
+        return $result instanceof ChannelConnection ? $result : null;
+    }
+
+    public function findChannelByRoutingKey(string $provider, string $routingKey): ?ChannelConnection
+    {
+        $result = $this->entityManager->createQueryBuilder()
+            ->select('item')->from(ChannelConnection::class, 'item')
+            ->andWhere('item.provider = :provider')
+            ->andWhere('item.webhookRoutingKey = :routingKey')
+            ->setParameter('provider', $provider)
+            ->setParameter('routingKey', $routingKey)
+            ->getQuery()->getOneOrNullResult();
 
         return $result instanceof ChannelConnection ? $result : null;
     }

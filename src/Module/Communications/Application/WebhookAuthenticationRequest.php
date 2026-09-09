@@ -10,6 +10,7 @@ final readonly class WebhookAuthenticationRequest
     public function __construct(
         public string $rawBody,
         public array $headers,
+        public ?string $expectedSecretHash = null,
     ) {
     }
 }

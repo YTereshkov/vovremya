@@ -25,10 +25,11 @@ final readonly class WebhookInboxRecorder
         CommunicationProvider $provider,
         string $externalEventId,
         array $payload,
+        ?Ulid $channelConnectionId = null,
     ): array {
         $organizationId = $this->organizationContext->currentId();
         $organization = $this->entityManager->getReference(Organization::class, $organizationId);
-        $inbox = WebhookInbox::receive($organization, $provider, $externalEventId, $payload);
+        $inbox = WebhookInbox::receive($organization, $provider, $externalEventId, $payload, $channelConnectionId);
 
         return $this->store->recordWebhook($inbox);
     }

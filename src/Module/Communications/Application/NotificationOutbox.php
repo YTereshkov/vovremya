@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Communications\Application;
 
+use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Communications\Domain\Model\CommunicationProvider;
 use App\Module\Communications\Domain\Model\NotificationIntent;
 use App\Module\Communications\Domain\Model\OutboundMessage;
@@ -18,6 +19,7 @@ final readonly class NotificationOutbox
         private EntityManagerInterface $entityManager,
         private CommunicationStore $store,
         private OrganizationContext $organizationContext,
+        private ChannelConnectionResolver $connections,
     ) {
     }
 
@@ -36,6 +38,20 @@ final readonly class NotificationOutbox
         array $metadata = [],
         ?string $dedupeKey = null,
     ): OutboundMessage {
+        if (null === $recipientChannelId) {
+            throw new \DomainException('Для внешнего уведомления требуется подключённый канал.');
+        }
+        $connection = $this->connections->findChannelForTenant($recipientChannelId);
+        if (null === $connection || !$connection->isActive()) {
+            throw new \DomainException('Канал получателя не найден или отключён.');
+        }
+        if ($connection->provider() !== $provider->value) {
+            throw new \DomainException('Канал получателя не соответствует провайдеру уведомления.');
+        }
+        if (trim($recipientAddress) !== $connection->address()) {
+            throw new \DomainException('Адрес получателя должен быть взят из подключённого канала.');
+        }
+        OutboundMessage::assertMetadata($metadata);
         $organization = $this->entityManager->getReference(Organization::class, $this->organizationContext->currentId());
 
         return $this->store->transactional(function () use ($organization, $type, $recipientChannelId, $provider, $recipientAddress, $body, $payload, $buttons, $metadata, $dedupeKey): OutboundMessage {

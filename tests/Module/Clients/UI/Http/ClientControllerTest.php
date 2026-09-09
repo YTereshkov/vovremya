@@ -88,6 +88,9 @@ final class ClientControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(201);
         $channelId = $withChannel['channels'][0]['id'];
         self::assertSame($channelId, $withChannel['primaryChannelId']);
+        self::assertSame('PENDING', $withChannel['channels'][0]['status']);
+        $configured = $this->send('PUT', "/api/clients/$id/channels/$channelId/webhook-secret", ['secret' => 'channel-secret']);
+        self::assertSame('PENDING', $configured['channels'][0]['status']);
 
         $this->client->request('GET', '/api/clients?search='.urlencode('иван'));
         self::assertCount(1, $this->json());

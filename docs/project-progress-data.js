@@ -1,11 +1,11 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Часть 28 завершена',
-    currentBatch: 12,
-    currentPart: 29,
-    currentItem: 'Шаблоны сообщений · ожидают старта',
-    updatedAt: '2026-09-08',
+    state: 'Часть 31 требует проверки зависимостей',
+    currentBatch: 13,
+    currentPart: 31,
+    currentItem: 'MAX adapter hardened · части 29–30 ещё не завершены',
+    updatedAt: '2026-09-09',
   },
   statusLabels: {
     done: 'Выполнено',
@@ -15,14 +15,16 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 12 · Часть 29',
+    title: 'Пачка 13 · Часть 31',
     items: [
       'Пачка 11 завершена: регулярные правила управляются от формы до календаря.',
       'Communications foundation завершён: outbox, webhook inbox и provider contracts готовы.',
-      'Следующий шаг: шаблоны сообщений и подключения каналов.',
+      'MAX adapter hardened: tenant-bound routing, recipient validation, stable event handoff, secure outbox и curl runtime готовы.',
+      'Normalized-event processing атомарно фиксирует business transition и PROCESSED; отключённый MAX-канал webhook-ом не реактивируется.',
+      'Минимальный channel lifecycle и normalized-event consumer добавлены; полноценные части 29–30 ещё требуют отдельного завершения.',
     ],
-    description: 'Часть 28 завершена: provider-neutral notification intents, transactional outbox, idempotent webhook inbox и Messenger/Scheduler handlers.',
-    outcome: 'Бизнес-модули могут надёжно ставить сообщения в очередь без зависимости от API конкретного мессенджера.',
+    description: 'MAX adapter исправлен по security/reliability review; lifecycle и consumer foundation добавлены, финальное закрытие зависит от полного объёма частей 29–30.',
+    outcome: 'MAX outbound/inbound flow tenant-bound, callbacks проверяют recipient и активность канала, credentials не попадают в outbox, normalized events имеют атомарный durable processing lifecycle с DB-инвариантами.',
   },
   nextPartNumbers: [29, 30, 31, 32, 33],
   batches: [
@@ -125,10 +127,10 @@ window.PROJECT_PROGRESS = {
       parts: [
         { number: 28, title: 'Communications foundation', status: 'done', completedAt: '2026-09-08', result: 'Добавлены notification intents, transactional outbox, конкурентно-идемпотентный webhook inbox, authenticated provider contracts, processing leases и scheduled recovery.' },
         { number: 29, title: 'Шаблоны сообщений', status: 'pending' },
-        { number: 30, title: 'Подключение каналов и capabilities', status: 'pending' },
+        { number: 30, title: 'Подключение каналов и capabilities', status: 'in_progress', result: 'Добавлен минимальный pending/verified lifecycle и tenant-scoped webhook secret configuration; полный adapter lifecycle ещё впереди.' },
       ],
     },
-    { number: 13, title: 'MAX', parts: [{ number: 31, title: 'MAX adapter', status: 'pending' }] },
+    { number: 13, title: 'MAX', parts: [{ number: 31, title: 'MAX adapter', status: 'review', result: 'Security/reliability hardening завершён; финальное закрытие зависит от частей 29–30 (templates и channel lifecycle).' }] },
     {
       number: 14,
       title: 'Подтверждения и ответы клиента',
@@ -241,6 +243,12 @@ window.PROJECT_PROGRESS = {
     { date: '2026-09-08', title: 'Webhook аутентифицируется до сохранения', text: 'Настроенный provider проверяет raw body и headers до JSON decode и записи inbox; endpoint ограничен rate limit и размером 256 KiB.' },
     { date: '2026-09-08', title: 'Сообщения проходят через transactional outbox', text: 'NotificationIntent и OutboundMessage сохраняются одной транзакцией; scheduler публикует pending-записи, а Redis/Messenger не являются источником истины.' },
     { date: '2026-09-08', title: 'Webhook inbox идемпотентен', text: 'Повтор одного provider event определяется уникальным (organization_id, provider, external_event_id) и возвращает исходную запись без дубля.' },
+    { date: '2026-09-08', title: 'MAX adapter отвечает через общий контракт', text: 'MAX REST transport, callback keyboard и webhook secret validation изолированы в MaxChannelProvider; обычный текст не становится бизнес-командой.' },
+    { date: '2026-09-08', title: 'MAX event id и capabilities проверяются по документации', text: 'Webhook inbox использует callback/update id вместо hash envelope, normalized events дедуплицируются на уровне БД, а неподдерживаемое редактирование и delivery/read статусы не объявляются capabilities; exactly-once отправка MAX не заявляется.' },
+    { date: '2026-09-09', title: 'MAX callback требует подтверждённого получателя', text: 'Actionable callback сохраняется только при совпадении MAX user_id с tenant-owned ChannelConnection; новые connections проходят pending/verified lifecycle через webhook secret и bot_started.' },
+    { date: '2026-09-09', title: 'Normalized events имеют durable consumer lifecycle', text: 'Полный provider parser выполняется только worker-ом; normalized event получает claim/retry/processed статус и передаётся общему Messenger consumer с восстановлением через Scheduler.' },
+    { date: '2026-09-09', title: 'Normalized consumer commit атомарен', text: 'Consumer mutations и переход event в PROCESSED фиксируются одной DB-транзакцией; ошибка откатывает mutations и возвращает event в retry lifecycle, а PostgreSQL CHECK и tenant-first индексы закрепляют допустимые состояния и recovery.' },
+    { date: '2026-09-09', title: 'Outbox metadata ограничен allowlist', text: 'В durable outbox допускается только безопасный source marker; вложенные и переименованные credentials, recipient IDs и неизвестные поля отклоняются, разрешённое поле передаётся adapter без потери.' },
     { date: '2026-09-08', title: 'Провайдеры подключаются через общий контракт', text: 'ChannelProvider и registry изолируют бизнес-логику от MAX, Telegram и WhatsApp; capability flags не выдумывают delivery/read статусы.' },
     { date: '2026-09-08', title: 'Календарь читает snapshot занятия', text: 'Calendar query одним tenant-scoped JOIN получает клиента и специалиста, но название и параметры услуги берёт из неизменяемого Appointment snapshot.' },
     { date: '2026-09-08', title: 'Границы календаря задаёт timezone организации', text: 'Локальные from/to преобразуются в UTC instants на backend; browser timezone не определяет состав календарного дня.' },
@@ -250,5 +258,5 @@ window.PROJECT_PROGRESS = {
     { date: '2026-09-07', title: 'Дополнительный рабочий день дополняет неделю', text: 'Date-specific интервал специалиста добавляется к недельным часам, а не заменяет их.' },
     { date: '2026-09-07', title: 'Tenant ownership защищён на двух уровнях', text: 'Application stores всегда scoped текущей организацией; составные foreign keys с organization_id запрещают cross-tenant связи в PostgreSQL.' },
   ],
-  blockers: [],
+  blockers: ['Часть 31 не закрыта финально: часть 29 и полный объём части 30 (шаблоны и lifecycle подключений) ещё не завершены.'],
 }
