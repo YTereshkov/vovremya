@@ -8,4 +8,5 @@ enum ConfirmationActionType: string
 {
     case Confirm = 'CONFIRM';
     case CannotAttend = 'CANNOT_ATTEND';
+    case RequestTransfer = 'REQUEST_TRANSFER';
 }

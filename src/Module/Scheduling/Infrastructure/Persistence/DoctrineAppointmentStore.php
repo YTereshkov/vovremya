@@ -9,6 +9,7 @@ use App\Module\Scheduling\Application\AppointmentStore;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentEvent;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Ulid;
 
@@ -26,6 +27,15 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
             ->andWhere('IDENTITY(appointment.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
             ->andWhere('appointment.id = :id')->setParameter('id', $id, 'ulid')
             ->getQuery()->getOneOrNullResult();
+
+        return $appointment instanceof Appointment ? $appointment : null;
+    }
+
+    public function lock(Ulid $id): ?Appointment
+    {
+        $appointment = $this->appointmentQuery()
+            ->andWhere('appointment.id = :id')->setParameter('id', $id, 'ulid')
+            ->getQuery()->setLockMode(LockMode::PESSIMISTIC_WRITE)->getOneOrNullResult();
 
         return $appointment instanceof Appointment ? $appointment : null;
     }
@@ -62,6 +72,13 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
             ->getQuery()->getResult();
     }
 
+    public function lockPlannedForSpecialistBetween(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array
+    {
+        return $this->plannedBetween($startsAt, $endsAt)
+            ->andWhere('appointment.specialistId = :owner')->setParameter('owner', $specialistId, 'ulid')
+            ->getQuery()->setLockMode(LockMode::PESSIMISTIC_WRITE)->getResult();
+    }
+
     public function plannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array
     {
         $query = $this->plannedBetween($startsAt, $endsAt)
@@ -71,6 +88,17 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
         }
 
         return $query->getQuery()->getResult();
+    }
+
+    public function lockPlannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array
+    {
+        $query = $this->plannedBetween($startsAt, $endsAt)
+            ->andWhere('appointment.clientId = :owner')->setParameter('owner', $clientId, 'ulid');
+        if ($oneOffOnly) {
+            $query->andWhere('appointment.regularScheduleId IS NULL');
+        }
+
+        return $query->getQuery()->setLockMode(LockMode::PESSIMISTIC_WRITE)->getResult();
     }
 
     public function save(Appointment|AppointmentEvent $entity): void
@@ -106,5 +134,11 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
             ->andWhere('appointment.planningStatus = :status')->setParameter('status', 'PLANNED')
             ->andWhere('appointment.resultStatus IS NULL')
             ->orderBy('appointment.startsAt', 'ASC')->addOrderBy('appointment.id', 'ASC');
+    }
+
+    private function appointmentQuery(): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->entityManager->createQueryBuilder()->select('appointment')->from(Appointment::class, 'appointment')
+            ->andWhere('IDENTITY(appointment.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid');
     }
 }

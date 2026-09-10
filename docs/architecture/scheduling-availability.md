@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–27, 34–38
+# Scheduling and availability: parts 19–27, 34–40
 
 ## Concrete occupancy
 
@@ -220,3 +220,32 @@ may create explicit FreeWindow records. Client `RELEASE_PERMANENT_PLACE` ends
 active regular schedules at the absence start, invokes the established removal
 lifecycle for future generated occurrences, and creates no FreeWindow records.
 This does not delete the client or past appointments/results.
+
+## Appointment transfers
+
+`TransferRequest` owns the transfer lifecycle for one source Appointment;
+`TransferOption` stores each proposed interval and an opaque single-use callback
+token hash. A request may wait for options, contain sent options, or end as
+completed, declined, or cancelled. It has no automatic timeout.
+
+Transfer options do not create `ScheduleAllocation` rows and do not reserve
+time. When the client selects an option, the backend locks the source
+Appointment and then its request, rechecks current availability while excluding the source appointment, releases
+the source allocation, and inserts the new `APPOINTMENT` allocation in one
+transaction. PostgreSQL's exclusion constraint remains the final concurrency
+guarantee; SQLSTATE `23P01` becomes the domain result “время уже недоступно”,
+while the request stays open so another proposed option can be selected.
+
+Successful transfer preserves the source Appointment with result
+`RESCHEDULED`, creates a new one-off Appointment from the immutable service
+snapshot, and records human-facing `from`/`to` history. Moving one materialized
+regular occurrence does not end or edit its `RegularSchedule`. Cancelling the
+source appointment, applying an absence, or removing a generated occurrence
+also cancels its active transfer request.
+
+Result changes, absence processing, regular-schedule removal, and transfer
+selection use the same `Appointment -> TransferRequest` row-lock order. State is
+reloaded and revalidated after acquiring the lock, so a stale pre-transaction
+read cannot overwrite a concurrent transfer. This is lifecycle coordination,
+not a specialist/date booking lock; interval exclusivity still belongs to the
+PostgreSQL exclusion constraint.

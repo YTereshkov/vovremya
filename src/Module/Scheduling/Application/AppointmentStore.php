@@ -12,6 +12,8 @@ interface AppointmentStore
 {
     public function find(Ulid $id): ?Appointment;
 
+    public function lock(Ulid $id): ?Appointment;
+
     public function findRegularOccurrence(Ulid $scheduleId, \DateTimeImmutable $date): ?Appointment;
 
     /** @return list<Appointment> */
@@ -21,7 +23,13 @@ interface AppointmentStore
     public function plannedForSpecialistBetween(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
 
     /** @return list<Appointment> */
+    public function lockPlannedForSpecialistBetween(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
+
+    /** @return list<Appointment> */
     public function plannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array;
+
+    /** @return list<Appointment> */
+    public function lockPlannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array;
 
     public function save(Appointment|AppointmentEvent $entity): void;
 

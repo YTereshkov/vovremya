@@ -143,6 +143,26 @@ final class Appointment implements OrganizationOwned
         return $appointment;
     }
 
+    public static function rescheduledFrom(self $source, \DateTimeImmutable $startsAt): self
+    {
+        if (AppointmentPlanningStatus::Planned !== $source->planningStatus || null !== $source->resultStatus) {
+            throw new \DomainException('Перенести можно только запланированное занятие.');
+        }
+
+        return self::create(
+            $source->organization,
+            $source->specialistId,
+            $source->clientId,
+            $source->serviceId,
+            $source->serviceNameSnapshot,
+            $source->serviceDefaultDurationSnapshot,
+            $source->serviceMinimumDurationSnapshot,
+            $source->serviceMaximumDurationSnapshot,
+            $source->durationMinutes,
+            $startsAt,
+        );
+    }
+
     public function removeFromSchedule(): void
     {
         if (null === $this->regularScheduleId) {
@@ -187,6 +207,18 @@ final class Appointment implements OrganizationOwned
         $this->resultIsLate = $isLate;
         $this->resultRespectfulReason = $respectfulReason;
         $this->resultComment = $normalizedComment;
+    }
+
+    public function recordRescheduled(\DateTimeImmutable $recordedAt): void
+    {
+        if (AppointmentPlanningStatus::Planned !== $this->planningStatus || null !== $this->resultStatus) {
+            throw new \DomainException('Перенести можно только запланированное занятие.');
+        }
+        $this->resultStatus = AppointmentResultStatus::Rescheduled;
+        $this->resultRecordedAt = $recordedAt->setTimezone(new \DateTimeZone('UTC'));
+        $this->resultIsLate = null;
+        $this->resultRespectfulReason = false;
+        $this->resultComment = null;
     }
 
     public function id(): Ulid { return $this->id; }

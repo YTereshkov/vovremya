@@ -66,6 +66,18 @@ final class SchedulingSchemaConstraints
             );
         }
 
+        if ($schema->hasTable('transfer_requests')) {
+            $requests = $schema->getTable('transfer_requests');
+            $requests->addForeignKeyConstraint('appointments', ['organization_id', 'appointment_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_transfer_requests_appointment_tenant');
+            $requests->addForeignKeyConstraint('channel_connections', ['organization_id', 'channel_connection_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_transfer_requests_channel_tenant');
+            $requests->addForeignKeyConstraint('appointments', ['organization_id', 'new_appointment_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_transfer_requests_new_appointment_tenant');
+            $requests->addUniqueIndex(['organization_id', 'appointment_id'], 'uniq_transfer_requests_active_appointment', ['where' => "((status)::text = ANY ((ARRAY['AWAITING_OPTIONS'::character varying, 'OPTIONS_SENT'::character varying])::text[]))"]);
+        }
+
+        if ($schema->hasTable('transfer_options')) {
+            $schema->getTable('transfer_options')->addForeignKeyConstraint('transfer_requests', ['organization_id', 'transfer_request_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_transfer_options_request_tenant');
+        }
+
         if ($schema->hasTable('scheduling_settings') && $schema->hasTable('organizations')) {
             $schema->getTable('scheduling_settings')->addForeignKeyConstraint(
                 'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_scheduling_settings_organization',

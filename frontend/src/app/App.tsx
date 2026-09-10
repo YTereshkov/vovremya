@@ -26,6 +26,7 @@ import { NotificationsPage } from '@/pages/NotificationsPage'
 import { WaitingPage } from '@/pages/WaitingPage'
 import { SpecialistAbsencePage } from '@/pages/SpecialistAbsencePage'
 import { ClientAbsencePage } from '@/pages/ClientAbsencePage'
+import { AppointmentTransferPage } from '@/pages/AppointmentTransferPage'
 
 export function App() {
   return (
@@ -35,6 +36,7 @@ export function App() {
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireAuthentication />}>
         <Route path="appointments/new" element={<AppointmentFormPage />} />
+        <Route path="appointments/:id/transfer" element={<AppointmentTransferPage />} />
         <Route path="regular-schedules/new" element={<RegularScheduleFormPage />} />
         <Route element={<AppShell />}>
           <Route index element={<TodayPage />} />

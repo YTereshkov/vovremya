@@ -53,6 +53,8 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
         }
         $connection->transactional(static function () use ($connection, $id): void {
             $connection->executeStatement('DELETE FROM free_windows WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM transfer_options WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM transfer_requests WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM scheduling_settings WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointment_confirmation_actions WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointment_confirmation_requests WHERE organization_id = ?', [$id]);

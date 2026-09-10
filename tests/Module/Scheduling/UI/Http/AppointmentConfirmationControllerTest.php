@@ -17,6 +17,7 @@ use App\Module\Scheduling\Application\AppointmentConfirmationStore;
 use App\Module\Scheduling\Application\AppointmentHistoryRecorder;
 use App\Module\Scheduling\Application\AppointmentStore;
 use App\Module\Scheduling\Application\AppointmentConfirmationService;
+use App\Module\Scheduling\Application\TransferService;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentConfirmationRequest;
 use App\Module\Communications\Domain\Model\CommunicationProvider;
@@ -89,7 +90,7 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(201);
         self::assertSame('PENDING', $this->json()['status']);
         self::assertSame(1, $this->countRows('appointment_confirmation_requests'));
-        self::assertSame(2, $this->countRows('appointment_confirmation_actions'));
+        self::assertSame(3, $this->countRows('appointment_confirmation_actions'));
         self::assertSame(1, $this->countRows('communication_outbox'));
         self::assertSame(['CONFIRMATION_REQUESTED'], $this->eventTypes());
 
@@ -101,6 +102,7 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         self::assertInstanceOf(OutboundMessage::class, $outbound);
         self::assertStringContainsString('Петя: Диагностика', $outbound->body());
         $actions = array_map(static fn (array $row): string => $row[0]['action'], $outbound->buttons());
+        self::assertCount(3, $actions);
         self::assertMatchesRegularExpression('/^confirmation:[0-9a-f-]{36}:[A-Za-z0-9_-]+$/', $actions[0]);
         self::assertStringNotContainsString($actions[0], json_encode($this->entityManager->getConnection()->fetchFirstColumn('SELECT token_hash FROM appointment_confirmation_actions'), JSON_THROW_ON_ERROR));
 
@@ -170,6 +172,7 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         $processor = new ConfirmationActionProcessor(
             self::getContainer()->get(AppointmentConfirmationStore::class),
             new AppointmentHistoryRecorder($appointments),
+            self::getContainer()->get(TransferService::class),
         );
 
         try {

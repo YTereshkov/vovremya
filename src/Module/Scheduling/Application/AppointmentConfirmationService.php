@@ -161,14 +161,18 @@ final readonly class AppointmentConfirmationService
     {
         $confirmToken = self::token();
         $cannotToken = self::token();
+        $transferToken = self::token();
         $confirm = AppointmentConfirmationAction::create($request, ConfirmationActionType::Confirm, $confirmToken, $now);
         $cannot = AppointmentConfirmationAction::create($request, ConfirmationActionType::CannotAttend, $cannotToken, $now);
+        $transfer = AppointmentConfirmationAction::create($request, ConfirmationActionType::RequestTransfer, $transferToken, $now);
         $this->store->save($confirm);
         $this->store->save($cannot);
+        $this->store->save($transfer);
 
         return [
             [['label' => 'Будем', 'action' => self::callback($confirm, $confirmToken)]],
             [['label' => 'Не сможем', 'action' => self::callback($cannot, $cannotToken)]],
+            [['label' => 'Хотим перенести', 'action' => self::callback($transfer, $transferToken)]],
         ];
     }
 

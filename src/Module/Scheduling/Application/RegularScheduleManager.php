@@ -6,6 +6,7 @@ namespace App\Module\Scheduling\Application;
 
 use App\Module\Scheduling\Domain\Model\RegularSchedule;
 use App\Module\Scheduling\Domain\Model\RegularScheduleDay;
+use App\Module\Scheduling\Domain\Model\AppointmentPlanningStatus;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class RegularScheduleManager
@@ -15,6 +16,7 @@ final readonly class RegularScheduleManager
         private AppointmentStore $appointments,
         private ScheduleAllocationStore $allocations,
         private RegularScheduleMaterializer $materializer,
+        private TransferService $transfers,
     ) {
     }
 
@@ -99,6 +101,11 @@ final readonly class RegularScheduleManager
         $timezone = new \DateTimeZone($schedule->organization()->timezone());
         $instant = new \DateTimeImmutable($from->format('Y-m-d').' 00:00', $timezone);
         foreach ($this->appointments->futureRegular($schedule->id(), $instant, $dayId) as $appointment) {
+            $appointment = $this->appointments->lock($appointment->id());
+            if (null === $appointment || AppointmentPlanningStatus::Planned !== $appointment->planningStatus()) {
+                continue;
+            }
+            $this->transfers->cancelActiveForAppointment($appointment->id(), null, 'REGULAR_SCHEDULE_CHANGED', new \DateTimeImmutable());
             $appointment->removeFromSchedule();
             $this->allocations->releaseForAppointment($appointment->id());
             $this->appointments->save($appointment);

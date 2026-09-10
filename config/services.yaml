@@ -75,6 +75,9 @@ services:
     App\Module\Scheduling\Application\RegularScheduleStore:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineRegularScheduleStore
 
+    App\Module\Scheduling\Application\TransferStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineTransferStore
+
     App\Module\Organization\Application\OrganizationContext:
         alias: App\Module\Organization\Infrastructure\Context\SecurityOrganizationContext
 

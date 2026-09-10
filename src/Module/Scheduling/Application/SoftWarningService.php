@@ -20,7 +20,7 @@ final readonly class SoftWarningService
     }
 
     /** @return list<AvailabilityWarning> */
-    public function check(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array
+    public function check(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): array
     {
         $schedule = $this->workforce->find($specialistId)
             ?? throw new \OutOfBoundsException('Специалист не найден.');
@@ -31,7 +31,7 @@ final readonly class SoftWarningService
             $warnings[] = $lunch;
         }
 
-        $shortBreak = $this->shortestBreak($specialistId, $startsAt, $endsAt);
+        $shortBreak = $this->shortestBreak($specialistId, $startsAt, $endsAt, $excludeAppointmentId);
         if (null !== $shortBreak) {
             $warnings[] = $shortBreak;
         }
@@ -66,10 +66,11 @@ final readonly class SoftWarningService
         Ulid $specialistId,
         \DateTimeImmutable $startsAt,
         \DateTimeImmutable $endsAt,
+        ?Ulid $excludeAppointmentId,
     ): ?AvailabilityWarning {
         $shortest = null;
 
-        foreach ($this->allocations->activeNear($specialistId, $startsAt, $endsAt) as $interval) {
+        foreach ($this->allocations->activeNear($specialistId, $startsAt, $endsAt, $excludeAppointmentId) as $interval) {
             if ($interval->endsAt <= $startsAt) {
                 $minutes = (int) (($startsAt->getTimestamp() - $interval->endsAt->getTimestamp()) / 60);
                 $candidate = AvailabilityWarning::shortBreak(

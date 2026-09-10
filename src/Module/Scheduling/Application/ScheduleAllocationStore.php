@@ -9,10 +9,10 @@ use Symfony\Component\Uid\Ulid;
 
 interface ScheduleAllocationStore
 {
-    public function hasActiveConflict(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): bool;
+    public function hasActiveConflict(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): bool;
 
     /** @return list<AllocationInterval> */
-    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
+    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): array;
 
     public function save(ScheduleAllocation $allocation): void;
 

@@ -82,6 +82,7 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
                       AND request.channel_connection_id = :channel_connection_id
                       AND request.status IN ('PENDING', 'NO_RESPONSE')
                       AND appointment.planning_status = 'PLANNED'
+                      AND appointment.result_status IS NULL
                       AND appointment.starts_at > :now
                     FOR UPDATE OF action, request
                 ), updated_request AS (

@@ -26,6 +26,7 @@ final readonly class AppointmentAbsenceService
         private PendingAppointmentNotificationCancellation $notificationCancellation,
         private NotificationRecipientResolver $recipients,
         private NotificationOutbox $outbox,
+        private TransferService $transfers,
     ) {
     }
 
@@ -49,11 +50,12 @@ final readonly class AppointmentAbsenceService
         \DateTimeImmutable $now,
     ): array {
         [$startsAt, $endsAt] = $this->bounds($actor->organization(), $startsOn, $endsOn);
-        $appointments = $this->appointments->plannedForSpecialistBetween($specialistId, $startsAt, $endsAt);
 
-        return $this->appointments->transactional(function () use ($actor, $absenceId, $absenceType, $startsOn, $endsOn, $comment, $notifyClients, $appointments, $now): array {
+        return $this->appointments->transactional(function () use ($actor, $absenceId, $specialistId, $absenceType, $startsOn, $endsOn, $startsAt, $endsAt, $comment, $notifyClients, $now): array {
+            $appointments = $this->appointments->lockPlannedForSpecialistBetween($specialistId, $startsAt, $endsAt);
             $clientIds = [];
             foreach ($appointments as $appointment) {
+                $this->transfers->cancelActiveForAppointment($appointment->id(), $actor->id(), 'SPECIALIST_ABSENCE', $now);
                 $appointment->recordResult(AppointmentResultStatus::CancelledBySpecialist, $now, 1, false, $comment);
                 $this->releaseAndRecord($appointment, $actor->id(), 'SPECIALIST_ABSENCE_CANCELLED', [
                     'absenceId' => $absenceId->toRfc4122(),
@@ -100,12 +102,13 @@ final readonly class AppointmentAbsenceService
         \DateTimeImmutable $now,
     ): array {
         [$startsAt, $endsAt] = $this->bounds($actor->organization(), $startsOn, $endsOn);
-        $appointments = $this->appointments->plannedForClientBetween($clientId, $startsAt, $endsAt, $oneOffOnly);
         $lateThreshold = $this->settings->forOrganization($actor->organization())->lateCancellationHours();
 
-        return $this->appointments->transactional(function () use ($actor, $absenceId, $clientId, $startsOn, $endsOn, $reason, $createFreeWindows, $notifyClient, $appointments, $lateThreshold, $now): array {
+        return $this->appointments->transactional(function () use ($actor, $absenceId, $clientId, $startsOn, $endsOn, $startsAt, $endsAt, $reason, $createFreeWindows, $notifyClient, $oneOffOnly, $lateThreshold, $now): array {
+            $appointments = $this->appointments->lockPlannedForClientBetween($clientId, $startsAt, $endsAt, $oneOffOnly);
             $freeWindows = 0;
             foreach ($appointments as $appointment) {
+                $this->transfers->cancelActiveForAppointment($appointment->id(), $actor->id(), 'CLIENT_ABSENCE', $now);
                 $appointment->recordResult(AppointmentResultStatus::CancelledByClient, $now, $lateThreshold, false, $reason);
                 $openWindow = $createFreeWindows && $appointment->startsAt() > $now;
                 $this->releaseAndRecord($appointment, $actor->id(), 'CLIENT_ABSENCE_CANCELLED', [

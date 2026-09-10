@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 16 завершена',
-    currentBatch: 16,
-    currentPart: 38,
-    currentItem: 'Отсутствия специалиста и клиента завершены',
+    state: 'Пачка 17 завершена',
+    currentBatch: 17,
+    currentPart: 40,
+    currentItem: 'Перенос без резервирования завершён',
     updatedAt: '2026-09-10',
   },
   statusLabels: {
@@ -15,18 +15,18 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 16 · Части 37–38',
+    title: 'Пачка 17 · Части 39–40',
     items: [
-      'Отсутствие специалиста — hard conflict для ручной записи и materialization.',
-      'Затронутые занятия специалиста отменяются атомарно без FreeWindow; регулярные правила сохраняются.',
-      'KEEP_PERMANENT_PLACE сохраняет расписание клиента и может создать разовые FreeWindow.',
-      'RELEASE_PERMANENT_PLACE завершает активные регулярные правила без удаления клиента или истории.',
-      'Подтверждённые прошлые результаты не переписываются; pending reminders по отменённым занятиям подавляются.',
+      'TransferRequest и TransferOption хранят tenant-bound lifecycle и одноразовые callback actions без автоматического timeout.',
+      'Предложенные варианты не создают ScheduleAllocation и остаются доступны для обычной записи.',
+      'При выборе availability проверяется повторно; PostgreSQL exclusion constraint остаётся окончательной гарантией.',
+      'Успешный перенос сохраняет исходный Appointment как RESCHEDULED и создаёт новый Appointment со snapshot услуги.',
+      'Перенос отдельного occurrence не изменяет RegularSchedule; история показывает исходное и новое время.',
     ],
-    description: 'Отсутствия специалиста и клиента работают сквозным tenant-scoped контуром.',
-    outcome: 'Appointment, allocations, reminders, FreeWindow и regular schedule lifecycle изменяются согласно выбранному режиму без потери истории.',
+    description: 'Перенос работает сквозным tenant-scoped контуром от кнопки клиента и формы администратора до конкурентно безопасного выбора.',
+    outcome: 'Несколько вариантов предлагаются без резервирования, а окончательный перенос атомарно занимает только реально свободное время.',
   },
-  nextPartNumbers: [39, 40, 41, 42],
+  nextPartNumbers: [41, 42, 43],
   batches: [
     {
       number: 1,
@@ -160,8 +160,8 @@ window.PROJECT_PROGRESS = {
       number: 17,
       title: 'Перенос без резервирования',
       parts: [
-        { number: 39, title: 'TransferRequest и TransferOption', status: 'pending' },
-        { number: 40, title: 'Выбор варианта и конкурентный перенос', status: 'pending' },
+        { number: 39, title: 'TransferRequest и TransferOption', status: 'done', completedAt: '2026-09-10', result: 'Запрос и несколько вариантов поддерживают tenant-bound lifecycle без резервирования интервалов и автоматического timeout.' },
+        { number: 40, title: 'Выбор варианта и конкурентный перенос', status: 'done', completedAt: '2026-09-10', result: 'Выбор повторно проверяет availability и атомарно создаёт новый Appointment под PostgreSQL exclusion constraint.' },
       ],
     },
     {
@@ -202,6 +202,16 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-10',
+      items: [
+        'Завершена пачка 17: TransferRequest, несколько TransferOption и конкурентно безопасный перенос.',
+        'Варианты не резервируют время; availability повторно проверяется только при окончательном выборе.',
+        'Успешный перенос сохраняет исходное занятие и человеческую историю «было/стало».',
+        'Конкурирующие lifecycle-операции перечитывают Appointment под row lock в едином порядке с TransferRequest.',
+        'Responsive UI и E2E покрывают предложение нескольких вариантов на desktop и mobile.',
+      ],
+    },
     {
       date: '2026-09-10',
       items: [
@@ -266,6 +276,10 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-10', title: 'TransferOption не резервирует время', text: 'Предложенные интервалы не создают ScheduleAllocation и остаются доступны для обычной записи; OFFER_RESERVATION используется только будущими предложениями FreeWindow/PermanentPlace.' },
+    { date: '2026-09-10', title: 'Перенос подтверждается повторной availability check', text: 'Финальный выбор атомарно освобождает исходный allocation и создаёт новый APPOINTMENT allocation; PostgreSQL exclusion constraint преобразует конкурентный проигрыш во «время уже недоступно».' },
+    { date: '2026-09-10', title: 'TransferRequest не имеет автоматического timeout', text: 'Запрос закрывается выбором, отказом, отменой администратора либо изменением lifecycle исходного занятия; Scheduler его по возрасту не завершает.' },
+    { date: '2026-09-10', title: 'Lifecycle использует единый порядок row locks', text: 'Результат, отсутствие, изменение регулярного правила и выбор переноса блокируют и повторно проверяют Appointment перед TransferRequest; это не заменяет exclusion constraint и не вводит specialist/date lock.' },
     { date: '2026-09-10', title: 'Отсутствие специалиста не создаёт FreeWindow', text: 'Затронутые Appointment отменяются как CANCELLED_BY_SPECIALIST, allocations освобождаются, но свободные окна не создаются.' },
     { date: '2026-09-10', title: 'Режим отсутствия клиента определяет lifecycle места', text: 'KEEP_PERMANENT_PLACE сохраняет RegularSchedule и может создать FreeWindow; RELEASE_PERMANENT_PLACE завершает активные правила без удаления клиента и истории.' },
     { date: '2026-09-10', title: 'FreeWindow не равен календарному пробелу', text: 'Окно создаётся только явным действием при будущей отмене клиентом; один Appointment имеет максимум одно окно, а текущая availability проверяется при чтении.' },

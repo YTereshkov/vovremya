@@ -121,8 +121,8 @@ overlapping scans safe.
 
 Each appointment has at most one confirmation request bound to the active
 primary `ChannelConnection` selected when the request is created. The request
-creates opaque, separately hashed, single-use actions for `CONFIRMED` and
-`CANNOT_ATTEND`; raw tokens exist only in the callback buttons. A normalized
+creates opaque, separately hashed, single-use actions for `CONFIRMED`,
+`CANNOT_ATTEND`, and `REQUEST_TRANSFER`; raw tokens exist only in the callback buttons. A normalized
 provider event must match the tenant, original channel connection, action and
 token before the atomic database transition succeeds. Ordinary text remains
 unsupported; a stale action or a callback from another recipient cannot change
@@ -131,8 +131,9 @@ the appointment.
 `NO_RESPONSE` is an operational attention state, not a callback expiry. A
 verified late answer is accepted until the appointment starts, while preserving
 the recorded no-response timestamp. Confirmation status remains independent
-from the appointment result. The “Хотим перенести” action is intentionally not
-created here: it belongs to the later `TransferRequest` flow.
+from the appointment result. A verified `REQUEST_TRANSFER` action creates a
+tenant-bound `TransferRequest`; later option callbacks are routed through the
+same provider-neutral normalized-event boundary and never reserve their times.
 
 ## Message templates (part 29)
 

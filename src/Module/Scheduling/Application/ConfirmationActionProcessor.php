@@ -12,6 +12,7 @@ final readonly class ConfirmationActionProcessor
     public function __construct(
         private AppointmentConfirmationStore $store,
         private AppointmentHistoryRecorder $history,
+        private TransferService $transfers,
     ) {
     }
 
@@ -23,11 +24,15 @@ final readonly class ConfirmationActionProcessor
                 return;
             }
 
+            if (ConfirmationActionType::RequestTransfer === $consumed->type) {
+                $this->transfers->requestFromClient($consumed->appointmentId, $channelConnectionId, $now);
+
+                return;
+            }
+
             $this->history->recordByAppointmentId(
                 $consumed->appointmentId,
-                ConfirmationActionType::Confirm === $consumed->type
-                    ? 'CONFIRMATION_CONFIRMED'
-                    : 'CONFIRMATION_CANNOT_ATTEND',
+                ConfirmationActionType::Confirm === $consumed->type ? 'CONFIRMATION_CONFIRMED' : 'CONFIRMATION_CANNOT_ATTEND',
                 [],
                 null,
                 $now,

@@ -21,6 +21,7 @@ final readonly class AppointmentLifecycleService
         private AppointmentHistoryRecorder $history,
         private FreeWindowManager $freeWindows,
         private PendingAppointmentNotificationCancellation $notificationCancellation,
+        private TransferService $transfers,
     ) {
     }
 
@@ -34,25 +35,29 @@ final readonly class AppointmentLifecycleService
         bool $createFreeWindow,
         \DateTimeImmutable $now,
     ): array {
-        $appointment = $this->appointments->find($appointmentId)
-            ?? throw new \OutOfBoundsException('Занятие не найдено.');
-        if (AppointmentPlanningStatus::Planned !== $appointment->planningStatus()) {
-            throw new \OutOfBoundsException('Занятие не найдено.');
-        }
         if ($createFreeWindow && AppointmentResultStatus::CancelledByClient !== $status) {
             throw new \InvalidArgumentException('Свободное окно создаётся только при отмене клиентом.');
         }
-        if ($createFreeWindow && $appointment->startsAt() <= $now) {
-            throw new \DomainException('Свободное окно можно создать только для будущего занятия.');
-        }
-        $previousStatus = $appointment->resultStatus()?->value;
         $lateThreshold = $this->settings->forOrganization($actor->organization())->lateCancellationHours();
-        $windowWasOpen = $this->freeWindows->isOpenForAppointment($appointment->id());
-        if ($appointment->hasResult($status, $respectfulReason, $comment) && $windowWasOpen === $createFreeWindow) {
-            return ['appointment' => $appointment, 'freeWindowCreated' => false];
-        }
 
-        return $this->appointments->transactional(function () use ($actor, $appointment, $status, $respectfulReason, $comment, $createFreeWindow, $now, $previousStatus, $lateThreshold): array {
+        return $this->appointments->transactional(function () use ($actor, $appointmentId, $status, $respectfulReason, $comment, $createFreeWindow, $now, $lateThreshold): array {
+            $appointment = $this->appointments->lock($appointmentId)
+                ?? throw new \OutOfBoundsException('Занятие не найдено.');
+            if (AppointmentPlanningStatus::Planned !== $appointment->planningStatus()) {
+                throw new \OutOfBoundsException('Занятие не найдено.');
+            }
+            if (AppointmentResultStatus::Rescheduled === $appointment->resultStatus()) {
+                throw new \DomainException('Результат перенесённого занятия нельзя изменить.');
+            }
+            if ($createFreeWindow && $appointment->startsAt() <= $now) {
+                throw new \DomainException('Свободное окно можно создать только для будущего занятия.');
+            }
+            $windowWasOpen = $this->freeWindows->isOpenForAppointment($appointment->id());
+            if ($appointment->hasResult($status, $respectfulReason, $comment) && $windowWasOpen === $createFreeWindow) {
+                return ['appointment' => $appointment, 'freeWindowCreated' => false];
+            }
+            $previousStatus = $appointment->resultStatus()?->value;
+            $this->transfers->cancelActiveForAppointment($appointment->id(), $actor->id(), 'APPOINTMENT_RESULT_CHANGED', $now);
             $appointment->recordResult($status, $now, $lateThreshold, $respectfulReason, $comment);
             $this->notificationCancellation->cancel($appointment->id());
             if (in_array($status, [AppointmentResultStatus::CancelledByClient, AppointmentResultStatus::CancelledBySpecialist], true)) {
