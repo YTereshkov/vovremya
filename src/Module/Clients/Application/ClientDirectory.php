@@ -6,6 +6,7 @@ namespace App\Module\Clients\Application;
 
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
+use App\Module\Clients\Domain\Model\ClientAbsence;
 use App\Module\Clients\Domain\Model\ContactPerson;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use Symfony\Component\Uid\Ulid;
@@ -27,11 +28,13 @@ final readonly class ClientDirectory
         $clients = $this->store->all($search);
         $contacts = $this->groupByClient($this->store->contacts());
         $channels = $this->groupByClient($this->store->channels());
+        $absences = $this->groupByClient($this->store->absences());
 
         return array_map(fn (Client $client): array => $this->present(
             $client,
             $contacts[$client->id()->toRfc4122()] ?? [],
             $channels[$client->id()->toRfc4122()] ?? [],
+            $absences[$client->id()->toRfc4122()] ?? [],
         ), $clients);
     }
 
@@ -201,14 +204,20 @@ final readonly class ClientDirectory
     /** @return array<string, mixed> */
     public function details(Client $client): array
     {
-        return $this->present($client, $this->store->contacts($client->id()), $this->store->channels($client->id()));
+        return $this->present(
+            $client,
+            $this->store->contacts($client->id()),
+            $this->store->channels($client->id()),
+            $this->store->absences($client->id()),
+        );
     }
 
     /** @param list<ContactPerson> $contacts
      *  @param list<ChannelConnection> $channels
+     *  @param list<ClientAbsence> $absences
      *  @return array<string, mixed>
      */
-    private function present(Client $client, array $contacts, array $channels): array
+    private function present(Client $client, array $contacts, array $channels, array $absences): array
     {
         $contactNames = [];
         foreach ($contacts as $contact) {
@@ -240,6 +249,15 @@ final readonly class ClientDirectory
                     : $contactNames[$channel->contactPersonId()->toRfc4122()] ?? '',
                 'primary' => $client->primaryChannelId()?->equals($channel->id()) ?? false,
             ], $channels),
+            'absences' => array_map(static fn (ClientAbsence $absence): array => [
+                'id' => $absence->id()->toRfc4122(),
+                'startsOn' => $absence->startsOn()->format('Y-m-d'),
+                'endsOn' => $absence->endsOn()->format('Y-m-d'),
+                'reason' => $absence->reason(),
+                'mode' => $absence->mode()->value,
+                'createFreeWindows' => $absence->createFreeWindows(),
+                'notifyClient' => $absence->notifyClient(),
+            ], $absences),
         ];
     }
 

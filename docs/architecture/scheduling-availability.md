@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–27, 34–36
+# Scheduling and availability: parts 19–27, 34–38
 
 ## Concrete occupancy
 
@@ -66,9 +66,9 @@ Outside working hours uses `SPECIALIST_NOT_WORKING`; overlap uses
 `TIME_ALREADY_UNAVAILABLE`. Foreign specialist identifiers return 404.
 
 Lunch is deliberately not a hard conflict: manual booking over lunch remains
-possible and the warning belongs to part 22. Specialist absences are integrated
-in their later part. The availability check is advisory under concurrency; only
-the transactional allocation insert is authoritative.
+possible after accepting the part 22 warning. A dated specialist absence returns
+`SPECIALIST_ABSENT` as a hard conflict. The availability check is advisory under
+concurrency; only the transactional allocation insert is authoritative.
 
 PHPUnit covers working boundaries, days off, additional days, lunch behavior,
 released allocations, tenant isolation, adjacent intervals, and a real two-
@@ -200,3 +200,23 @@ FreeWindow itself creates no schedule allocation and reserves no time. Listing
 open windows repeats current Scheduling availability, so a subsequently booked
 or otherwise unavailable interval is not offered as free. Reservation belongs
 only to later FreeWindow/PermanentPlace offers through `OFFER_RESERVATION`.
+
+## Absence effects
+
+Specialist and client absence use cases first preview tenant-scoped planned
+appointments, then persist the absence and all scheduling effects in one
+transaction. Existing factual results are never rewritten. Cancellation keeps
+the Appointment and append-only history, releases its allocation, and suppresses
+pending confirmation/reminder delivery.
+
+Specialist absence always cancels affected appointments with
+`CANCELLED_BY_SPECIALIST` and never creates FreeWindow records. Regular schedule
+materialization repeats availability for every occurrence; an absence date
+therefore creates `ScheduleGenerationIssue` with `SPECIALIST_ABSENT` instead of
+being skipped silently.
+
+Client `KEEP_PERMANENT_PLACE` cancellation leaves the regular rule active and
+may create explicit FreeWindow records. Client `RELEASE_PERMANENT_PLACE` ends
+active regular schedules at the absence start, invokes the established removal
+lifecycle for future generated occurrences, and creates no FreeWindow records.
+This does not delete the client or past appointments/results.

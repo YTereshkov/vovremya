@@ -16,6 +16,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Index(name: 'idx_appointments_tenant_start', columns: ['organization_id', 'starts_at', 'id'])]
 #[ORM\Index(name: 'idx_appointments_tenant_specialist', columns: ['organization_id', 'specialist_id', 'starts_at'])]
 #[ORM\Index(name: 'idx_appointments_tenant_client', columns: ['organization_id', 'client_id'])]
+#[ORM\Index(name: 'idx_appointments_client_start', columns: ['organization_id', 'client_id', 'starts_at'])]
 #[ORM\Index(name: 'idx_appointments_tenant_service', columns: ['organization_id', 'service_id'])]
 #[ORM\Index(name: 'idx_appointments_regular_schedule', columns: ['organization_id', 'regular_schedule_id', 'starts_at'])]
 final class Appointment implements OrganizationOwned

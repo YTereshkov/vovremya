@@ -36,6 +36,16 @@ final readonly class DoctrineRegularScheduleStore implements RegularScheduleStor
             ->getQuery()->getOneOrNullResult();
     }
 
+    public function activeForClient(Ulid $clientId, \DateTimeImmutable $date): array
+    {
+        return $this->query(RegularSchedule::class)
+            ->andWhere('item.clientId = :client')->setParameter('client', $clientId, 'ulid')
+            ->andWhere('item.startsOn <= :date')->setParameter('date', $date, 'date_immutable')
+            ->andWhere('(item.inactiveFrom IS NULL OR item.inactiveFrom > :date)')
+            ->orderBy('item.startsOn', 'ASC')->addOrderBy('item.id', 'ASC')
+            ->getQuery()->getResult();
+    }
+
     public function days(Ulid $scheduleId, bool $includeInactive = false): array
     {
         $query = $this->query(RegularScheduleDay::class)

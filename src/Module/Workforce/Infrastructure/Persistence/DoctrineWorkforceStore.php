@@ -8,6 +8,7 @@ use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Workforce\Application\WorkforceStore;
 use App\Module\Workforce\Domain\Model\AdditionalWorkingDay;
 use App\Module\Workforce\Domain\Model\Specialist;
+use App\Module\Workforce\Domain\Model\SpecialistAbsence;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -35,7 +36,17 @@ final readonly class DoctrineWorkforceStore implements WorkforceStore
         return $query->getQuery()->getResult();
     }
 
-    public function save(Specialist|AdditionalWorkingDay $entity): void
+    public function absences(?Ulid $specialistId = null): array
+    {
+        $query = $this->query(SpecialistAbsence::class)->orderBy('item.startsOn', 'DESC')->addOrderBy('item.id', 'ASC');
+        if (null !== $specialistId) {
+            $query->andWhere('item.specialistId = :id')->setParameter('id', $specialistId, 'ulid');
+        }
+
+        return $query->getQuery()->getResult();
+    }
+
+    public function save(Specialist|AdditionalWorkingDay|SpecialistAbsence $entity): void
     {
         $this->assertScope($entity);
         try {
@@ -53,13 +64,18 @@ final readonly class DoctrineWorkforceStore implements WorkforceStore
         $this->em->flush();
     }
 
+    public function transactional(callable $operation): mixed
+    {
+        return $this->em->wrapInTransaction($operation);
+    }
+
     private function query(string $class): QueryBuilder
     {
         return $this->em->createQueryBuilder()->select('item')->from($class, 'item')
             ->andWhere('IDENTITY(item.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid');
     }
 
-    private function assertScope(Specialist|AdditionalWorkingDay $entity): void
+    private function assertScope(Specialist|AdditionalWorkingDay|SpecialistAbsence $entity): void
     {
         if (!OrganizationIsolation::belongsTo($this->context->currentId(), $entity)) {
             throw new \LogicException('Cannot write outside the current organization.');

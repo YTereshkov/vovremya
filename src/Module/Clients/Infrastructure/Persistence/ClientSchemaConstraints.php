@@ -30,5 +30,10 @@ final class ClientSchemaConstraints
         $schema->getTable('clients')->addForeignKeyConstraint(
             'channel_connections', ['organization_id', 'id', 'primary_channel_id'], ['organization_id', 'client_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_clients_primary_channel_owner',
         );
+        if ($schema->hasTable('client_absences')) {
+            $schema->getTable('client_absences')->addForeignKeyConstraint(
+                'clients', ['organization_id', 'client_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_client_absences_client_tenant',
+            );
+        }
     }
 }

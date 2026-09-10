@@ -76,6 +76,8 @@ function historyLabel(type: string): string {
     CONFIRMATION_NO_RESPONSE: 'Ответ не получен',
     REMINDER_SENT: 'Отправлено повторное напоминание',
     RESULT_CHANGED: 'Результат занятия изменён',
+    SPECIALIST_ABSENCE_CANCELLED: 'Отменено из-за отсутствия специалиста',
+    CLIENT_ABSENCE_CANCELLED: 'Отменено на период отсутствия клиента',
   }
   return labels[type] ?? type
 }

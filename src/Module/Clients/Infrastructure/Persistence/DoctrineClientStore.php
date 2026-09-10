@@ -10,6 +10,7 @@ use App\Module\Clients\Application\NotificationRecipient;
 use App\Module\Clients\Application\NotificationRecipientResolver;
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
+use App\Module\Clients\Domain\Model\ClientAbsence;
 use App\Module\Clients\Domain\Model\ContactPerson;
 use App\Module\Organization\Application\OrganizationContext;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
@@ -41,6 +42,13 @@ final readonly class DoctrineClientStore implements ClientStore, ChannelConnecti
         $result = $this->query(Client::class)->andWhere('item.id = :id')->setParameter('id', $id, 'ulid')->getQuery()->getOneOrNullResult();
 
         return $result instanceof Client ? $result : null;
+    }
+
+    public function absences(?Ulid $clientId = null): array
+    {
+        return $this->children(ClientAbsence::class, $clientId)
+            ->orderBy('item.startsOn', 'DESC')->addOrderBy('item.id', 'ASC')
+            ->getQuery()->getResult();
     }
 
     public function contacts(?Ulid $clientId = null): array

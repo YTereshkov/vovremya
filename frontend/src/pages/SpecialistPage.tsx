@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CalendarPlus, ChevronRight, Clock, Pencil, Trash2 } from 'lucide-react'
+import { CalendarOff, CalendarPlus, ChevronRight, Clock, Pencil, Trash2 } from 'lucide-react'
 import { useSpecialist, useWorkforceKey, workforceRequest, type AdditionalDay, type Interval, type ProfileInput, type Specialist } from '@/features/workforce/api'
 import { Avatar, Feedback, Modal, ProfileForm, TimeFields, WorkforceFrame, fieldClass, formatDate, shortDays, surfaceClass } from '@/features/workforce/components'
 import { Button } from '@/shared/ui/Button'
@@ -28,13 +28,20 @@ export function SpecialistPage() {
         {s.weeklyHours.every((d) => !d.enabled) ? <p className="text-muted">Рабочие часы не заданы.</p> : null}
       </section>
       <section className={surfaceClass}><h2 className="text-lg font-semibold">Исключения</h2>{s.additionalDays.length ? <div className="mt-2 divide-y divide-border">{s.additionalDays.map((d) => <button key={d.id} onClick={() => setDay(d)} className="flex w-full items-center gap-3 py-4 text-left"><CalendarPlus className="size-6 shrink-0 text-primary" /><span className="flex-1"><span className="block">{formatDate(d.date)}</span><span className="text-sm text-muted">Дополнительный рабочий день · {d.work.start}–{d.work.end}</span></span><ChevronRight className="size-5 shrink-0" /></button>)}</div> : <p className="mt-3 text-muted">Дополнительных рабочих дней нет.</p>}</section>
-      <section className={surfaceClass}><h2 className="mb-2 text-lg font-semibold">Действия</h2><Link className="flex items-center gap-3 border-b border-border py-4" to={`/specialists/${id}/hours`}><Clock className="size-6 text-success" /><span className="flex-1">Изменить рабочие часы</span><ChevronRight className="size-5" /></Link><button className="flex w-full items-center gap-3 py-4 text-left" onClick={() => setDay('new')}><CalendarPlus className="size-6 text-primary" /><span className="flex-1">Добавить рабочий день</span><ChevronRight className="size-5" /></button></section>
+      {s.absences.length ? <section className={surfaceClass}><h2 className="text-lg font-semibold">Отсутствия</h2><div className="mt-2 divide-y divide-border">{s.absences.map((absence) => <div className="flex items-start gap-3 py-4" key={absence.id}><CalendarOff className="mt-0.5 size-5 shrink-0 text-warning" /><div><p>{absenceLabel(absence.type)} · {formatDate(absence.startsOn)}–{formatDate(absence.endsOn)}</p>{absence.comment ? <p className="mt-1 text-sm text-muted">{absence.comment}</p> : null}</div></div>)}</div></section> : null}
+      <section className={surfaceClass}><h2 className="mb-2 text-lg font-semibold">Действия</h2><Link className="flex items-center gap-3 border-b border-border py-4" to={`/specialists/${id}/hours`}><Clock className="size-6 text-success" /><span className="flex-1">Изменить рабочие часы</span><ChevronRight className="size-5" /></Link><Link className="flex items-center gap-3 border-b border-border py-4" to={`/specialists/${id}/absence`}><CalendarOff className="size-6 text-warning" /><span className="flex-1">Оформить отсутствие</span><ChevronRight className="size-5" /></Link><button className="flex w-full items-center gap-3 py-4 text-left" onClick={() => setDay('new')}><CalendarPlus className="size-6 text-primary" /><span className="flex-1">Добавить рабочий день</span><ChevronRight className="size-5" /></button></section>
       <button className="flex items-center gap-2 px-2 py-3 text-sm text-danger" onClick={() => { remove.reset(); setDeleting(true) }}><Trash2 className="size-4" />Удалить специалиста</button>
     </div>
     {editing ? <Modal title="Редактировать специалиста" close={() => !update.isPending && setEditing(false)}><ProfileForm initial={s} onSave={(data) => update.mutate(data)} close={() => setEditing(false)} pending={update.isPending} error={update.error} /></Modal> : null}
     {deleting ? <Modal title="Удалить специалиста?" close={() => !remove.isPending && setDeleting(false)}><p>Профиль «{s.name}», его рабочие часы и дополнительные дни будут удалены. Аккаунт администратора сохранится.</p><Feedback error={remove.error} /><div className="mt-6 flex gap-3"><Button disabled={remove.isPending} onClick={() => remove.mutate()}>Удалить</Button><Button variant="outline" onClick={() => setDeleting(false)} disabled={remove.isPending}>Отмена</Button></div></Modal> : null}
     {day ? <AdditionalDayForm specialistId={id} initial={day === 'new' ? undefined : day} close={() => setDay(null)} /> : null}
   </WorkforceFrame>
+}
+
+function absenceLabel(type: Specialist['absences'][number]['type']) {
+  if (type === 'VACATION') return 'Отпуск'
+  if (type === 'SICK_LEAVE') return 'Больничный'
+  return 'Другое'
 }
 
 function AdditionalDayForm({ specialistId, initial, close }: { specialistId: string; initial?: AdditionalDay; close: () => void }) {

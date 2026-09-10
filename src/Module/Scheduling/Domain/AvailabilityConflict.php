@@ -15,6 +15,11 @@ final readonly class AvailabilityConflict
         return new self('SPECIALIST_NOT_WORKING', 'Специалист не работает в выбранное время.');
     }
 
+    public static function specialistAbsent(): self
+    {
+        return new self('SPECIALIST_ABSENT', 'Специалист отсутствует в выбранную дату.');
+    }
+
     public static function timeAlreadyUnavailable(): self
     {
         return new self('TIME_ALREADY_UNAVAILABLE', 'Время уже недоступно.');

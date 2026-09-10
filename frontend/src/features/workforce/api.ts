@@ -5,6 +5,7 @@ import { apiRequest } from '@/shared/api/request'
 export interface Interval { start: string; end: string }
 export interface Weekday { weekday: number; enabled: boolean; work: Interval | null; lunch: Interval | null }
 export interface AdditionalDay { id: string; date: string; work: Interval }
+export interface SpecialistAbsence { id: string; type: 'VACATION' | 'SICK_LEAVE' | 'OTHER'; startsOn: string; endsOn: string; comment: string | null; notifyClients: boolean }
 export interface Specialist {
   id: string
   name: string
@@ -12,6 +13,7 @@ export interface Specialist {
   administratorId: string | null
   weeklyHours: Weekday[]
   additionalDays: AdditionalDay[]
+  absences: SpecialistAbsence[]
   today: string
   todayIntervals: Interval[]
 }

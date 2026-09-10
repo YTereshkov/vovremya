@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, ExternalLink, MessageCircle, Pencil, Phone, Plus, Power, Star, Trash2, UserRound } from 'lucide-react'
+import { CalendarOff, ChevronRight, ExternalLink, MessageCircle, Pencil, Phone, Plus, Power, Star, Trash2, UserRound } from 'lucide-react'
 
 import { useClient, useClientsKey, type ChannelProvider, type ClientRecord } from '@/features/clients/api'
 import { useChannelSettings } from '@/features/communications/api'
@@ -45,6 +45,8 @@ export function ClientPage() {
 
       {client.note ? <section className={resourceSurfaceClass}><h2 className="font-semibold">Организационная заметка</h2><p className="mt-2 whitespace-pre-wrap text-muted">{client.note}</p></section> : null}
 
+      {client.absences.length ? <section className={resourceSurfaceClass}><h2 className="text-lg font-semibold">Отсутствия</h2><div className="mt-2 divide-y divide-border">{client.absences.map((absence) => <div className="flex items-start gap-3 py-4" key={absence.id}><CalendarOff className="mt-0.5 size-5 shrink-0 text-warning" /><div><p>{formatDate(absence.startsOn)}–{formatDate(absence.endsOn)}</p><p className="mt-1 text-sm text-muted">{absence.mode === 'KEEP_PERMANENT_PLACE' ? 'Постоянное место сохранено' : 'Постоянное место освобождено'}{absence.reason ? ` · ${absence.reason}` : ''}</p></div></div>)}</div></section> : null}
+
       <section className={resourceSurfaceClass}>
         <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Контактные лица</h2><button aria-label="Добавить контактное лицо" title="Добавить контактное лицо" className="grid size-10 place-items-center text-primary" onClick={() => setContactOpen(true)}><Plus className="size-5" /></button></div>
         {client.contacts.length === 0 ? <p className="mt-3 text-muted">Контактных лиц нет. Получателем может быть сам клиент.</p> : <div className="mt-2 divide-y divide-border">{client.contacts.map((contact) => <div className="flex items-center gap-3 py-4" key={contact.id}><UserRound className="size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="break-words font-medium">{contact.name}</p>{contact.phone ? <p className="text-sm text-muted">{contact.phone}</p> : null}</div><button aria-label={`Удалить контактное лицо ${contact.name}`} title="Удалить контактное лицо" className="grid size-10 place-items-center text-danger" disabled={removeContact.isPending} onClick={() => removeContact.mutate(contact.id)}><Trash2 className="size-4" /></button></div>)}</div>}
@@ -64,6 +66,7 @@ export function ClientPage() {
         <ResourceFeedback error={removeChannel.error ?? selectPrimary.error ?? startActivation.error ?? deactivate.error} />
       </section>
 
+      <Link className={`${resourceSurfaceClass} flex min-h-14 items-center gap-3`} to={`/clients/${id}/absence`}><CalendarOff className="size-5 text-warning" /><span className="flex-1">Оформить отсутствие</span><ChevronRight className="size-5 text-muted" /></Link>
       <Link className={`${resourceSurfaceClass} flex min-h-14 items-center gap-3`} to={`/clients/${id}/edit`}><Pencil className="size-5 text-primary" /><span className="flex-1">Редактировать клиента</span><ChevronRight className="size-5 text-muted" /></Link>
       <button className="flex min-h-11 items-center gap-2 px-2 text-danger" onClick={() => setConfirmDelete(true)}><Trash2 className="size-5" />Удалить клиента</button>
     </div>
@@ -114,4 +117,8 @@ function providerLabel(provider: ChannelProvider): string {
   if (provider === 'TELEGRAM') return 'Telegram'
   if (provider === 'WHATSAPP') return 'WhatsApp'
   return 'MAX'
+}
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
 }

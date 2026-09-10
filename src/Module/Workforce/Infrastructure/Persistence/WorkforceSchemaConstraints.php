@@ -24,5 +24,9 @@ final class WorkforceSchemaConstraints
             $schema->getTable('additional_working_days')->addForeignKeyConstraint('specialists',
                 ['organization_id', 'specialist_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_additional_days_specialist_tenant');
         }
+        if ($schema->hasTable('specialist_absences') && $schema->hasTable('specialists')) {
+            $schema->getTable('specialist_absences')->addForeignKeyConstraint('specialists',
+                ['organization_id', 'specialist_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_specialist_absences_specialist_tenant');
+        }
     }
 }

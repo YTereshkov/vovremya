@@ -24,6 +24,8 @@ import { RegularSchedulePage } from '@/pages/RegularSchedulePage'
 import { MessageTemplatesPage } from '@/pages/MessageTemplatesPage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
 import { WaitingPage } from '@/pages/WaitingPage'
+import { SpecialistAbsencePage } from '@/pages/SpecialistAbsencePage'
+import { ClientAbsencePage } from '@/pages/ClientAbsencePage'
 
 export function App() {
   return (
@@ -44,11 +46,13 @@ export function App() {
           <Route path="clients/new" element={<ClientFormPage />} />
           <Route path="clients/:id" element={<ClientPage />} />
           <Route path="clients/:id/edit" element={<ClientFormPage />} />
+          <Route path="clients/:id/absence" element={<ClientAbsencePage />} />
           <Route path="waiting" element={<WaitingPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="specialists" element={<SpecialistsPage />} />
           <Route path="specialists/:id" element={<SpecialistPage />} />
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />
+          <Route path="specialists/:id/absence" element={<SpecialistAbsencePage />} />
           <Route path="statistics" element={<SectionPlaceholderPage title="Статистика" />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/services" element={<ServicesPage />} />

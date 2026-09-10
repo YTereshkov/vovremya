@@ -25,6 +25,16 @@ export interface ChannelConnection {
   activationExpiresAt: string | null
 }
 
+export interface ClientAbsence {
+  id: string
+  startsOn: string
+  endsOn: string
+  reason: string | null
+  mode: 'KEEP_PERMANENT_PLACE' | 'RELEASE_PERMANENT_PLACE'
+  createFreeWindows: boolean
+  notifyClient: boolean
+}
+
 export interface ClientRecord {
   id: string
   name: string
@@ -34,6 +44,7 @@ export interface ClientRecord {
   primaryChannelId: string | null
   contacts: ContactPerson[]
   channels: ChannelConnection[]
+  absences: ClientAbsence[]
 }
 
 export interface ClientInput {

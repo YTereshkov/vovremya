@@ -17,6 +17,12 @@ interface AppointmentStore
     /** @return list<Appointment> */
     public function futureRegular(Ulid $scheduleId, \DateTimeImmutable $from, ?Ulid $dayId = null): array;
 
+    /** @return list<Appointment> */
+    public function plannedForSpecialistBetween(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array;
+
+    /** @return list<Appointment> */
+    public function plannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array;
+
     public function save(Appointment|AppointmentEvent $entity): void;
 
     /** @return list<AppointmentEvent> */

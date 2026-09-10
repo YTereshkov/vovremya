@@ -26,6 +26,10 @@ final readonly class AvailabilityService
         $schedule = $this->workforce->find($specialistId)
             ?? throw new \OutOfBoundsException('Специалист не найден.');
 
+        if ($this->overlapsAbsence($schedule, $startsAt, $endsAt)) {
+            return AvailabilityDecision::unavailable(AvailabilityConflict::specialistAbsent());
+        }
+
         if (!$this->isInsideWorkingHours($schedule, $startsAt, $endsAt)) {
             return AvailabilityDecision::unavailable(AvailabilityConflict::specialistNotWorking());
         }
@@ -35,6 +39,20 @@ final readonly class AvailabilityService
         }
 
         return AvailabilityDecision::available();
+    }
+
+    private function overlapsAbsence(SpecialistAvailability $schedule, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): bool
+    {
+        $timezone = new \DateTimeZone($schedule->timezone);
+        $firstDate = $startsAt->setTimezone($timezone)->format('Y-m-d');
+        $lastDate = $endsAt->modify('-1 microsecond')->setTimezone($timezone)->format('Y-m-d');
+        foreach ($schedule->absences as $absence) {
+            if ($absence['startsOn'] <= $lastDate && $absence['endsOn'] >= $firstDate) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isInsideWorkingHours(

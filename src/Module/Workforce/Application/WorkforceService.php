@@ -8,6 +8,7 @@ use App\Module\Identity\Application\AdministratorAccountReader;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use App\Module\Workforce\Domain\Model\AdditionalWorkingDay;
 use App\Module\Workforce\Domain\Model\Specialist;
+use App\Module\Workforce\Domain\Model\SpecialistAbsence;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class WorkforceService
@@ -60,11 +61,17 @@ final readonly class WorkforceService
     {
         $days = [];
         foreach ($this->store->additionalDays() as $day) { $days[$day->specialistId()->toRfc4122()][] = $day; }
+        $absences = [];
+        foreach ($this->store->absences() as $absence) { $absences[$absence->specialistId()->toRfc4122()][] = $absence; }
 
-        return array_map(fn (Specialist $s): array => $this->present($s, $days[$s->id()->toRfc4122()] ?? []), $this->store->all());
+        return array_map(fn (Specialist $s): array => $this->present(
+            $s,
+            $days[$s->id()->toRfc4122()] ?? [],
+            $absences[$s->id()->toRfc4122()] ?? [],
+        ), $this->store->all());
     }
 
-    public function details(Specialist $s): array { return $this->present($s, $this->store->additionalDays($s->id())); }
+    public function details(Specialist $s): array { return $this->present($s, $this->store->additionalDays($s->id()), $this->store->absences($s->id())); }
 
     private function link(Specialist $specialist, ?string $id): void
     {
@@ -84,7 +91,10 @@ final readonly class WorkforceService
         throw new \OutOfBoundsException('Рабочий день не найден.');
     }
 
-    private function present(Specialist $s, array $days): array
+    /** @param list<AdditionalWorkingDay> $days
+     *  @param list<SpecialistAbsence> $absences
+     */
+    private function present(Specialist $s, array $days, array $absences): array
     {
         $today = new \DateTimeImmutable('today', new \DateTimeZone($s->organization()->timezone()));
         $work = $s->weeklyHours()[(int) $today->format('N') - 1]['work'];
@@ -101,6 +111,14 @@ final readonly class WorkforceService
             'additionalDays' => array_map(static fn (AdditionalWorkingDay $day): array => [
                 'id' => $day->id()->toRfc4122(), 'date' => $day->date(), 'work' => $day->work(),
             ], $days),
+            'absences' => array_map(static fn (SpecialistAbsence $absence): array => [
+                'id' => $absence->id()->toRfc4122(),
+                'type' => $absence->type()->value,
+                'startsOn' => $absence->startsOn()->format('Y-m-d'),
+                'endsOn' => $absence->endsOn()->format('Y-m-d'),
+                'comment' => $absence->comment(),
+                'notifyClients' => $absence->notifyClients(),
+            ], $absences),
         ];
     }
 }

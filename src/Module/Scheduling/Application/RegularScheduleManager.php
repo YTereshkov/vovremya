@@ -45,6 +45,21 @@ final readonly class RegularScheduleManager
         return $day;
     }
 
+    public function endForClient(Ulid $clientId, \DateTimeImmutable $from): int
+    {
+        $schedules = $this->schedules->activeForClient($clientId, $from);
+        $this->schedules->transactional(function () use ($schedules, $from): void {
+            foreach ($schedules as $schedule) {
+                $schedule->endFrom($from);
+                $this->removeMaterialized($schedule, $from);
+                $this->resolveObsoleteIssues($schedule, $from);
+                $this->schedules->save($schedule);
+            }
+        });
+
+        return count($schedules);
+    }
+
     public function replaceDay(string $scheduleId, string $dayId, \DateTimeImmutable $from, string $startTime, int $durationMinutes): RegularScheduleDay
     {
         $schedule = $this->schedule($scheduleId);

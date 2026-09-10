@@ -55,6 +55,24 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
         return $query->getQuery()->getResult();
     }
 
+    public function plannedForSpecialistBetween(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): array
+    {
+        return $this->plannedBetween($startsAt, $endsAt)
+            ->andWhere('appointment.specialistId = :owner')->setParameter('owner', $specialistId, 'ulid')
+            ->getQuery()->getResult();
+    }
+
+    public function plannedForClientBetween(Ulid $clientId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, bool $oneOffOnly = false): array
+    {
+        $query = $this->plannedBetween($startsAt, $endsAt)
+            ->andWhere('appointment.clientId = :owner')->setParameter('owner', $clientId, 'ulid');
+        if ($oneOffOnly) {
+            $query->andWhere('appointment.regularScheduleId IS NULL');
+        }
+
+        return $query->getQuery()->getResult();
+    }
+
     public function save(Appointment|AppointmentEvent $entity): void
     {
         if (!OrganizationIsolation::belongsTo($this->organizationContext->currentId(), $entity)) {
@@ -77,5 +95,16 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
     public function transactional(callable $operation): mixed
     {
         return $this->entityManager->getConnection()->transactional(\Closure::fromCallable($operation));
+    }
+
+    private function plannedBetween(\DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->entityManager->createQueryBuilder()->select('appointment')->from(Appointment::class, 'appointment')
+            ->andWhere('IDENTITY(appointment.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->andWhere('appointment.startsAt >= :startsAt')->setParameter('startsAt', $startsAt, 'datetimetz_immutable')
+            ->andWhere('appointment.startsAt < :endsAt')->setParameter('endsAt', $endsAt, 'datetimetz_immutable')
+            ->andWhere('appointment.planningStatus = :status')->setParameter('status', 'PLANNED')
+            ->andWhere('appointment.resultStatus IS NULL')
+            ->orderBy('appointment.startsAt', 'ASC')->addOrderBy('appointment.id', 'ASC');
     }
 }

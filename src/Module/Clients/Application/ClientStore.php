@@ -6,6 +6,7 @@ namespace App\Module\Clients\Application;
 
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
+use App\Module\Clients\Domain\Model\ClientAbsence;
 use App\Module\Clients\Domain\Model\ContactPerson;
 use App\Shared\Domain\MultiTenancy\OrganizationOwned;
 use Symfony\Component\Uid\Ulid;
@@ -16,6 +17,9 @@ interface ClientStore
     public function all(?string $search = null): array;
 
     public function find(Ulid $id): ?Client;
+
+    /** @return list<ClientAbsence> */
+    public function absences(?Ulid $clientId = null): array;
 
     /** @return list<ContactPerson> */
     public function contacts(?Ulid $clientId = null): array;

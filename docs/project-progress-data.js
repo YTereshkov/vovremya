@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 15 завершена',
-    currentBatch: 15,
-    currentPart: 36,
-    currentItem: 'Результаты, отдельные отмены и управляемые FreeWindow завершены',
+    state: 'Пачка 16 завершена',
+    currentBatch: 16,
+    currentPart: 38,
+    currentItem: 'Отсутствия специалиста и клиента завершены',
     updatedAt: '2026-09-10',
   },
   statusLabels: {
@@ -15,19 +15,18 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 15 · Части 34–36',
+    title: 'Пачка 16 · Части 37–38',
     items: [
-      'Результат занятия хранится независимо от confirmation status и отображается в календаре и карточке.',
-      'Append-only история включает подтверждения, напоминания и изменения результата.',
-      'Tenant-настройка задаёт порог поздней отмены; уважительная причина допустима только для поздней отмены клиентом.',
-      'Отмена одного занятия освобождает allocation, не завершает регулярное правило и отменяет pending reminders.',
-      'FreeWindow создаётся только явно для будущей отмены клиентом и не резервирует время.',
-      'Список разовых окон повторно проверяет availability и скрывает уже занятые интервалы.',
+      'Отсутствие специалиста — hard conflict для ручной записи и materialization.',
+      'Затронутые занятия специалиста отменяются атомарно без FreeWindow; регулярные правила сохраняются.',
+      'KEEP_PERMANENT_PLACE сохраняет расписание клиента и может создать разовые FreeWindow.',
+      'RELEASE_PERMANENT_PLACE завершает активные регулярные правила без удаления клиента или истории.',
+      'Подтверждённые прошлые результаты не переписываются; pending reminders по отменённым занятиям подавляются.',
     ],
-    description: 'Результаты, отмена отдельного занятия и разовые свободные окна работают сквозным tenant-scoped контуром.',
-    outcome: 'История сохраняется, занятость освобождается атомарно, регулярные правила не повреждаются, а FreeWindow остаётся управляемым сценарием без резервирования.',
+    description: 'Отсутствия специалиста и клиента работают сквозным tenant-scoped контуром.',
+    outcome: 'Appointment, allocations, reminders, FreeWindow и regular schedule lifecycle изменяются согласно выбранному режиму без потери истории.',
   },
-  nextPartNumbers: [37, 38, 39, 40],
+  nextPartNumbers: [39, 40, 41, 42],
   batches: [
     {
       number: 1,
@@ -153,8 +152,8 @@ window.PROJECT_PROGRESS = {
       number: 16,
       title: 'Отсутствие специалиста и клиента',
       parts: [
-        { number: 37, title: 'Отсутствие специалиста', status: 'pending' },
-        { number: 38, title: 'Отсутствие клиента', status: 'pending' },
+        { number: 37, title: 'Отсутствие специалиста', status: 'done', completedAt: '2026-09-10', result: 'Период становится hard conflict, занятия отменяются без FreeWindow, а регулярные правила сохраняются.' },
+        { number: 38, title: 'Отсутствие клиента', status: 'done', completedAt: '2026-09-10', result: 'Режимы сохранения и освобождения постоянного места изменяют только нужные Appointment, FreeWindow и RegularSchedule.' },
       ],
     },
     {
@@ -203,6 +202,15 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-10',
+      items: [
+        'Завершена пачка 16: отсутствия специалиста и клиента.',
+        'Отсутствие специалиста блокирует booking/materialization, но не удаляет регулярные правила.',
+        'Отсутствие клиента поддерживает сохранение или освобождение постоянного места.',
+        'Responsive UI и E2E покрывают оба сценария на desktop и mobile.',
+      ],
+    },
     {
       date: '2026-09-10',
       items: [
@@ -258,6 +266,8 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-10', title: 'Отсутствие специалиста не создаёт FreeWindow', text: 'Затронутые Appointment отменяются как CANCELLED_BY_SPECIALIST, allocations освобождаются, но свободные окна не создаются.' },
+    { date: '2026-09-10', title: 'Режим отсутствия клиента определяет lifecycle места', text: 'KEEP_PERMANENT_PLACE сохраняет RegularSchedule и может создать FreeWindow; RELEASE_PERMANENT_PLACE завершает активные правила без удаления клиента и истории.' },
     { date: '2026-09-10', title: 'FreeWindow не равен календарному пробелу', text: 'Окно создаётся только явным действием при будущей отмене клиентом; один Appointment имеет максимум одно окно, а текущая availability проверяется при чтении.' },
     { date: '2026-09-10', title: 'FreeWindow не резервирует интервал', text: 'Создание FreeWindow не создаёт ScheduleAllocation; только будущий Offer для FreeWindow/PermanentPlace вправе создать OFFER_RESERVATION.' },
     { date: '2026-09-10', title: 'Отмена occurrence не меняет регулярное правило', text: 'Result пишется в конкретный Appointment, allocation освобождается, но RegularSchedule и RegularScheduleDay продолжают lifecycle независимо.' },

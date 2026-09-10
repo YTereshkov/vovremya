@@ -16,6 +16,9 @@ interface RegularScheduleStore
 
     public function find(Ulid $id): ?RegularSchedule;
 
+    /** @return list<RegularSchedule> */
+    public function activeForClient(Ulid $clientId, \DateTimeImmutable $date): array;
+
     /** @return list<RegularScheduleDay> */
     public function days(Ulid $scheduleId, bool $includeInactive = false): array;
 
