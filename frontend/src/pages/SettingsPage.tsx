@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useChannelSettings, useCommunicationsKey, useConfirmationAttention } from '@/features/communications/api'
 import { ConfirmationSettingsForm } from '@/features/communications/ConfirmationSettingsForm'
+import { SchedulingSettingsForm } from '@/features/scheduling/SchedulingSettingsForm'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
@@ -48,6 +49,9 @@ export function SettingsPage() {
 
       <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Подтверждения и напоминания</h2>
       <ConfirmationSettingsForm />
+
+      <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Расписание</h2>
+      <SchedulingSettingsForm />
 
       <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Справочники</h2>
       <nav aria-label="Настройки справочников" className={`${resourceSurfaceClass} mt-3 max-w-xl divide-y divide-border p-0`}>

@@ -121,6 +121,31 @@ final class ScheduleAllocationStoreTest extends WebTestCase
         self::assertTrue($this->store->hasActiveConflict($this->specialist->id(), $this->instant('10:30'), $this->instant('11:30')));
     }
 
+    public function testReleasedAppointmentAllocationCanBeRestoredButStillCannotOverlap(): void
+    {
+        $appointmentId = new Ulid();
+        $allocation = ScheduleAllocation::forAppointment(
+            $this->administrator->organization(),
+            $this->specialist->id(),
+            $appointmentId,
+            $this->instant('10:00'),
+            $this->instant('11:00'),
+        );
+        $this->store->save($allocation);
+        $this->store->releaseForAppointment($appointmentId);
+        self::assertFalse($this->store->hasActiveConflict($this->specialist->id(), $this->instant('10:00'), $this->instant('11:00')));
+
+        $this->store->restoreForAppointment($appointmentId);
+        self::assertTrue($this->store->hasActiveConflict($this->specialist->id(), $this->instant('10:00'), $this->instant('11:00')));
+
+        $this->store->releaseForAppointment($appointmentId);
+        $this->store->save($this->allocation($this->specialist, '10:30', '11:30'));
+        $this->expectException(TimeUnavailable::class);
+        self::getContainer()->get(AppointmentStore::class)->transactional(
+            fn () => $this->store->restoreForAppointment($appointmentId),
+        );
+    }
+
     public function testDatabaseRejectsSpecialistFromAnotherOrganization(): void
     {
         $foreignOrganization = Organization::create('Allocation B', 'Europe/Moscow');

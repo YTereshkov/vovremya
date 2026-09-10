@@ -21,13 +21,36 @@ export interface CalendarAppointment {
   startsAt: string
   endsAt: string
   confirmationStatus: ConfirmationStatus
+  resultStatus: AppointmentResultStatus | null
+  resultRecordedAt: string | null
+  lateCancellation: boolean | null
+  respectfulReason: boolean
+  resultComment: string | null
 }
 
 export type ConfirmationStatus = 'NOT_REQUESTED' | 'PENDING' | 'CONFIRMED' | 'CANNOT_ATTEND' | 'NO_RESPONSE'
+export type AppointmentResultStatus = 'CONDUCTED' | 'CANCELLED_BY_CLIENT' | 'CANCELLED_BY_SPECIALIST' | 'NO_SHOW' | 'RESCHEDULED'
 
 export interface AppointmentConfirmation {
   status: ConfirmationStatus
   requestId: string | null
+}
+
+export interface AppointmentHistoryEvent {
+  id: string
+  type: string
+  payload: Record<string, unknown>
+  actorAdministratorId: string | null
+  occurredAt: string
+}
+
+export interface AppointmentResultState {
+  status: AppointmentResultStatus | null
+  recordedAt: string | null
+  lateCancellation: boolean | null
+  respectfulReason: boolean
+  comment: string | null
+  freeWindowOpen: boolean
 }
 
 export interface CalendarResponse {
@@ -63,6 +86,24 @@ export function useAppointmentConfirmation(id: string) {
   return useQuery({
     queryKey: ['calendar', user?.organization.id, 'appointment', id, 'confirmation'],
     queryFn: ({ signal }) => apiRequest<AppointmentConfirmation>(`/api/appointments/${id}/confirmation`, 'GET', undefined, signal),
+    enabled: Boolean(id),
+  })
+}
+
+export function useAppointmentHistory(id: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['calendar', user?.organization.id, 'appointment', id, 'history'],
+    queryFn: ({ signal }) => apiRequest<AppointmentHistoryEvent[]>(`/api/appointments/${id}/history`, 'GET', undefined, signal),
+    enabled: Boolean(id),
+  })
+}
+
+export function useAppointmentResult(id: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['calendar', user?.organization.id, 'appointment', id, 'result'],
+    queryFn: ({ signal }) => apiRequest<AppointmentResultState>(`/api/appointments/${id}/result`, 'GET', undefined, signal),
     enabled: Boolean(id),
   })
 }

@@ -122,6 +122,11 @@ final readonly class CalendarController
             'startsAt' => $startsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'endsAt' => $endsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'confirmationStatus' => $appointment->confirmationStatus,
+            'resultStatus' => $appointment->resultStatus,
+            'resultRecordedAt' => $appointment->resultRecordedAt?->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'lateCancellation' => $appointment->lateCancellation,
+            'respectfulReason' => $appointment->respectfulReason,
+            'resultComment' => $appointment->resultComment,
         ];
     }
 }

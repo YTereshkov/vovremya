@@ -55,6 +55,16 @@ final class Appointment implements OrganizationOwned
         private ?\DateTimeImmutable $occurrenceDate,
         #[ORM\Column(name: 'planning_status', length: 32, enumType: AppointmentPlanningStatus::class)]
         private AppointmentPlanningStatus $planningStatus,
+        #[ORM\Column(name: 'result_status', length: 32, enumType: AppointmentResultStatus::class, nullable: true)]
+        private ?AppointmentResultStatus $resultStatus,
+        #[ORM\Column(name: 'result_recorded_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+        private ?\DateTimeImmutable $resultRecordedAt,
+        #[ORM\Column(name: 'result_is_late', nullable: true)]
+        private ?bool $resultIsLate,
+        #[ORM\Column(name: 'result_respectful_reason')]
+        private bool $resultRespectfulReason,
+        #[ORM\Column(name: 'result_comment', length: 1000, nullable: true)]
+        private ?string $resultComment,
         #[ORM\Column(name: 'created_at', type: Types::DATETIMETZ_IMMUTABLE)]
         private \DateTimeImmutable $createdAt,
     ) {
@@ -98,6 +108,11 @@ final class Appointment implements OrganizationOwned
             null,
             null,
             AppointmentPlanningStatus::Planned,
+            null,
+            null,
+            null,
+            false,
+            null,
             new \DateTimeImmutable('now', $utc),
         );
     }
@@ -135,6 +150,44 @@ final class Appointment implements OrganizationOwned
         $this->planningStatus = AppointmentPlanningStatus::RemovedFromSchedule;
     }
 
+    public function recordResult(
+        AppointmentResultStatus $status,
+        \DateTimeImmutable $recordedAt,
+        int $lateCancellationHours,
+        bool $respectfulReason,
+        ?string $comment,
+    ): void {
+        $at = $recordedAt->setTimezone(new \DateTimeZone('UTC'));
+        if (in_array($status, [AppointmentResultStatus::Conducted, AppointmentResultStatus::NoShow], true) && $at < $this->startsAt) {
+            throw new \DomainException('Проведённое занятие или неявку можно отметить только после начала занятия.');
+        }
+        if (AppointmentResultStatus::Rescheduled === $status) {
+            throw new \DomainException('Перенос оформляется через отдельный запрос переноса.');
+        }
+        $normalizedComment = null === $comment ? null : trim($comment);
+        if ('' === $normalizedComment) {
+            $normalizedComment = null;
+        }
+        if (null !== $normalizedComment && 1000 < mb_strlen($normalizedComment)) {
+            throw new \InvalidArgumentException('Комментарий не должен превышать 1000 символов.');
+        }
+        $resultAt = $status === $this->resultStatus && null !== $this->resultRecordedAt ? $this->resultRecordedAt : $at;
+        $isLate = AppointmentResultStatus::CancelledByClient === $status
+            ? ($status === $this->resultStatus && null !== $this->resultIsLate
+                ? $this->resultIsLate
+                : $resultAt > $this->startsAt->modify(sprintf('-%d hours', $lateCancellationHours)))
+            : null;
+        if ($respectfulReason && (AppointmentResultStatus::CancelledByClient !== $status || true !== $isLate)) {
+            throw new \InvalidArgumentException('Уважительная причина отмечается только для поздней отмены клиентом.');
+        }
+
+        $this->resultStatus = $status;
+        $this->resultRecordedAt = $resultAt;
+        $this->resultIsLate = $isLate;
+        $this->resultRespectfulReason = $respectfulReason;
+        $this->resultComment = $normalizedComment;
+    }
+
     public function id(): Ulid { return $this->id; }
     public function organization(): Organization { return $this->organization; }
     public function organizationId(): Ulid { return $this->organization->id(); }
@@ -152,4 +205,18 @@ final class Appointment implements OrganizationOwned
     public function regularScheduleDayId(): ?Ulid { return $this->regularScheduleDayId; }
     public function occurrenceDate(): ?\DateTimeImmutable { return $this->occurrenceDate; }
     public function planningStatus(): AppointmentPlanningStatus { return $this->planningStatus; }
+    public function resultStatus(): ?AppointmentResultStatus { return $this->resultStatus; }
+    public function resultRecordedAt(): ?\DateTimeImmutable { return $this->resultRecordedAt; }
+    public function resultIsLate(): ?bool { return $this->resultIsLate; }
+    public function resultRespectfulReason(): bool { return $this->resultRespectfulReason; }
+    public function resultComment(): ?string { return $this->resultComment; }
+
+    public function hasResult(AppointmentResultStatus $status, bool $respectfulReason, ?string $comment): bool
+    {
+        $normalizedComment = null === $comment ? null : trim($comment);
+
+        return $this->resultStatus === $status
+            && $this->resultRespectfulReason === $respectfulReason
+            && $this->resultComment === ('' === $normalizedComment ? null : $normalizedComment);
+    }
 }

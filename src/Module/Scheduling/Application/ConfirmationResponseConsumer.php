@@ -10,7 +10,7 @@ use Symfony\Component\Uid\Ulid;
 
 final readonly class ConfirmationResponseConsumer implements NormalizedWebhookEventConsumer
 {
-    public function __construct(private AppointmentConfirmationStore $store)
+    public function __construct(private ConfirmationActionProcessor $processor)
     {
     }
 
@@ -28,7 +28,7 @@ final readonly class ConfirmationResponseConsumer implements NormalizedWebhookEv
         } catch (\InvalidArgumentException) {
             return;
         }
-        $this->store->consumeAction(
+        $this->processor->consume(
             $actionId,
             $matches[2],
             $event->channelConnectionId(),

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import type { CalendarAppointment } from '@/features/calendar/api'
 import { ConfirmationStatusBadge } from '@/features/calendar/ConfirmationStatus'
+import { AppointmentResultBadge } from '@/features/calendar/AppointmentResultStatus'
 import { formatDate } from '@/features/calendar/date'
 import { cn } from '@/shared/lib/cn'
 
@@ -20,7 +21,7 @@ export function AppointmentAgendaItem({ appointment, showSpecialist = false }: {
     <span className="min-w-0">
       <span className="block truncate text-sm font-semibold">{appointment.client.name}</span>
       <span className="mt-0.5 block truncate text-xs text-muted">{appointment.service.name}{showSpecialist ? ` · ${appointment.specialist.name}` : ''}</span>
-      <ConfirmationStatusBadge compact status={appointment.confirmationStatus} />
+      {appointment.resultStatus ? <AppointmentResultBadge compact status={appointment.resultStatus} /> : <ConfirmationStatusBadge compact status={appointment.confirmationStatus} />}
     </span>
     <ChevronRight aria-hidden="true" className="size-5 text-muted" />
   </Link>
@@ -73,6 +74,7 @@ function TimedAppointment({ appointment, showSpecialist }: { appointment: Calend
     <strong className="block truncate tabular-nums">{appointment.startTime} {appointment.client.name}</strong>
     <span className="mt-0.5 block truncate text-muted">{appointment.service.name}</span>
     {showSpecialist ? <span className="mt-0.5 block truncate text-primary">{appointment.specialist.name}</span> : null}
+    {appointment.resultStatus ? <AppointmentResultBadge compact status={appointment.resultStatus} /> : null}
   </Link>
 }
 

@@ -80,7 +80,12 @@ final readonly class DoctrineCalendarQuery implements CalendarQuery
                 a.duration_minutes,
                 a.starts_at,
                 a.ends_at,
-                COALESCE(confirmation.status, 'NOT_REQUESTED') AS confirmation_status
+                COALESCE(confirmation.status, 'NOT_REQUESTED') AS confirmation_status,
+                a.result_status,
+                a.result_recorded_at,
+                a.result_is_late,
+                a.result_respectful_reason,
+                a.result_comment
             FROM appointments a
             INNER JOIN specialists s
                 ON s.organization_id = a.organization_id AND s.id = a.specialist_id
@@ -110,6 +115,11 @@ final readonly class DoctrineCalendarQuery implements CalendarQuery
             new \DateTimeImmutable((string) $row['starts_at']),
             new \DateTimeImmutable((string) $row['ends_at']),
             (string) $row['confirmation_status'],
+            null === $row['result_status'] ? null : (string) $row['result_status'],
+            null === $row['result_recorded_at'] ? null : new \DateTimeImmutable((string) $row['result_recorded_at']),
+            null === $row['result_is_late'] ? null : (bool) $row['result_is_late'],
+            (bool) $row['result_respectful_reason'],
+            null === $row['result_comment'] ? null : (string) $row['result_comment'],
         );
     }
 }

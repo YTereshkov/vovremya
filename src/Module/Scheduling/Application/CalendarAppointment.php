@@ -24,6 +24,11 @@ final readonly class CalendarAppointment
         public \DateTimeImmutable $startsAt,
         public \DateTimeImmutable $endsAt,
         public string $confirmationStatus,
+        public ?string $resultStatus,
+        public ?\DateTimeImmutable $resultRecordedAt,
+        public ?bool $lateCancellation,
+        public bool $respectfulReason,
+        public ?string $resultComment,
     ) {
     }
 }

@@ -6,6 +6,7 @@ namespace App\Module\Scheduling\Infrastructure\Persistence;
 
 use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Scheduling\Application\AppointmentConfirmationStore;
+use App\Module\Scheduling\Application\ConsumedConfirmationAction;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentConfirmationAction;
 use App\Module\Scheduling\Domain\Model\AppointmentConfirmationRequest;
@@ -46,6 +47,7 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
         return $this->entityManager->createQueryBuilder()->select('item')->from(Appointment::class, 'item')
             ->andWhere('IDENTITY(item.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid')
             ->andWhere('item.planningStatus = :status')->setParameter('status', 'PLANNED')
+            ->andWhere('item.resultStatus IS NULL')
             ->andWhere('item.startsAt > :now')->setParameter('now', $now, 'datetimetz_immutable')
             ->andWhere('item.startsAt <= :until')->setParameter('until', $until, 'datetimetz_immutable')
             ->orderBy('item.startsAt', 'ASC')->getQuery()->getResult();
@@ -60,12 +62,12 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
         $this->entityManager->flush();
     }
 
-    public function consumeAction(Ulid $actionId, string $token, Ulid $channelConnectionId, \DateTimeImmutable $now): ?ConfirmationActionType
+    public function consumeAction(Ulid $actionId, string $token, Ulid $channelConnectionId, \DateTimeImmutable $now): ?ConsumedConfirmationAction
     {
-        $action = $this->entityManager->getConnection()->fetchOne(
+        $action = $this->entityManager->getConnection()->fetchAssociative(
             <<<'SQL'
                 WITH candidate AS (
-                    SELECT action.confirmation_request_id, action.action_type
+                    SELECT action.confirmation_request_id, action.action_type, request.appointment_id
                     FROM appointment_confirmation_actions action
                     INNER JOIN appointment_confirmation_requests request
                         ON request.organization_id = action.organization_id
@@ -92,16 +94,16 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
                     FROM candidate
                     WHERE request.organization_id = :organization
                       AND request.id = candidate.confirmation_request_id
-                    RETURNING request.id, candidate.action_type
+                    RETURNING request.id, candidate.action_type, candidate.appointment_id
                 ), consumed_actions AS (
                     UPDATE appointment_confirmation_actions action
                     SET consumed_at = :now
                     FROM updated_request
                     WHERE action.organization_id = :organization
                       AND action.confirmation_request_id = updated_request.id
-                    RETURNING updated_request.action_type
+                    RETURNING updated_request.action_type, updated_request.appointment_id
                 )
-                SELECT action_type FROM consumed_actions LIMIT 1
+                SELECT action_type, appointment_id FROM consumed_actions LIMIT 1
                 SQL,
             [
                 'organization' => $this->context->currentId()->toRfc4122(),
@@ -112,7 +114,10 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
             ],
         );
 
-        return false === $action ? null : ConfirmationActionType::from((string) $action);
+        return false === $action ? null : new ConsumedConfirmationAction(
+            Ulid::fromString((string) $action['appointment_id']),
+            ConfirmationActionType::from((string) $action['action_type']),
+        );
     }
 
     public function noResponseAttention(\DateTimeImmutable $now): array
@@ -128,6 +133,7 @@ final readonly class DoctrineAppointmentConfirmationStore implements Appointment
                 WHERE request.organization_id = :organization
                   AND request.status = 'NO_RESPONSE'
                   AND appointment.planning_status = 'PLANNED'
+                  AND appointment.result_status IS NULL
                   AND appointment.starts_at > :now
                 ORDER BY appointment.starts_at, appointment.id
                 SQL,

@@ -20,6 +20,16 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
     ) {
     }
 
+    public function find(Ulid $id): ?Appointment
+    {
+        $appointment = $this->entityManager->createQueryBuilder()->select('appointment')->from(Appointment::class, 'appointment')
+            ->andWhere('IDENTITY(appointment.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->andWhere('appointment.id = :id')->setParameter('id', $id, 'ulid')
+            ->getQuery()->getOneOrNullResult();
+
+        return $appointment instanceof Appointment ? $appointment : null;
+    }
+
     public function findRegularOccurrence(Ulid $scheduleId, \DateTimeImmutable $date): ?Appointment
     {
         return $this->entityManager->createQueryBuilder()->select('appointment')->from(Appointment::class, 'appointment')
@@ -53,6 +63,15 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+    }
+
+    public function history(Ulid $appointmentId): array
+    {
+        return $this->entityManager->createQueryBuilder()->select('event')->from(AppointmentEvent::class, 'event')
+            ->andWhere('IDENTITY(event.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->andWhere('event.appointmentId = :appointment')->setParameter('appointment', $appointmentId, 'ulid')
+            ->orderBy('event.occurredAt', 'ASC')->addOrderBy('event.id', 'ASC')
+            ->getQuery()->getResult();
     }
 
     public function transactional(callable $operation): mixed

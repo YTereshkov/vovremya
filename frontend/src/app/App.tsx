@@ -17,11 +17,13 @@ import { ClientFormPage } from '@/pages/ClientFormPage'
 import { ClientPage } from '@/pages/ClientPage'
 import { AppointmentFormPage } from '@/pages/AppointmentFormPage'
 import { AppointmentPage } from '@/pages/AppointmentPage'
+import { AppointmentResultPage } from '@/pages/AppointmentResultPage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { RegularScheduleFormPage } from '@/pages/RegularScheduleFormPage'
 import { RegularSchedulePage } from '@/pages/RegularSchedulePage'
 import { MessageTemplatesPage } from '@/pages/MessageTemplatesPage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
+import { WaitingPage } from '@/pages/WaitingPage'
 
 export function App() {
   return (
@@ -36,12 +38,13 @@ export function App() {
           <Route index element={<TodayPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="appointments/:id" element={<AppointmentPage />} />
+          <Route path="appointments/:id/result" element={<AppointmentResultPage />} />
           <Route path="regular-schedules/:id" element={<RegularSchedulePage />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="clients/new" element={<ClientFormPage />} />
           <Route path="clients/:id" element={<ClientPage />} />
           <Route path="clients/:id/edit" element={<ClientFormPage />} />
-          <Route path="waiting" element={<SectionPlaceholderPage title="Ожидание" />} />
+          <Route path="waiting" element={<WaitingPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="specialists" element={<SpecialistsPage />} />
           <Route path="specialists/:id" element={<SpecialistPage />} />

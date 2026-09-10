@@ -63,6 +63,9 @@ services:
     App\Module\Scheduling\Application\AppointmentStore:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentStore
 
+    App\Module\Scheduling\Application\SchedulingSettingsStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineSchedulingSettingsStore
+
     App\Module\Scheduling\Application\AppointmentConfirmationStore:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentConfirmationStore
 
@@ -95,3 +98,9 @@ services:
 
     App\Module\Communications\Application\ConfirmationSettingsStore:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrineConfirmationSettingsStore
+
+    App\Module\Waiting\Application\FreeWindowStore:
+        alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowStore
+
+    App\Module\Communications\Application\PendingAppointmentNotificationCancellation:
+        alias: App\Module\Communications\Infrastructure\Persistence\DoctrinePendingAppointmentNotificationCancellation

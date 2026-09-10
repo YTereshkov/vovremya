@@ -26,8 +26,8 @@ final class AppointmentEvent implements OrganizationOwned
         private Organization $organization,
         #[ORM\Column(name: 'appointment_id', type: 'ulid')]
         private Ulid $appointmentId,
-        #[ORM\Column(name: 'actor_administrator_id', type: 'ulid')]
-        private Ulid $actorAdministratorId,
+        #[ORM\Column(name: 'actor_administrator_id', type: 'ulid', nullable: true)]
+        private ?Ulid $actorAdministratorId,
         #[ORM\Column(name: 'event_type', length: 48)]
         private string $type,
         #[ORM\Column(type: 'jsonb')]
@@ -55,9 +55,35 @@ final class AppointmentEvent implements OrganizationOwned
         );
     }
 
+    /** @param array<string, mixed> $payload */
+    public static function record(
+        Appointment $appointment,
+        ?Ulid $actorId,
+        string $type,
+        array $payload,
+        ?\DateTimeImmutable $occurredAt = null,
+    ): self {
+        if (!preg_match('/^[A-Z][A-Z0-9_]{2,47}$/D', $type)) {
+            throw new \InvalidArgumentException('Invalid appointment event type.');
+        }
+
+        return new self(
+            new Ulid(),
+            $appointment->organization(),
+            $appointment->id(),
+            $actorId,
+            $type,
+            $payload,
+            ($occurredAt ?? new \DateTimeImmutable('now'))->setTimezone(new \DateTimeZone('UTC')),
+        );
+    }
+
+    public function id(): Ulid { return $this->id; }
     public function organizationId(): Ulid { return $this->organization->id(); }
     public function appointmentId(): Ulid { return $this->appointmentId; }
+    public function actorAdministratorId(): ?Ulid { return $this->actorAdministratorId; }
     public function type(): string { return $this->type; }
     /** @return array<string, mixed> */
     public function payload(): array { return $this->payload; }
+    public function occurredAt(): \DateTimeImmutable { return $this->occurredAt; }
 }

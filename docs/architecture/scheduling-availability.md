@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–27
+# Scheduling and availability: parts 19–27, 34–36
 
 ## Concrete occupancy
 
@@ -162,3 +162,41 @@ Materialization follows the same concurrency boundary as one-off creation:
 availability is advisory, and the transactional allocation insert is final.
 PostgreSQL's exclusion constraint remains the authoritative protection from
 double booking; no specialist/date transaction lock is used.
+
+## Appointment result and history
+
+Confirmation status and appointment result are independent. `Appointment`
+stores the current result (`CONDUCTED`, client/specialist cancellation,
+`NO_SHOW`, or later `RESCHEDULED`) while append-only `AppointmentEvent` rows
+keep the human-facing history. System and client-originated events may have no
+administrator actor. Conducted and no-show results cannot be recorded before
+the appointment starts; transfer cannot be simulated through the generic
+result endpoint.
+
+Late cancellation is calculated only for client cancellation against the
+tenant setting `late_cancellation_hours` (12 by default). “Less than N hours”
+is strict: cancellation exactly at the boundary is not late. A respectful
+reason is valid only for a late client cancellation. Changing a concrete
+regular occurrence never edits or terminates its `RegularSchedule` or day
+rule, and the existing appointment row and all prior events remain intact.
+
+Client or specialist cancellation releases the appointment allocation in the
+same database transaction. Any pending confirmation/reminder intent is marked
+cancelled, preventing an already published worker command from beginning a new
+send. The independent confirmation response remains recorded for history. If
+an administrator corrects a cancellation to conducted/no-show, the original
+allocation is restored; PostgreSQL rejects that correction when another active
+allocation already occupies the interval.
+
+## Managed free windows
+
+`Waiting.FreeWindow` is created only when an administrator explicitly requests
+it while cancelling a future appointment by the client. Ordinary gaps in the
+calendar are not FreeWindow records. One source appointment can own at most one
+window; repeated result submissions reopen the same row instead of creating a
+duplicate. Changing the result or clearing the checkbox closes that window.
+
+FreeWindow itself creates no schedule allocation and reserves no time. Listing
+open windows repeats current Scheduling availability, so a subsequently booked
+or otherwise unavailable interval is not offered as free. Reservation belongs
+only to later FreeWindow/PermanentPlace offers through `OFFER_RESERVATION`.

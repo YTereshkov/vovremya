@@ -26,6 +26,7 @@ final readonly class AppointmentConfirmationService
         private ServiceNotificationTemplateResolver $serviceTemplates,
         private MessageTemplateCatalog $templates,
         private NotificationOutbox $outbox,
+        private AppointmentHistoryRecorder $history,
     ) {
     }
 
@@ -35,6 +36,9 @@ final readonly class AppointmentConfirmationService
             ?? throw new \OutOfBoundsException('Занятие не найдено.');
         if ($appointment->startsAt() <= $now) {
             throw new \DomainException('Нельзя запросить подтверждение для начавшегося занятия.');
+        }
+        if (null !== $appointment->resultStatus()) {
+            throw new \DomainException('Нельзя запросить подтверждение для занятия с указанным результатом.');
         }
         $existing = $this->store->findByAppointment($appointment->id());
         if (null !== $existing) {
@@ -58,6 +62,7 @@ final readonly class AppointmentConfirmationService
                 'confirmation:'.$appointment->id()->toRfc4122(),
                 $request->id(),
             );
+            $this->history->record($appointment, 'CONFIRMATION_REQUESTED', ['provider' => $recipient->provider], null, $now);
 
             return $request;
         });
@@ -65,7 +70,7 @@ final readonly class AppointmentConfirmationService
 
     public function remind(Appointment $appointment, AppointmentConfirmationRequest $request, \DateTimeImmutable $now): void
     {
-        if (null !== $request->reminderSentAt() || $appointment->startsAt() <= $now || !in_array($request->status(), [AppointmentConfirmationStatus::Pending, AppointmentConfirmationStatus::NoResponse], true)) {
+        if (null !== $appointment->resultStatus() || null !== $request->reminderSentAt() || $appointment->startsAt() <= $now || !in_array($request->status(), [AppointmentConfirmationStatus::Pending, AppointmentConfirmationStatus::NoResponse], true)) {
             return;
         }
         $recipient = $this->recipients->byChannel($appointment->clientId(), $request->channelConnectionId())
@@ -81,6 +86,19 @@ final readonly class AppointmentConfirmationService
             );
             $request->markReminderSent($now);
             $this->store->save($request);
+            $this->history->record($appointment, 'REMINDER_SENT', ['provider' => $recipient->provider], null, $now);
+        });
+    }
+
+    public function markNoResponse(Appointment $appointment, AppointmentConfirmationRequest $request, \DateTimeImmutable $now): void
+    {
+        if (AppointmentConfirmationStatus::Pending !== $request->status()) {
+            return;
+        }
+        $this->store->transactional(function () use ($appointment, $request, $now): void {
+            $request->markNoResponse($now);
+            $this->store->save($request);
+            $this->history->record($appointment, 'CONFIRMATION_NO_RESPONSE', [], null, $now);
         });
     }
 

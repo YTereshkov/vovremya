@@ -32,7 +32,7 @@ export function TodayPage() {
       <span className="ml-3 font-medium">{appointments.length === 1 ? 'занятие' : appointments.length > 1 && appointments.length < 5 ? 'занятия' : 'занятий'}</span>
       {specialists.data?.length === 1 ? <p className="mt-2 text-sm text-muted">{specialists.data[0].name} · {specialists.data[0].specialization}</p> : null}
       {appointments.length ? <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">{(['CONFIRMED', 'PENDING', 'NO_RESPONSE'] as const).map((status) => {
-        const count = appointments.filter((appointment) => appointment.confirmationStatus === status).length
+        const count = appointments.filter((appointment) => !appointment.resultStatus && appointment.confirmationStatus === status).length
         return count ? <span key={status}>{confirmationStatusLabel(status)}: {count}</span> : null
       })}</div> : null}
     </section>

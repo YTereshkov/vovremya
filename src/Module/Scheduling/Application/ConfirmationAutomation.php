@@ -41,8 +41,7 @@ final readonly class ConfirmationAutomation
                 continue;
             }
             if ($localNow >= $noResponseAt && \App\Module\Scheduling\Domain\Model\AppointmentConfirmationStatus::Pending === $request->status()) {
-                $request->markNoResponse($utcNow);
-                $this->store->save($request);
+                $this->confirmations->markNoResponse($appointment, $request, $utcNow);
             }
             if (!$settings->reminderEnabled() || null !== $request->reminderSentAt() || $settings->isQuietAt($localNow)
                 || !in_array($request->status(), [\App\Module\Scheduling\Domain\Model\AppointmentConfirmationStatus::Pending, \App\Module\Scheduling\Domain\Model\AppointmentConfirmationStatus::NoResponse], true)) {

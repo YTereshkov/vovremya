@@ -12,6 +12,10 @@ use App\Module\Communications\Domain\Model\OutboundMessage;
 use App\Module\Identity\Application\CreateAdministrator\CreateAdministratorHandler;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use App\Module\Scheduling\Application\ConfirmationResponseConsumer;
+use App\Module\Scheduling\Application\ConfirmationActionProcessor;
+use App\Module\Scheduling\Application\AppointmentConfirmationStore;
+use App\Module\Scheduling\Application\AppointmentHistoryRecorder;
+use App\Module\Scheduling\Application\AppointmentStore;
 use App\Module\Scheduling\Application\AppointmentConfirmationService;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentConfirmationRequest;
@@ -87,6 +91,7 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         self::assertSame(1, $this->countRows('appointment_confirmation_requests'));
         self::assertSame(2, $this->countRows('appointment_confirmation_actions'));
         self::assertSame(1, $this->countRows('communication_outbox'));
+        self::assertSame(['CONFIRMATION_REQUESTED'], $this->eventTypes());
 
         $this->client->request('GET', '/api/appointments/'.$this->appointment->id()->toRfc4122());
         self::assertResponseIsSuccessful();
@@ -118,6 +123,7 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         $this->entityManager->clear();
         $request = $this->entityManager->getRepository(AppointmentConfirmationRequest::class)->findOneBy([]);
         self::assertSame('CONFIRMED', $request?->status()->value);
+        self::assertSame(['CONFIRMATION_REQUESTED', 'CONFIRMATION_CONFIRMED'], $this->eventTypes());
         self::assertInstanceOf(AppointmentConfirmationRequest::class, $request);
         self::getContainer()->get(AppointmentConfirmationService::class)->remind(
             $this->entityManager->find(Appointment::class, $this->appointment->id()),
@@ -150,6 +156,37 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         $consumer->consume($this->event($outbound->buttons()[1][0]['action'], $this->channel->id(), 'second-late-callback'));
         $this->entityManager->clear();
         self::assertSame('CONFIRMED', $this->entityManager->getRepository(AppointmentConfirmationRequest::class)->findOneBy([])?->status()->value);
+    }
+
+    public function testHistoryFailureRollsBackConsumedActionAndConfirmationStatus(): void
+    {
+        $this->requestConfirmation();
+        $outbound = $this->entityManager->getRepository(OutboundMessage::class)->findOneBy([]);
+        self::assertInstanceOf(OutboundMessage::class, $outbound);
+        preg_match('/^confirmation:([0-9a-f-]{36}):([A-Za-z0-9_-]+)$/D', $outbound->buttons()[0][0]['action'], $matches);
+
+        $appointments = $this->createMock(AppointmentStore::class);
+        $appointments->expects(self::once())->method('find')->willThrowException(new \RuntimeException('History persistence failed.'));
+        $processor = new ConfirmationActionProcessor(
+            self::getContainer()->get(AppointmentConfirmationStore::class),
+            new AppointmentHistoryRecorder($appointments),
+        );
+
+        try {
+            $processor->consume(
+                Ulid::fromString($matches[1]),
+                $matches[2],
+                $this->channel->id(),
+                new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+            );
+            self::fail('History persistence failure was expected.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('History persistence failed.', $exception->getMessage());
+        }
+
+        self::assertSame('PENDING', $this->entityManager->getConnection()->fetchOne('SELECT status FROM appointment_confirmation_requests'));
+        self::assertSame(0, (int) $this->entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM appointment_confirmation_actions WHERE consumed_at IS NOT NULL'));
+        self::assertSame(['CONFIRMATION_REQUESTED'], $this->eventTypes());
     }
 
     public function testWrongChannelAndForeignAppointmentAreRejected(): void
@@ -193,6 +230,22 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
         self::assertStringContainsString('Анна: Диагностика', $outbound->body());
     }
 
+    public function testResultCancelsPendingNotificationButKeepsConfirmationIndependent(): void
+    {
+        $this->requestConfirmation();
+        $this->client->jsonRequest('PUT', '/api/appointments/'.$this->appointment->id()->toRfc4122().'/result', [
+            'status' => 'CANCELLED_BY_CLIENT',
+            'respectfulReason' => false,
+            'comment' => null,
+            'createFreeWindow' => false,
+        ], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('CANCELLED', $this->entityManager->getConnection()->fetchOne('SELECT status FROM notification_intents'));
+        self::assertSame('PENDING', $this->entityManager->getConnection()->fetchOne('SELECT status FROM appointment_confirmation_requests'));
+        self::assertSame(['CONFIRMATION_REQUESTED', 'RESULT_CHANGED'], $this->eventTypes());
+    }
+
     private function requestConfirmation(): void
     {
         $this->client->jsonRequest('POST', '/api/appointments/'.$this->appointment->id()->toRfc4122().'/confirmation', [], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
@@ -212,6 +265,12 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
     private function countRows(string $table): int
     {
         return (int) $this->entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM '.$table);
+    }
+
+    /** @return list<string> */
+    private function eventTypes(): array
+    {
+        return $this->entityManager->getConnection()->fetchFirstColumn('SELECT event_type FROM appointment_events ORDER BY occurred_at, id');
     }
 
     private function json(): array

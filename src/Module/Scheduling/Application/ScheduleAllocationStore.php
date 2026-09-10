@@ -17,4 +17,6 @@ interface ScheduleAllocationStore
     public function save(ScheduleAllocation $allocation): void;
 
     public function releaseForAppointment(Ulid $appointmentId): void;
+
+    public function restoreForAppointment(Ulid $appointmentId): void;
 }

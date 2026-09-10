@@ -132,4 +132,30 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
             ],
         );
     }
+
+    public function restoreForAppointment(Ulid $appointmentId): void
+    {
+        try {
+            $this->entityManager->getConnection()->executeStatement(
+                <<<'SQL'
+                    UPDATE schedule_allocations
+                    SET released_at = NULL
+                    WHERE organization_id = :organization_id
+                      AND allocation_type = 'APPOINTMENT'
+                      AND source_id = :appointment_id
+                      AND released_at IS NOT NULL
+                    SQL,
+                [
+                    'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
+                    'appointment_id' => $appointmentId->toRfc4122(),
+                ],
+            );
+        } catch (DriverException $exception) {
+            if ('23P01' === $exception->getSQLState()) {
+                throw new TimeUnavailable(AvailabilityConflict::timeAlreadyUnavailable(), $exception);
+            }
+
+            throw $exception;
+        }
+    }
 }

@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 14 завершена',
-    currentBatch: 14,
-    currentPart: 33,
-    currentItem: 'Запросы подтверждения, фоновые сроки и ответы клиента завершены',
+    state: 'Пачка 15 завершена',
+    currentBatch: 15,
+    currentPart: 36,
+    currentItem: 'Результаты, отдельные отмены и управляемые FreeWindow завершены',
     updatedAt: '2026-09-10',
   },
   statusLabels: {
@@ -15,19 +15,19 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 14 · Части 32–33',
+    title: 'Пачка 15 · Части 34–36',
     items: [
-      'Tenant-настройки задают время запроса, порог «нет ответа», повторное напоминание и тихие часы.',
-      'Scheduler идемпотентно создаёт запросы и напоминания через transactional outbox.',
-      'Запрос связан с проверенным ChannelConnection; callback actions opaque, hashed и single-use.',
-      'Подтверждение, «не сможем» и «нет ответа» отображаются в календаре и карточке занятия.',
-      'Поздний проверенный ответ принимается до начала занятия; confirmation не меняет appointment result.',
-      'Экран уведомлений показывает будущие занятия без ответа.',
+      'Результат занятия хранится независимо от confirmation status и отображается в календаре и карточке.',
+      'Append-only история включает подтверждения, напоминания и изменения результата.',
+      'Tenant-настройка задаёт порог поздней отмены; уважительная причина допустима только для поздней отмены клиентом.',
+      'Отмена одного занятия освобождает allocation, не завершает регулярное правило и отменяет pending reminders.',
+      'FreeWindow создаётся только явно для будущей отмены клиентом и не резервирует время.',
+      'Список разовых окон повторно проверяет availability и скрывает уже занятые интервалы.',
     ],
-    description: 'Подтверждения работают сквозным контуром от tenant-настроек и Scheduler до MAX callback и responsive UI.',
-    outcome: 'Запросы и напоминания отправляются идемпотентно; проверенный ответ меняет только независимый confirmation status.',
+    description: 'Результаты, отмена отдельного занятия и разовые свободные окна работают сквозным tenant-scoped контуром.',
+    outcome: 'История сохраняется, занятость освобождается атомарно, регулярные правила не повреждаются, а FreeWindow остаётся управляемым сценарием без резервирования.',
   },
-  nextPartNumbers: [34, 35, 36, 37],
+  nextPartNumbers: [37, 38, 39, 40],
   batches: [
     {
       number: 1,
@@ -144,9 +144,9 @@ window.PROJECT_PROGRESS = {
       number: 15,
       title: 'Результаты, отмены и FreeWindow',
       parts: [
-        { number: 34, title: 'Результаты, история и поздняя отмена', status: 'pending' },
-        { number: 35, title: 'Отмена отдельного занятия', status: 'pending' },
-        { number: 36, title: 'FreeWindow core', status: 'pending' },
+        { number: 34, title: 'Результаты, история и поздняя отмена', status: 'done', completedAt: '2026-09-10', result: 'Добавлены независимый result state, tenant-порог поздней отмены и append-only история занятия.' },
+        { number: 35, title: 'Отмена отдельного занятия', status: 'done', completedAt: '2026-09-10', result: 'Отмена освобождает allocation и pending reminders, сохраняя Appointment и регулярное правило.' },
+        { number: 36, title: 'FreeWindow core', status: 'done', completedAt: '2026-09-10', result: 'Явная отмена клиентом создаёт одно управляемое окно без reservation; список повторно проверяет availability.' },
       ],
     },
     {
@@ -206,6 +206,15 @@ window.PROJECT_PROGRESS = {
     {
       date: '2026-09-10',
       items: [
+        'Завершена пачка 15: результаты, история, отдельная отмена и FreeWindow core.',
+        'Результат остаётся независимым от confirmation; история хранит системные, клиентские и административные события.',
+        'Отмена освобождает allocation и pending уведомления, но сохраняет Appointment и регулярное правило.',
+        'Responsive UI добавляет форму результата, историю и список доступных разовых окон.',
+      ],
+    },
+    {
+      date: '2026-09-10',
+      items: [
         'Завершена пачка 14: запросы подтверждения, фоновые сроки и ответы клиента.',
         'Добавлены tenant-настройки времени запроса, no-response cutoff, повторного напоминания и quiet hours.',
         'Scheduler и transactional outbox обеспечивают восстановление и идемпотентность повторных запусков.',
@@ -249,6 +258,10 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-10', title: 'FreeWindow не равен календарному пробелу', text: 'Окно создаётся только явным действием при будущей отмене клиентом; один Appointment имеет максимум одно окно, а текущая availability проверяется при чтении.' },
+    { date: '2026-09-10', title: 'FreeWindow не резервирует интервал', text: 'Создание FreeWindow не создаёт ScheduleAllocation; только будущий Offer для FreeWindow/PermanentPlace вправе создать OFFER_RESERVATION.' },
+    { date: '2026-09-10', title: 'Отмена occurrence не меняет регулярное правило', text: 'Result пишется в конкретный Appointment, allocation освобождается, но RegularSchedule и RegularScheduleDay продолжают lifecycle независимо.' },
+    { date: '2026-09-10', title: 'Граница поздней отмены строгая', text: 'Отмена клиентом считается поздней только если до начала осталось строго меньше tenant-настройки часов; точное равенство порогу не считается поздним.' },
     { date: '2026-09-10', title: 'Confirmation и результат занятия независимы', text: 'CONFIRMED, CANNOT_ATTEND и NO_RESPONSE не изменяют planning/result state Appointment; отмена и перенос остаются отдельными последующими use cases.' },
     { date: '2026-09-10', title: 'Confirmation callback связан с исходным каналом', text: 'Действие хранится только как SHA-256 hash и принимается один раз при совпадении tenant, ChannelConnection и opaque token; обычный текст не запускает действие.' },
     { date: '2026-09-10', title: 'NO_RESPONSE не завершает возможность ответа', text: 'После операционной отметки «нет ответа» проверенный callback всё ещё принимается до начала занятия; автоматического срока действия action нет.' },

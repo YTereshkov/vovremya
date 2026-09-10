@@ -31,6 +31,11 @@ code. A cancelled intent is excluded both from scheduler publication and from
 the atomic send claim, so an already queued Messenger envelope cannot start a
 new send for it.
 
+When an appointment receives any final result, Scheduling calls the
+Communications application boundary that cancels pending confirmation and
+reminder intents for that tenant and appointment. Credentials, channel state,
+and already recorded confirmation responses remain untouched.
+
 ## Provider contract
 
 `ChannelProvider` exposes only provider-neutral operations: provider identity,
