@@ -121,6 +121,7 @@ final readonly class CalendarController
             'endTime' => $endsAt->format('H:i'),
             'startsAt' => $startsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
             'endsAt' => $endsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
+            'confirmationStatus' => $appointment->confirmationStatus,
         ];
     }
 }

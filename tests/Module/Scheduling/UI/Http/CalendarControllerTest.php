@@ -71,6 +71,7 @@ final class CalendarControllerTest extends WebTestCase
         self::assertSame('2026-09-07T10:00:00.000+03:00', $result['appointments'][0]['startsAt']);
         self::assertSame('Первичное занятие', $result['appointments'][0]['service']['name']);
         self::assertSame(45, $result['appointments'][0]['service']['defaultDurationMinutes']);
+        self::assertSame(['NOT_REQUESTED', 'NOT_REQUESTED', 'NOT_REQUESTED'], array_column($result['appointments'], 'confirmationStatus'));
     }
 
     public function testFiltersBySpecialistAndRejectsInvalidRanges(): void

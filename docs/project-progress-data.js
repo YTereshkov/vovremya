@@ -1,11 +1,11 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 13 завершена',
-    currentBatch: 13,
-    currentPart: 31,
-    currentItem: 'Шаблоны, lifecycle каналов и MAX adapter завершены',
-    updatedAt: '2026-09-09',
+    state: 'Пачка 14 завершена',
+    currentBatch: 14,
+    currentPart: 33,
+    currentItem: 'Запросы подтверждения, фоновые сроки и ответы клиента завершены',
+    updatedAt: '2026-09-10',
   },
   statusLabels: {
     done: 'Выполнено',
@@ -15,19 +15,19 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 13 · Части 29–31',
+    title: 'Пачка 14 · Части 32–33',
     items: [
-      'Пачка 11 завершена: регулярные правила управляются от формы до календаря.',
-      'Communications foundation завершён: outbox, webhook inbox и provider contracts готовы.',
-      'MAX adapter hardened: tenant-bound routing, recipient validation, stable event handoff, secure outbox и curl runtime готовы.',
-      'Normalized-event processing атомарно фиксирует business transition и PROCESSED; отключённый MAX-канал webhook-ом не реактивируется.',
-      'Общие и сервисные шаблоны используют утверждённые {variable} placeholders.',
-      'ChannelConnection поддерживает tenant-bound одноразовую активацию и реальные capabilities провайдера.',
+      'Tenant-настройки задают время запроса, порог «нет ответа», повторное напоминание и тихие часы.',
+      'Scheduler идемпотентно создаёт запросы и напоминания через transactional outbox.',
+      'Запрос связан с проверенным ChannelConnection; callback actions opaque, hashed и single-use.',
+      'Подтверждение, «не сможем» и «нет ответа» отображаются в календаре и карточке занятия.',
+      'Поздний проверенный ответ принимается до начала занятия; confirmation не меняет appointment result.',
+      'Экран уведомлений показывает будущие занятия без ответа.',
     ],
-    description: 'Communications foundation дополнен шаблонами, подключением клиентских каналов и завершённым MAX adapter.',
-    outcome: 'Шаблоны и каналы работают от PostgreSQL/API до responsive UI; MAX activation, inbound и outbound flow tenant-bound и защищены от replay/concurrency.',
+    description: 'Подтверждения работают сквозным контуром от tenant-настроек и Scheduler до MAX callback и responsive UI.',
+    outcome: 'Запросы и напоминания отправляются идемпотентно; проверенный ответ меняет только независимый confirmation status.',
   },
-  nextPartNumbers: [32, 33, 34, 35],
+  nextPartNumbers: [34, 35, 36, 37],
   batches: [
     {
       number: 1,
@@ -136,8 +136,8 @@ window.PROJECT_PROGRESS = {
       number: 14,
       title: 'Подтверждения и ответы клиента',
       parts: [
-        { number: 32, title: 'Запросы подтверждения и фоновые сроки', status: 'pending' },
-        { number: 33, title: 'Ответы клиента на подтверждение', status: 'pending' },
+        { number: 32, title: 'Запросы подтверждения и фоновые сроки', status: 'done', completedAt: '2026-09-10', result: 'Добавлены tenant-настройки, Scheduler, идемпотентные запросы и повторные напоминания через outbox.' },
+        { number: 33, title: 'Ответы клиента на подтверждение', status: 'done', completedAt: '2026-09-10', result: 'Opaque single-use callbacks безопасно меняют независимый confirmation status; статусы видны в календаре и UI.' },
       ],
     },
     {
@@ -204,6 +204,15 @@ window.PROJECT_PROGRESS = {
   ],
   changes: [
     {
+      date: '2026-09-10',
+      items: [
+        'Завершена пачка 14: запросы подтверждения, фоновые сроки и ответы клиента.',
+        'Добавлены tenant-настройки времени запроса, no-response cutoff, повторного напоминания и quiet hours.',
+        'Scheduler и transactional outbox обеспечивают восстановление и идемпотентность повторных запусков.',
+        'Календарь, карточка занятия и экран уведомлений показывают реальные confirmation statuses.',
+      ],
+    },
+    {
       date: '2026-09-08',
       items: [
         'Завершена пачка 10: Calendar API, «Сегодня», карточка занятия и responsive day/week views.',
@@ -240,6 +249,9 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-10', title: 'Confirmation и результат занятия независимы', text: 'CONFIRMED, CANNOT_ATTEND и NO_RESPONSE не изменяют planning/result state Appointment; отмена и перенос остаются отдельными последующими use cases.' },
+    { date: '2026-09-10', title: 'Confirmation callback связан с исходным каналом', text: 'Действие хранится только как SHA-256 hash и принимается один раз при совпадении tenant, ChannelConnection и opaque token; обычный текст не запускает действие.' },
+    { date: '2026-09-10', title: 'NO_RESPONSE не завершает возможность ответа', text: 'После операционной отметки «нет ответа» проверенный callback всё ещё принимается до начала занятия; автоматического срока действия action нет.' },
     { date: '2026-09-09', title: 'Шаблоны используют утверждённые placeholders', text: 'Поддерживаются {date}, {time}, {service}, {client_name}, {contact_name}; неизвестные переменные отклоняются, а шаблон услуги имеет приоритет только для подтверждения.' },
     { date: '2026-09-09', title: 'Активация канала одноразовая и tenant-bound', text: 'В БД хранится только SHA-256 activation token с expiry; bot_started атомарно активирует ровно одну scoped connection, повторное и конкурентное использование невозможно.' },
     { date: '2026-09-09', title: 'Capabilities приходят от активного adapter', text: 'Организационный default channel можно выбрать только среди настроенных providers, а UI не предполагает неподтверждённые возможности доставки, чтения или редактирования.' },

@@ -24,7 +24,7 @@ export const desktopNavigation: NavigationItem[] = [
   { label: 'Календарь', to: '/calendar', icon: CalendarDays },
   { label: 'Клиенты', to: '/clients', icon: UsersRound },
   { label: 'Ожидание', to: '/waiting', icon: Hourglass },
-  { label: 'Уведомления', to: '/notifications', icon: Bell, badge: 3 },
+  { label: 'Уведомления', to: '/notifications', icon: Bell },
   { label: 'Специалисты', to: '/specialists', icon: UserRound },
   { label: 'Статистика', to: '/statistics', icon: BarChart3 },
   { label: 'Настройки', to: '/settings', icon: Settings },

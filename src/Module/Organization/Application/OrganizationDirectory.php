@@ -12,5 +12,7 @@ interface OrganizationDirectory
     /** @return list<Ulid> */
     public function allIds(): array;
 
+    public function find(Ulid $id): ?Organization;
+
     public function save(Organization $organization): void;
 }

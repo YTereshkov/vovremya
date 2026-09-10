@@ -64,5 +64,11 @@ final class CommunicationsSchemaConstraints
                 'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_message_templates_organization',
             );
         }
+
+        if ($schema->hasTable('confirmation_settings')) {
+            $schema->getTable('confirmation_settings')->addForeignKeyConstraint(
+                'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_confirmation_settings_organization',
+            );
+        }
     }
 }

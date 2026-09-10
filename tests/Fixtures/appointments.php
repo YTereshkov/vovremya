@@ -39,6 +39,12 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             $entityManager->persist($specialist);
             $entityManager->persist($client);
             $entityManager->persist($service);
+            $entityManager->flush();
+            $channel = App\Module\Clients\Domain\Model\ChannelConnection::create($client, null, 'MAX', 'e2e-'.$client->id()->toRfc4122());
+            $channel->activate();
+            $entityManager->persist($channel);
+            $entityManager->flush();
+            $client->selectPrimaryChannel($channel);
         });
     } else {
         $id = $connection->fetchOne('SELECT o.id FROM organizations o JOIN administrator_accounts a ON a.organization_id = o.id WHERE a.normalized_email = ? AND o.name = ?', [$email, $name]);
@@ -46,9 +52,16 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             continue;
         }
         $connection->transactional(static function () use ($connection, $id): void {
+            $connection->executeStatement('DELETE FROM appointment_confirmation_actions WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM appointment_confirmation_requests WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM communication_outbox WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM notification_intents WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM confirmation_settings WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointment_events WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM schedule_allocations WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointments WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('UPDATE clients SET primary_channel_id = NULL WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM channel_connections WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM clients WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM services WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM specialists WHERE organization_id = ?', [$id]);

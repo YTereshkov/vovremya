@@ -23,6 +23,7 @@ final readonly class CalendarAppointment
         public int $durationMinutes,
         public \DateTimeImmutable $startsAt,
         public \DateTimeImmutable $endsAt,
+        public string $confirmationStatus,
     ) {
     }
 }

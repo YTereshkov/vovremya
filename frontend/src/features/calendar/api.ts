@@ -20,6 +20,14 @@ export interface CalendarAppointment {
   endTime: string
   startsAt: string
   endsAt: string
+  confirmationStatus: ConfirmationStatus
+}
+
+export type ConfirmationStatus = 'NOT_REQUESTED' | 'PENDING' | 'CONFIRMED' | 'CANNOT_ATTEND' | 'NO_RESPONSE'
+
+export interface AppointmentConfirmation {
+  status: ConfirmationStatus
+  requestId: string | null
 }
 
 export interface CalendarResponse {
@@ -46,6 +54,15 @@ export function useAppointment(id: string) {
   return useQuery({
     queryKey: ['calendar', user?.organization.id, 'appointment', id],
     queryFn: ({ signal }) => apiRequest<CalendarAppointment>(`/api/appointments/${id}`, 'GET', undefined, signal),
+    enabled: Boolean(id),
+  })
+}
+
+export function useAppointmentConfirmation(id: string) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['calendar', user?.organization.id, 'appointment', id, 'confirmation'],
+    queryFn: ({ signal }) => apiRequest<AppointmentConfirmation>(`/api/appointments/${id}/confirmation`, 'GET', undefined, signal),
     enabled: Boolean(id),
   })
 }

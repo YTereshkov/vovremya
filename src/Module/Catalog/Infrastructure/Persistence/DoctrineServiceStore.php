@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Module\Catalog\Infrastructure\Persistence;
 
 use App\Module\Catalog\Application\ServiceStore;
+use App\Module\Catalog\Application\ServiceNotificationTemplateResolver;
 use App\Module\Catalog\Domain\Model\Service;
 use App\Module\Organization\Application\OrganizationContext;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class DoctrineServiceStore implements ServiceStore
+final readonly class DoctrineServiceStore implements ServiceStore, ServiceNotificationTemplateResolver
 {
     public function __construct(private EntityManagerInterface $entityManager, private OrganizationContext $organizationContext)
     {
@@ -41,6 +42,22 @@ final readonly class DoctrineServiceStore implements ServiceStore
 
         $this->entityManager->persist($service);
         $this->entityManager->flush();
+    }
+
+    public function confirmationTemplate(Ulid $serviceId): ?string
+    {
+        $value = $this->entityManager->createQueryBuilder()
+            ->select('service.confirmationTemplate')
+            ->from(Service::class, 'service')
+            ->andWhere('IDENTITY(service.organization) = :organization')
+            ->andWhere('service.id = :id')
+            ->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->setParameter('id', $serviceId, 'ulid')
+            ->getQuery()->getOneOrNullResult();
+
+        return is_array($value) && is_string($value['confirmationTemplate'] ?? null)
+            ? $value['confirmationTemplate']
+            : null;
     }
 
     private function query(): \Doctrine\ORM\QueryBuilder

@@ -27,6 +27,22 @@ export interface ChannelSettings {
   }>
 }
 
+export interface ConfirmationSettings {
+  requestTime: string
+  noResponseTime: string
+  reminderEnabled: boolean
+  reminderLeadMinutes: number
+  reminderNotBefore: string
+  quietHoursStart: string
+  quietHoursEnd: string
+}
+
+export interface ConfirmationAttentionItem {
+  appointmentId: string
+  clientName: string
+  startsAt: string
+}
+
 export function useCommunicationsKey() {
   const { user } = useAuth()
   return ['communications', user?.organization.id] as const
@@ -45,5 +61,21 @@ export function useChannelSettings() {
   return useQuery({
     queryKey: [...key, 'channels'],
     queryFn: ({ signal }) => apiRequest<ChannelSettings>('/api/communications/channels', 'GET', undefined, signal),
+  })
+}
+
+export function useConfirmationSettings() {
+  const key = useCommunicationsKey()
+  return useQuery({
+    queryKey: [...key, 'confirmation-settings'],
+    queryFn: ({ signal }) => apiRequest<ConfirmationSettings>('/api/communications/confirmation-settings', 'GET', undefined, signal),
+  })
+}
+
+export function useConfirmationAttention() {
+  const key = useCommunicationsKey()
+  return useQuery({
+    queryKey: [...key, 'confirmation-attention'],
+    queryFn: ({ signal }) => apiRequest<ConfirmationAttentionItem[]>('/api/communications/confirmation-attention', 'GET', undefined, signal),
   })
 }

@@ -21,6 +21,7 @@ import { CalendarPage } from '@/pages/CalendarPage'
 import { RegularScheduleFormPage } from '@/pages/RegularScheduleFormPage'
 import { RegularSchedulePage } from '@/pages/RegularSchedulePage'
 import { MessageTemplatesPage } from '@/pages/MessageTemplatesPage'
+import { NotificationsPage } from '@/pages/NotificationsPage'
 
 export function App() {
   return (
@@ -41,7 +42,7 @@ export function App() {
           <Route path="clients/:id" element={<ClientPage />} />
           <Route path="clients/:id/edit" element={<ClientFormPage />} />
           <Route path="waiting" element={<SectionPlaceholderPage title="Ожидание" />} />
-          <Route path="notifications" element={<SectionPlaceholderPage title="Уведомления" />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="specialists" element={<SpecialistsPage />} />
           <Route path="specialists/:id" element={<SpecialistPage />} />
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />

@@ -3,17 +3,21 @@ import { NavLink } from 'react-router-dom'
 
 import { desktopNavigation } from '@/app/layout/navigation'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { useConfirmationAttention } from '@/features/communications/api'
 import { cn } from '@/shared/lib/cn'
 
 export function DesktopSidebar() {
   const { logout, user } = useAuth()
+  const attention = useConfirmationAttention()
 
   return (
     <aside className="hidden min-h-screen border-r border-border bg-white/55 px-3.5 py-8 backdrop-blur-xl lg:flex lg:flex-col">
       <div className="px-3 text-[29px] font-semibold tracking-[-0.035em] text-primary">Vovremya</div>
 
       <nav aria-label="Основная навигация" className="mt-8 flex flex-col gap-1.5">
-        {desktopNavigation.map(({ badge, icon: Icon, label, to }) => (
+        {desktopNavigation.map(({ badge, icon: Icon, label, to }) => {
+          const visibleBadge = to === '/notifications' ? attention.data?.length : badge
+          return (
           <NavLink
             className={({ isActive }) =>
               cn(
@@ -28,13 +32,13 @@ export function DesktopSidebar() {
           >
             <Icon aria-hidden="true" className="size-6 shrink-0" strokeWidth={1.8} />
             <span>{label}</span>
-            {badge ? (
+            {visibleBadge ? (
               <span className="ml-auto flex size-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
-                {badge}
+                {visibleBadge}
               </span>
             ) : null}
           </NavLink>
-        ))}
+        )})}
       </nav>
 
       <NavLink

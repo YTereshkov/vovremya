@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { useCalendar } from '@/features/calendar/api'
 import { DayAgenda } from '@/features/calendar/components'
+import { confirmationStatusLabel } from '@/features/calendar/ConfirmationStatus'
 import { longDate, todayInTimezone } from '@/features/calendar/date'
 import { useSpecialists } from '@/features/workforce/api'
 import { Button } from '@/shared/ui/Button'
@@ -30,6 +31,10 @@ export function TodayPage() {
       <strong className="text-3xl font-semibold tabular-nums">{appointments.length}</strong>
       <span className="ml-3 font-medium">{appointments.length === 1 ? 'занятие' : appointments.length > 1 && appointments.length < 5 ? 'занятия' : 'занятий'}</span>
       {specialists.data?.length === 1 ? <p className="mt-2 text-sm text-muted">{specialists.data[0].name} · {specialists.data[0].specialization}</p> : null}
+      {appointments.length ? <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">{(['CONFIRMED', 'PENDING', 'NO_RESPONSE'] as const).map((status) => {
+        const count = appointments.filter((appointment) => appointment.confirmationStatus === status).length
+        return count ? <span key={status}>{confirmationStatusLabel(status)}: {count}</span> : null
+      })}</div> : null}
     </section>
 
     <div className="mt-6 flex items-center justify-between gap-3">

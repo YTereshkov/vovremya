@@ -2,6 +2,7 @@ import { CalendarX2, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import type { CalendarAppointment } from '@/features/calendar/api'
+import { ConfirmationStatusBadge } from '@/features/calendar/ConfirmationStatus'
 import { formatDate } from '@/features/calendar/date'
 import { cn } from '@/shared/lib/cn'
 
@@ -19,6 +20,7 @@ export function AppointmentAgendaItem({ appointment, showSpecialist = false }: {
     <span className="min-w-0">
       <span className="block truncate text-sm font-semibold">{appointment.client.name}</span>
       <span className="mt-0.5 block truncate text-xs text-muted">{appointment.service.name}{showSpecialist ? ` · ${appointment.specialist.name}` : ''}</span>
+      <ConfirmationStatusBadge compact status={appointment.confirmationStatus} />
     </span>
     <ChevronRight aria-hidden="true" className="size-5 text-muted" />
   </Link>

@@ -36,10 +36,16 @@ services:
     App\Module\Catalog\Application\ServiceStore:
         alias: App\Module\Catalog\Infrastructure\Persistence\DoctrineServiceStore
 
+    App\Module\Catalog\Application\ServiceNotificationTemplateResolver:
+        alias: App\Module\Catalog\Infrastructure\Persistence\DoctrineServiceStore
+
     App\Module\Clients\Application\ClientStore:
         alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
 
     App\Module\Clients\Application\ChannelConnectionResolver:
+        alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
+
+    App\Module\Clients\Application\NotificationRecipientResolver:
         alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
 
     App\Module\Clients\Application\ChannelActivationLinkFactory:
@@ -56,6 +62,9 @@ services:
 
     App\Module\Scheduling\Application\AppointmentStore:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentStore
+
+    App\Module\Scheduling\Application\AppointmentConfirmationStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentConfirmationStore
 
     App\Module\Scheduling\Application\CalendarQuery:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineCalendarQuery
@@ -83,3 +92,6 @@ services:
 
     App\Module\Communications\Application\MessageTemplateStore:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrineMessageTemplateStore
+
+    App\Module\Communications\Application\ConfirmationSettingsStore:
+        alias: App\Module\Communications\Infrastructure\Persistence\DoctrineConfirmationSettingsStore

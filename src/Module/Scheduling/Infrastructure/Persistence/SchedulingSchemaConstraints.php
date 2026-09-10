@@ -52,6 +52,20 @@ final class SchedulingSchemaConstraints
             $events->addForeignKeyConstraint('administrator_accounts', ['organization_id', 'actor_administrator_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_appointment_events_actor_tenant');
         }
 
+        if ($schema->hasTable('appointment_confirmation_requests')) {
+            $requests = $schema->getTable('appointment_confirmation_requests');
+            $requests->addForeignKeyConstraint('appointments', ['organization_id', 'appointment_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_confirmation_requests_appointment_tenant');
+            if ($schema->hasTable('channel_connections')) {
+                $requests->addForeignKeyConstraint('channel_connections', ['organization_id', 'channel_connection_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_confirmation_requests_channel_tenant');
+            }
+        }
+
+        if ($schema->hasTable('appointment_confirmation_actions')) {
+            $schema->getTable('appointment_confirmation_actions')->addForeignKeyConstraint(
+                'appointment_confirmation_requests', ['organization_id', 'confirmation_request_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_confirmation_actions_request_tenant',
+            );
+        }
+
         if ($schema->hasTable('regular_schedules')) {
             $schedules = $schema->getTable('regular_schedules');
             $schedules->addForeignKeyConstraint('specialists', ['organization_id', 'specialist_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_regular_schedules_specialist_tenant');

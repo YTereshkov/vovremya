@@ -6,6 +6,8 @@ namespace App\Module\Clients\Infrastructure\Persistence;
 
 use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Clients\Application\ClientStore;
+use App\Module\Clients\Application\NotificationRecipient;
+use App\Module\Clients\Application\NotificationRecipientResolver;
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
 use App\Module\Clients\Domain\Model\ContactPerson;
@@ -17,7 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class DoctrineClientStore implements ClientStore, ChannelConnectionResolver
+final readonly class DoctrineClientStore implements ClientStore, ChannelConnectionResolver, NotificationRecipientResolver
 {
     public function __construct(private EntityManagerInterface $entityManager, private OrganizationContext $organizationContext)
     {
@@ -127,6 +129,43 @@ final readonly class DoctrineClientStore implements ClientStore, ChannelConnecti
         }
 
         return $channel;
+    }
+
+    public function primaryForClient(Ulid $clientId): ?NotificationRecipient
+    {
+        $client = $this->find($clientId);
+        if (null === $client || null === $client->primaryChannelId()) {
+            return null;
+        }
+
+        return $this->byChannel($client->id(), $client->primaryChannelId());
+    }
+
+    public function byChannel(Ulid $clientId, Ulid $channelConnectionId): ?NotificationRecipient
+    {
+        $client = $this->find($clientId);
+        if (null === $client) {
+            return null;
+        }
+        $channel = $this->findChannel($client->id(), $channelConnectionId);
+        if (null === $channel || !$channel->isActive()) {
+            return null;
+        }
+        $contactName = null;
+        if (null !== $channel->contactPersonId()) {
+            $contactName = $this->findContact($client->id(), $channel->contactPersonId())?->name();
+            if (null === $contactName) {
+                return null;
+            }
+        }
+
+        return new NotificationRecipient(
+            $channel->id(),
+            $channel->provider(),
+            $channel->address(),
+            $client->name(),
+            $contactName,
+        );
     }
 
     public function save(OrganizationOwned ...$entities): void

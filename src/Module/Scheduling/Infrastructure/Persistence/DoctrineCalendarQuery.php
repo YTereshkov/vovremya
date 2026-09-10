@@ -79,12 +79,15 @@ final readonly class DoctrineCalendarQuery implements CalendarQuery
                 a.service_maximum_duration_snapshot,
                 a.duration_minutes,
                 a.starts_at,
-                a.ends_at
+                a.ends_at,
+                COALESCE(confirmation.status, 'NOT_REQUESTED') AS confirmation_status
             FROM appointments a
             INNER JOIN specialists s
                 ON s.organization_id = a.organization_id AND s.id = a.specialist_id
             INNER JOIN clients c
                 ON c.organization_id = a.organization_id AND c.id = a.client_id
+            LEFT JOIN appointment_confirmation_requests confirmation
+                ON confirmation.organization_id = a.organization_id AND confirmation.appointment_id = a.id
             SQL;
     }
 
@@ -106,6 +109,7 @@ final readonly class DoctrineCalendarQuery implements CalendarQuery
             (int) $row['duration_minutes'],
             new \DateTimeImmutable((string) $row['starts_at']),
             new \DateTimeImmutable((string) $row['ends_at']),
+            (string) $row['confirmation_status'],
         );
     }
 }

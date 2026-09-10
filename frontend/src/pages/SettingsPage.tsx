@@ -1,10 +1,11 @@
-import { ChevronRight, ClipboardList, LogOut, MessageCircle, UserRound } from 'lucide-react'
+import { Bell, ChevronRight, ClipboardList, LogOut, MessageCircle, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { useAuth } from '@/features/auth/AuthProvider'
-import { useChannelSettings, useCommunicationsKey } from '@/features/communications/api'
+import { useChannelSettings, useCommunicationsKey, useConfirmationAttention } from '@/features/communications/api'
+import { ConfirmationSettingsForm } from '@/features/communications/ConfirmationSettingsForm'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
@@ -15,6 +16,7 @@ export function SettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const channels = useChannelSettings()
   const communicationsKey = useCommunicationsKey()
+  const attention = useConfirmationAttention()
   const queryClient = useQueryClient()
   const changeDefault = useMutation({
     mutationFn: (provider: string) => apiRequest('/api/communications/channels/default', 'PUT', { provider }),
@@ -44,8 +46,12 @@ export function SettingsPage() {
       </section>
       {channels.error || changeDefault.error ? <p className="mt-3 text-sm text-danger" role="alert">{(channels.error ?? changeDefault.error)?.message}</p> : null}
 
+      <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Подтверждения и напоминания</h2>
+      <ConfirmationSettingsForm />
+
       <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Справочники</h2>
       <nav aria-label="Настройки справочников" className={`${resourceSurfaceClass} mt-3 max-w-xl divide-y divide-border p-0`}>
+        <Link className="flex min-h-16 items-center gap-3 px-5 lg:hidden" to="/notifications"><Bell className="size-5 text-primary" /><span className="flex-1">Уведомления</span>{attention.data?.length ? <span className="rounded-full bg-primary px-2 py-0.5 text-sm font-semibold text-white">{attention.data.length}</span> : null}<ChevronRight className="size-5 text-muted" /></Link>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/specialists"><UserRound className="size-5 text-primary" /><span className="flex-1">Специалисты</span><ChevronRight className="size-5 text-muted" /></Link>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/settings/services"><ClipboardList className="size-5 text-primary" /><span className="flex-1">Услуги</span><ChevronRight className="size-5 text-muted" /></Link>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/my-schedule"><UserRound className="size-5 text-primary" /><span className="flex-1">Моё расписание</span><ChevronRight className="size-5 text-muted" /></Link>

@@ -24,6 +24,16 @@ final readonly class DoctrineOrganizationDirectory implements OrganizationDirect
         return array_map(static fn (array $row): Ulid => Ulid::fromString((string) $row['id']), $rows);
     }
 
+    public function find(Ulid $id): ?Organization
+    {
+        if (!$id->equals($this->organizationContext->currentId())) {
+            return null;
+        }
+        $organization = $this->entityManager->find(Organization::class, $id);
+
+        return $organization instanceof Organization ? $organization : null;
+    }
+
     public function save(Organization $organization): void
     {
         if (!$organization->id()->equals($this->organizationContext->currentId())) {

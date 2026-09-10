@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Communications\Infrastructure\Scheduler;
 
 use App\Module\Communications\Application\Message\PublishPendingOutboundMessages;
+use App\Module\Scheduling\Application\Message\ProcessDueConfirmations;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Message\RedispatchMessage;
 use Symfony\Component\Scheduler\Attribute\AsSchedule;
@@ -28,6 +29,7 @@ final class CommunicationsSchedule implements ScheduleProviderInterface
     {
         return $this->schedule ??= (new Schedule())
             ->add(RecurringMessage::every('1 minute', new RedispatchMessage(new PublishPendingOutboundMessages(), 'async')))
+            ->add(RecurringMessage::every('1 minute', new RedispatchMessage(new ProcessDueConfirmations(), 'async')))
             ->stateful($this->cache)
             ->processOnlyLastMissedRun(true);
     }

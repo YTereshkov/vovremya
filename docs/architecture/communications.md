@@ -1,4 +1,4 @@
-# Communications: parts 28–31
+# Communications: parts 28–33
 
 `Communications` owns provider-neutral notification intents, outbound messages,
 and the webhook inbox. The module does not know how MAX, Telegram, or WhatsApp
@@ -103,6 +103,31 @@ Outbound metadata currently has a strict allowlist containing only the safe
 diagnostic `source` string. Unknown, nested, credential-like, or recipient
 override values are rejected before persistence and the surviving safe metadata
 is passed unchanged to the provider adapter.
+
+## Appointment confirmations (parts 32–33)
+
+Confirmation settings are tenant-owned and use the organization timezone. By
+default, the request is sent at 14:00 on the day before the appointment, a
+still-pending request becomes `NO_RESPONSE` at 16:00, and one repeat reminder
+is due two hours before the appointment but never before 07:00. Quiet hours
+delay outbound work rather than discarding it. The scheduler scans due work
+every minute; database uniqueness and outbox deduplication make repeated or
+overlapping scans safe.
+
+Each appointment has at most one confirmation request bound to the active
+primary `ChannelConnection` selected when the request is created. The request
+creates opaque, separately hashed, single-use actions for `CONFIRMED` and
+`CANNOT_ATTEND`; raw tokens exist only in the callback buttons. A normalized
+provider event must match the tenant, original channel connection, action and
+token before the atomic database transition succeeds. Ordinary text remains
+unsupported; a stale action or a callback from another recipient cannot change
+the appointment.
+
+`NO_RESPONSE` is an operational attention state, not a callback expiry. A
+verified late answer is accepted until the appointment starts, while preserving
+the recorded no-response timestamp. Confirmation status remains independent
+from the appointment result. The “Хотим перенести” action is intentionally not
+created here: it belongs to the later `TransferRequest` flow.
 
 ## Message templates (part 29)
 
