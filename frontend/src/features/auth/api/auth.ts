@@ -5,6 +5,7 @@ export interface AuthUser {
     id: string
     name: string
     timezone: string
+    defaultChannel: 'MAX' | 'TELEGRAM' | 'WHATSAPP'
   }
 }
 

@@ -12,7 +12,12 @@ use Symfony\Component\Uid\Ulid;
 
 final readonly class ClientDirectory
 {
-    public function __construct(private ClientStore $store)
+    public function __construct(
+        private ClientStore $store,
+        private ChannelActivationLinkFactory $activationLinks,
+        #[\Symfony\Component\DependencyInjection\Attribute\Autowire('%env(int:CHANNEL_ACTIVATION_TTL_SECONDS)%')]
+        private int $activationTtlSeconds,
+    )
     {
     }
 
@@ -173,6 +178,26 @@ final readonly class ClientDirectory
         $this->store->save($channel);
     }
 
+    /** @return array{url: string, expiresAt: string} */
+    public function startChannelActivation(Client $client, string $channelId): array
+    {
+        $channel = $this->channel($client, $channelId);
+        $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+        $url = $this->activationLinks->create($channel->provider(), $token);
+        $expiresAt = new \DateTimeImmutable(sprintf('+%d seconds', max(60, $this->activationTtlSeconds)), new \DateTimeZone('UTC'));
+        $channel->startActivation($token, $expiresAt);
+        $this->store->save($channel);
+
+        return ['url' => $url, 'expiresAt' => $expiresAt->format(DATE_ATOM)];
+    }
+
+    public function deactivateChannel(Client $client, string $channelId): void
+    {
+        $channel = $this->channel($client, $channelId);
+        $channel->deactivate();
+        $this->store->save($channel);
+    }
+
     /** @return array<string, mixed> */
     public function details(Client $client): array
     {
@@ -207,6 +232,7 @@ final readonly class ClientDirectory
                 'provider' => $channel->provider(),
                 'address' => $channel->address(),
                 'status' => $channel->state(),
+                'activationExpiresAt' => $channel->activationExpiresAt()?->format(DATE_ATOM),
                 'recipientType' => null === $channel->contactPersonId() ? 'CLIENT' : 'CONTACT_PERSON',
                 'recipientId' => $channel->contactPersonId()?->toRfc4122() ?? $client->id()->toRfc4122(),
                 'recipientName' => null === $channel->contactPersonId()

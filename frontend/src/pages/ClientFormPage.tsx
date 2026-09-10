@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useClient, useClientsKey, type ChannelProvider, type ClientInput, type ClientRecord, type ClientType, type RecipientType } from '@/features/clients/api'
+import { useAuth } from '@/features/auth/AuthProvider'
+import { useChannelSettings } from '@/features/communications/api'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
@@ -21,6 +23,8 @@ function ClientForm({ initial }: { initial?: ClientRecord }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const clientsKey = useClientsKey()
+  const { user } = useAuth()
+  const channelSettings = useChannelSettings()
   const [name, setName] = useState(initial?.name ?? '')
   const [type, setType] = useState<ClientType>(initial?.type ?? 'CHILD')
   const [phone, setPhone] = useState(initial?.phone ?? '')
@@ -30,7 +34,8 @@ function ClientForm({ initial }: { initial?: ClientRecord }) {
   const [contactPhone, setContactPhone] = useState('')
   const [hasChannel, setHasChannel] = useState(false)
   const [recipient, setRecipient] = useState<RecipientType>('CLIENT')
-  const [provider, setProvider] = useState<ChannelProvider>('MAX')
+  const [provider, setProvider] = useState<ChannelProvider | null>(null)
+  const selectedProvider = provider ?? channelSettings.data?.defaultProvider ?? user?.organization.defaultChannel ?? 'MAX'
   const [address, setAddress] = useState('')
   const save = useMutation({
     mutationFn: () => {
@@ -39,7 +44,7 @@ function ClientForm({ initial }: { initial?: ClientRecord }) {
       return apiRequest<ClientRecord>('/api/clients', 'POST', {
         ...core,
         contactPerson: hasContact ? { name: contactName, phone: contactPhone || null } : null,
-        primaryChannel: hasChannel ? { recipient, provider, address } : null,
+        primaryChannel: hasChannel ? { recipient, provider: selectedProvider, address } : null,
       })
     },
     onSuccess: async (client) => {
@@ -84,7 +89,7 @@ function ClientForm({ initial }: { initial?: ClientRecord }) {
           <label className="flex items-center gap-3"><input className="size-5 accent-primary" type="checkbox" checked={hasChannel} onChange={(event) => setHasChannel(event.target.checked)} /><span className="font-medium">Добавить основной канал</span></label>
           {hasChannel ? <div className="mt-5 space-y-4">
             <label className="block space-y-2"><span>Получатель</span><select className={resourceFieldClass} value={recipient} onChange={(event) => setRecipient(event.target.value as RecipientType)}><option value="CLIENT">Сам клиент</option>{hasContact ? <option value="CONTACT_PERSON">Контактное лицо</option> : null}</select></label>
-            <fieldset><legend className="mb-2">Канал</legend><div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border bg-white/75">{(['MAX', 'TELEGRAM', 'WHATSAPP'] as const).map((value) => <button aria-pressed={provider === value} className={`min-h-12 border-l border-border px-2 text-sm first:border-l-0 ${provider === value ? 'bg-primary-soft text-primary' : 'text-muted'}`} key={value} type="button" onClick={() => setProvider(value)}>{value === 'WHATSAPP' ? 'WhatsApp' : value === 'TELEGRAM' ? 'Telegram' : value}</button>)}</div></fieldset>
+            <fieldset><legend className="mb-2">Канал</legend><div className="grid overflow-hidden rounded-lg border border-border bg-white/75" style={{ gridTemplateColumns: `repeat(${channelSettings.data?.providers.length || 1}, minmax(0, 1fr))` }}>{(channelSettings.data?.providers.map(({ provider: value }) => value) ?? ['MAX']).map((value) => <button aria-pressed={selectedProvider === value} className={`min-h-12 border-l border-border px-2 text-sm first:border-l-0 ${selectedProvider === value ? 'bg-primary-soft text-primary' : 'text-muted'}`} key={value} type="button" onClick={() => setProvider(value)}>{value === 'WHATSAPP' ? 'WhatsApp' : value === 'TELEGRAM' ? 'Telegram' : value}</button>)}</div></fieldset>
             <label className="block space-y-2"><span>Телефон или адрес канала</span><input className={resourceFieldClass} maxLength={254} required value={address} onChange={(event) => setAddress(event.target.value)} /></label>
           </div> : <p className="mt-2 text-sm text-muted">Канал можно добавить позже в карточке клиента.</p>}
         </section>

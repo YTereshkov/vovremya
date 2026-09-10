@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 
 import { useCatalogKey, useService, type ServiceDefinition, type ServiceInput } from '@/features/catalog/api'
+import { useMessageTemplates } from '@/features/communications/api'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, ResourceModal, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
@@ -26,6 +27,9 @@ function ServiceForm({ initial }: { initial?: ServiceDefinition }) {
   const [duration, setDuration] = useState(initial?.defaultDurationMinutes ?? 45)
   const [minimum, setMinimum] = useState<number | null>(initial?.minimumDurationMinutes ?? null)
   const [maximum, setMaximum] = useState<number | null>(initial?.maximumDurationMinutes ?? null)
+  const [customTemplate, setCustomTemplate] = useState(initial?.confirmationTemplate !== null && initial?.confirmationTemplate !== undefined)
+  const [confirmationTemplate, setConfirmationTemplate] = useState(initial?.confirmationTemplate ?? '')
+  const templates = useMessageTemplates()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const save = useMutation({
     mutationFn: (input: ServiceInput) => apiRequest<ServiceDefinition>(initial ? `/api/services/${initial.id}` : '/api/services', initial ? 'PUT' : 'POST', input),
@@ -44,7 +48,7 @@ function ServiceForm({ initial }: { initial?: ServiceDefinition }) {
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    save.mutate({ name, defaultDurationMinutes: duration, minimumDurationMinutes: minimum, maximumDurationMinutes: maximum })
+    save.mutate({ name, defaultDurationMinutes: duration, minimumDurationMinutes: minimum, maximumDurationMinutes: maximum, confirmationTemplate: customTemplate ? confirmationTemplate : null })
   }
 
   return <ResourceFrame title={initial ? 'Редактировать услугу' : 'Новая услуга'} back="/settings/services">
@@ -55,6 +59,13 @@ function ServiceForm({ initial }: { initial?: ServiceDefinition }) {
         <DurationField label="По умолчанию" required value={duration} onChange={(value) => setDuration(value ?? 0)} />
         <DurationField label="Минимум" value={minimum} onChange={setMinimum} />
         <DurationField label="Максимум" value={maximum} onChange={setMaximum} />
+      </fieldset>
+      <fieldset className={resourceSurfaceClass}>
+        <legend className="mb-3 text-lg font-semibold">Шаблон подтверждения</legend>
+        <label className="flex min-h-12 items-center gap-3"><input checked={!customTemplate} className="size-5 accent-primary" name="template-mode" onChange={() => setCustomTemplate(false)} type="radio" /><span>Использовать общий шаблон</span></label>
+        <label className="flex min-h-12 items-center gap-3 border-t border-border"><input checked={customTemplate} className="size-5 accent-primary" name="template-mode" onChange={() => setCustomTemplate(true)} type="radio" /><span>Свой шаблон для услуги</span></label>
+        {customTemplate ? <textarea aria-label="Свой шаблон подтверждения" className={`${resourceFieldClass} mt-4 min-h-40 py-3`} maxLength={4000} required value={confirmationTemplate} onChange={(event) => setConfirmationTemplate(event.target.value)} /> : <div className="mt-4 rounded-lg border border-border bg-white/60 p-4 text-sm leading-relaxed text-muted">{templates.data?.find((template) => template.type === 'CONFIRMATION')?.body ?? 'Загружаем общий шаблон...'}</div>}
+        <p className="mt-3 text-sm text-muted">Доступны: {'{date}'}, {'{time}'}, {'{service}'}, {'{client_name}'}, {'{contact_name}'}</p>
       </fieldset>
       <ResourceFeedback error={save.error} />
       <Button className="w-full" disabled={save.isPending} type="submit">{save.isPending ? 'Сохраняем...' : initial ? 'Сохранить' : 'Добавить услугу'}</Button>

@@ -93,6 +93,24 @@ final class ServiceControllerTest extends WebTestCase
         self::assertNull($service['maximumDurationMinutes']);
     }
 
+    public function testConfirmationTemplateOverrideIsOptionalAndValidated(): void
+    {
+        $payload = $this->payload('Диагностика', 80, 60, 90);
+        $payload['confirmationTemplate'] = 'Напоминаем: {date}, {time}, {service}, {client_name}, {contact_name}.';
+        $service = $this->send('POST', '/api/services', $payload);
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame($payload['confirmationTemplate'], $service['confirmationTemplate']);
+
+        $payload['confirmationTemplate'] = null;
+        $updated = $this->send('PUT', '/api/services/'.$service['id'], $payload);
+        self::assertResponseIsSuccessful();
+        self::assertNull($updated['confirmationTemplate']);
+
+        $payload['confirmationTemplate'] = 'Неизвестная {variable}';
+        $this->send('PUT', '/api/services/'.$service['id'], $payload);
+        self::assertResponseStatusCodeSame(422);
+    }
+
     /** @return array<string, mixed> */
     private function payload(string $name, int $default, ?int $minimum, ?int $maximum): array
     {

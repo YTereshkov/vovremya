@@ -12,4 +12,6 @@ interface ChannelConnectionResolver
     public function findChannelForTenant(Ulid $id): ?ChannelConnection;
 
     public function findChannelByRoutingKey(string $provider, string $routingKey): ?ChannelConnection;
+
+    public function activatePendingChannelForTenant(Ulid $id, string $token, string $address): ?ChannelConnection;
 }

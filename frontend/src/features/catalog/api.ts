@@ -9,6 +9,7 @@ export interface ServiceDefinition {
   defaultDurationMinutes: number
   minimumDurationMinutes: number | null
   maximumDurationMinutes: number | null
+  confirmationTemplate: string | null
 }
 
 export type ServiceInput = Omit<ServiceDefinition, 'id'>

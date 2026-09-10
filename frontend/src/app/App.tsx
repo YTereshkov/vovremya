@@ -20,6 +20,7 @@ import { AppointmentPage } from '@/pages/AppointmentPage'
 import { CalendarPage } from '@/pages/CalendarPage'
 import { RegularScheduleFormPage } from '@/pages/RegularScheduleFormPage'
 import { RegularSchedulePage } from '@/pages/RegularSchedulePage'
+import { MessageTemplatesPage } from '@/pages/MessageTemplatesPage'
 
 export function App() {
   return (
@@ -49,6 +50,7 @@ export function App() {
           <Route path="settings/services" element={<ServicesPage />} />
           <Route path="settings/services/new" element={<ServiceFormPage />} />
           <Route path="settings/services/:id" element={<ServiceFormPage />} />
+          <Route path="settings/message-templates" element={<MessageTemplatesPage />} />
           <Route path="my-schedule" element={<MySchedulePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

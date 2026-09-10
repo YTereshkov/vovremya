@@ -41,18 +41,23 @@ final readonly class ProcessWebhookInboxHandler
             $events = $this->providers->get($inbox->provider())->parseWebhook($inbox->payload());
             if (null !== $connection && $connection->isPendingActivation()) {
                 $activation = array_values(array_filter($events, static fn ($event): bool => 'ACTIVATION' === ($event->payload['kind'] ?? null)));
-                $verified = false;
+                $activated = null;
                 foreach ($activation as $event) {
-                    if (is_string($event->payload['userId'] ?? null) && hash_equals($connection->address(), $event->payload['userId'])) {
-                        $verified = true;
+                    if (is_string($event->payload['userId'] ?? null) && is_string($event->payload['activationToken'] ?? null)) {
+                        $activated = $this->connections->activatePendingChannelForTenant(
+                            $connection->id(),
+                            $event->payload['activationToken'],
+                            $event->payload['userId'],
+                        );
+                    }
+                    if (null !== $activated) {
                         break;
                     }
                 }
-                if (!$verified) {
+                if (null === $activated) {
                     throw new \DomainException('Канал webhook ещё не подтверждён получателем.');
                 }
-                $connection->activate();
-                $this->store->save($connection);
+                $connection = $activated;
             } elseif (null !== $connection && !$connection->isActive()) {
                 throw new \DomainException('Канал webhook отключён.');
             }

@@ -144,6 +144,7 @@ final readonly class MaxChannelProvider implements ChannelProvider, WebhookEvent
                 $events[] = new WebhookEvent(CommunicationProvider::MAX, $eventId, [
                     'kind' => 'ACTIVATION',
                     'action' => null,
+                    'activationToken' => is_string($update['payload'] ?? null) ? $update['payload'] : null,
                     'userId' => isset($user['user_id']) ? (string) $user['user_id'] : null,
                     'raw' => $update,
                 ]);

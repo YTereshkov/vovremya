@@ -31,17 +31,19 @@ final readonly class ServiceCatalog
         return $this->store->findActive($serviceId) ?? throw new \OutOfBoundsException('Услуга не найдена.');
     }
 
-    public function create(AdministratorAccount $actor, string $name, int $default, ?int $minimum, ?int $maximum): Service
+    public function create(AdministratorAccount $actor, string $name, int $default, ?int $minimum, ?int $maximum, ?string $confirmationTemplate = null): Service
     {
         $service = Service::create($actor->organization(), $name, $default, $minimum, $maximum);
+        $service->changeConfirmationTemplate($confirmationTemplate);
         $this->store->save($service);
 
         return $service;
     }
 
-    public function update(Service $service, string $name, int $default, ?int $minimum, ?int $maximum): void
+    public function update(Service $service, string $name, int $default, ?int $minimum, ?int $maximum, ?string $confirmationTemplate = null): void
     {
         $service->change($name, $default, $minimum, $maximum);
+        $service->changeConfirmationTemplate($confirmationTemplate);
         $this->store->save($service);
     }
 
@@ -60,6 +62,7 @@ final readonly class ServiceCatalog
             'defaultDurationMinutes' => $service->defaultDurationMinutes(),
             'minimumDurationMinutes' => $service->minimumDurationMinutes(),
             'maximumDurationMinutes' => $service->maximumDurationMinutes(),
+            'confirmationTemplate' => $service->confirmationTemplate(),
         ];
     }
 }

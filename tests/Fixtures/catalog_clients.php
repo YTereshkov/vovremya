@@ -38,6 +38,7 @@ foreach (['desktop', 'mobile'] as $device) {
             continue;
         }
         $connection->transactional(static function () use ($connection, $id): void {
+            $connection->executeStatement('DELETE FROM organization_message_templates WHERE organization_id = ?', [$id]);
             $connection->executeStatement('UPDATE clients SET primary_channel_id = NULL WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM channel_connections WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM contact_people WHERE organization_id = ?', [$id]);

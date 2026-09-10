@@ -58,5 +58,11 @@ final class CommunicationsSchemaConstraints
                 );
             }
         }
+
+        if ($schema->hasTable('organization_message_templates')) {
+            $schema->getTable('organization_message_templates')->addForeignKeyConstraint(
+                'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_message_templates_organization',
+            );
+        }
     }
 }

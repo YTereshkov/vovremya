@@ -13,11 +13,12 @@ snapshots and appointment references are introduced by later Scheduling parts.
 
 ## Clients and recipients
 
-`Clients` owns clients, optional contact people, and channel metadata. A client
-can exist without a contact person and can itself be the recipient of a channel.
-A channel records only provider, address, and recipient ownership in this batch;
-activation state, credentials, capabilities, and provider adapters belong to
-parts 28–31.
+`Clients` owns clients, optional contact people, and channel connections. A
+client can exist without a contact person and can itself be the recipient of a
+channel. A connection records its provider, provisional or verified address,
+recipient ownership, activation state, tenant-bound webhook routing identity,
+and hashed secret/token material. Provider behavior and capabilities remain in
+the `Communications` adapters from parts 28–31.
 
 `Client.primary_channel_id` points to a channel owned by that exact client.
 Composite PostgreSQL foreign keys include `organization_id` and owner IDs for
@@ -38,9 +39,15 @@ Client list search is server-side and treats `%` and `_` as literal characters.
 - `POST /api/clients/{id}/channels`
 - `PUT/DELETE /api/clients/{id}/channels/{channelId}`
 - `PUT /api/clients/{id}/primary-channel`
+- `POST /api/clients/{id}/channels/{channelId}/activation`
+- `POST /api/clients/{id}/channels/{channelId}/deactivate`
+- `GET/PUT /api/communications/channels[/default]`
+- `GET/PUT/DELETE /api/communications/templates[/{type}]`
 
 The React service screens follow mockups 37–40. Client list, create form, and
 card follow mockups 7, 11, and 32 while omitting statuses and schedule data owned
 by later parts.
-The service-specific notification-template section from mockups 38 and 40 is
-activated with editable templates in the later Communications parts.
+The service-specific confirmation-template section from mockups 38 and 40 uses
+the organization template by default and may store one service override. Client
+forms use the organization's configured default provider while the client card
+shows connection status and starts the supported provider activation flow.

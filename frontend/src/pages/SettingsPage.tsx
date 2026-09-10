@@ -1,8 +1,11 @@
-import { ChevronRight, ClipboardList, LogOut, UserRound } from 'lucide-react'
+import { ChevronRight, ClipboardList, LogOut, MessageCircle, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { useAuth } from '@/features/auth/AuthProvider'
+import { useChannelSettings, useCommunicationsKey } from '@/features/communications/api'
+import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -10,6 +13,13 @@ export function SettingsPage() {
   const { logout, user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const channels = useChannelSettings()
+  const communicationsKey = useCommunicationsKey()
+  const queryClient = useQueryClient()
+  const changeDefault = useMutation({
+    mutationFn: (provider: string) => apiRequest('/api/communications/channels/default', 'PUT', { provider }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...communicationsKey, 'channels'] }),
+  })
 
   async function submitLogout() {
     setError(null)
@@ -26,7 +36,16 @@ export function SettingsPage() {
   return (
     <section className="mx-auto min-h-screen w-full max-w-[1306px] px-5 pb-28 pt-[calc(env(safe-area-inset-top)+36px)] sm:px-8 lg:px-7 lg:py-8">
       <h1 className="text-[32px] font-semibold leading-tight lg:text-[36px]">Настройки</h1>
-      <nav aria-label="Настройки справочников" className={`${resourceSurfaceClass} mt-6 max-w-xl divide-y divide-border p-0`}>
+      <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Каналы</h2>
+      <section className={`${resourceSurfaceClass} mt-3 max-w-xl divide-y divide-border p-0`}>
+        <label className="flex min-h-16 items-center gap-3 px-5"><span className="flex-1">Канал по умолчанию для новых клиентов</span><select aria-label="Канал по умолчанию" className="bg-transparent text-primary" disabled={channels.isPending || changeDefault.isPending} onChange={(event) => changeDefault.mutate(event.target.value)} value={channels.data?.defaultProvider ?? user?.organization.defaultChannel ?? 'MAX'}>{channels.data?.providers.map(({ provider }) => <option key={provider} value={provider}>{provider === 'WHATSAPP' ? 'WhatsApp' : provider === 'TELEGRAM' ? 'Telegram' : provider}</option>)}</select></label>
+        <div className="flex min-h-16 items-center gap-3 px-5"><span className="flex-1">Доступные каналы</span><span className="text-primary">{channels.data?.providers.map(({ provider }) => provider === 'WHATSAPP' ? 'WhatsApp' : provider === 'TELEGRAM' ? 'Telegram' : provider).join(', ') || '—'}</span></div>
+        <Link className="flex min-h-16 items-center gap-3 px-5" to="/settings/message-templates"><MessageCircle className="size-5 text-primary" /><span className="flex-1">Шаблоны сообщений</span><span className="text-primary">Настроить</span><ChevronRight className="size-5 text-muted" /></Link>
+      </section>
+      {channels.error || changeDefault.error ? <p className="mt-3 text-sm text-danger" role="alert">{(channels.error ?? changeDefault.error)?.message}</p> : null}
+
+      <h2 className="mt-7 text-sm font-medium uppercase tracking-wide text-primary">Справочники</h2>
+      <nav aria-label="Настройки справочников" className={`${resourceSurfaceClass} mt-3 max-w-xl divide-y divide-border p-0`}>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/specialists"><UserRound className="size-5 text-primary" /><span className="flex-1">Специалисты</span><ChevronRight className="size-5 text-muted" /></Link>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/settings/services"><ClipboardList className="size-5 text-primary" /><span className="flex-1">Услуги</span><ChevronRight className="size-5 text-muted" /></Link>
         <Link className="flex min-h-16 items-center gap-3 px-5" to="/my-schedule"><UserRound className="size-5 text-primary" /><span className="flex-1">Моё расписание</span><ChevronRight className="size-5 text-muted" /></Link>

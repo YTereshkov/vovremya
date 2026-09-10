@@ -183,6 +183,22 @@ final class MaxChannelProviderTest extends TestCase
             'updates' => [['update_type' => 'message_callback', 'callback' => ['callback_id' => 'callback-user']]],
         ]));
     }
+
+    public function testBotStartedCarriesActivationToken(): void
+    {
+        $provider = new MaxChannelProvider(new RecordingMaxApiClient());
+        $events = $provider->parseWebhook([
+            'update_type' => 'bot_started',
+            'update_id' => 'start-1',
+            'user' => ['user_id' => 42],
+            'payload' => 'connect-token',
+        ]);
+
+        self::assertCount(1, $events);
+        self::assertSame('ACTIVATION', $events[0]->payload['kind']);
+        self::assertSame('42', $events[0]->payload['userId']);
+        self::assertSame('connect-token', $events[0]->payload['activationToken']);
+    }
 }
 
 final class RecordingMaxApiClient implements MaxApiClient

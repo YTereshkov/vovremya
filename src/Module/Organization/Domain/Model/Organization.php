@@ -22,6 +22,8 @@ final class Organization
         private string $name,
         #[ORM\Column(length: 64)]
         private string $timezone,
+        #[ORM\Column(name: 'default_channel', length: 16, options: ['default' => 'MAX'])]
+        private string $defaultChannel,
         #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE)]
         private DateTimeImmutable $createdAt,
     ) {
@@ -55,6 +57,7 @@ final class Organization
             $id ?? new Ulid(),
             $name,
             $timezone,
+            'MAX',
             $createdAt ?? new DateTimeImmutable(),
         );
     }
@@ -77,5 +80,19 @@ final class Organization
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function defaultChannel(): string
+    {
+        return $this->defaultChannel;
+    }
+
+    public function changeDefaultChannel(string $provider): void
+    {
+        $provider = strtoupper(trim($provider));
+        if (!in_array($provider, ['MAX', 'TELEGRAM', 'WHATSAPP'], true)) {
+            throw new \InvalidArgumentException('Выберите поддерживаемый канал по умолчанию.');
+        }
+        $this->defaultChannel = $provider;
     }
 }

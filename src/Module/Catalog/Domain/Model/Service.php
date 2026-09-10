@@ -35,6 +35,8 @@ final class Service implements OrganizationOwned
         private ?int $maximumDurationMinutes,
         #[ORM\Column(name: 'deleted_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
         private ?DateTimeImmutable $deletedAt,
+        #[ORM\Column(name: 'confirmation_template', type: Types::TEXT, nullable: true)]
+        private ?string $confirmationTemplate,
         #[ORM\Column(name: 'created_at', type: Types::DATETIMETZ_IMMUTABLE)]
         private DateTimeImmutable $createdAt,
     ) {
@@ -54,6 +56,7 @@ final class Service implements OrganizationOwned
             0,
             0,
             0,
+            null,
             null,
             new DateTimeImmutable('now', new DateTimeZone('UTC')),
         );
@@ -93,11 +96,32 @@ final class Service implements OrganizationOwned
         $this->deletedAt ??= new DateTimeImmutable('now', new DateTimeZone('UTC'));
     }
 
+    public function changeConfirmationTemplate(?string $template): void
+    {
+        $this->confirmationTemplate = null === $template ? null : $this->validateTemplate($template);
+    }
+
     public function id(): Ulid { return $this->id; }
     public function organizationId(): Ulid { return $this->organization->id(); }
     public function name(): string { return $this->name; }
     public function defaultDurationMinutes(): int { return $this->defaultDurationMinutes; }
     public function minimumDurationMinutes(): ?int { return $this->minimumDurationMinutes; }
     public function maximumDurationMinutes(): ?int { return $this->maximumDurationMinutes; }
+    public function confirmationTemplate(): ?string { return $this->confirmationTemplate; }
     public function deletedAt(): ?DateTimeImmutable { return $this->deletedAt; }
+
+    private function validateTemplate(string $template): string
+    {
+        $template = trim($template);
+        if ('' === $template || 4000 < mb_strlen($template)) {
+            throw new \InvalidArgumentException('Шаблон должен содержать от 1 до 4000 символов.');
+        }
+        preg_match_all('/\{([a-z_]+)\}/u', $template, $matches);
+        $unknown = array_diff(array_unique($matches[1] ?? []), ['date', 'time', 'service', 'client_name', 'contact_name']);
+        if ([] !== $unknown) {
+            throw new \InvalidArgumentException('Шаблон содержит неизвестную переменную: {'.reset($unknown).'}.');
+        }
+
+        return $template;
+    }
 }

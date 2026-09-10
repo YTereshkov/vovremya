@@ -1,4 +1,4 @@
-# Communications foundation: part 28
+# Communications: parts 28–31
 
 `Communications` owns provider-neutral notification intents, outbound messages,
 and the webhook inbox. The module does not know how MAX, Telegram, or WhatsApp
@@ -103,3 +103,36 @@ Outbound metadata currently has a strict allowlist containing only the safe
 diagnostic `source` string. Unknown, nested, credential-like, or recipient
 override values are rejected before persistence and the surviving safe metadata
 is passed unchanged to the provider adapter.
+
+## Message templates (part 29)
+
+`Communications` owns organization-wide templates for confirmation, transfer,
+and free-window messages. The supported variables are `{date}`, `{time}`,
+`{service}`, `{client_name}`, and `{contact_name}`. Unknown or malformed
+placeholders are rejected before persistence. Each type has a usable built-in
+Russian default, while an organization may save or restore its override.
+
+`Catalog.Service` may contain an optional confirmation-template override. It is
+used only for confirmation messages and takes precedence over the organization
+template; other message types always use their matching organization template.
+The UI exposes no separate template archive.
+
+## Channel connection lifecycle (part 30)
+
+An organization selects one configured provider as the default for new clients.
+Each client channel still records its own provider and recipient, which may be
+the client or an optional contact person. Provider capabilities returned by the
+backend are the only source for capability-dependent UI.
+
+MAX connections move through `PENDING`, `ACTIVE`, and `DISABLED`. Starting an
+activation creates a random, time-limited token and persists only its SHA-256
+hash. The official MAX deep link carries the opaque token; a matching
+`bot_started` webhook atomically consumes it and replaces the provisional
+address with the verified provider user identifier. The update is scoped by
+organization and connection, so replay, expiry, wrong-recipient, wrong-tenant,
+and concurrent second consumption cannot activate a connection.
+
+The connection-specific webhook routing key and secret must be provisioned by
+the provider integration before an activation link can be issued. Bot username,
+activation lifetime, API credential, and webhook secret material remain
+deployment/provider configuration and are never returned by settings APIs.

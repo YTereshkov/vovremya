@@ -42,6 +42,7 @@ final class AuthenticationController
                 'id' => $administrator->organization()->id()->toRfc4122(),
                 'name' => $administrator->organization()->name(),
                 'timezone' => $administrator->organization()->timezone(),
+                'defaultChannel' => $administrator->organization()->defaultChannel(),
             ],
         ]);
     }

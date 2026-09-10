@@ -19,6 +19,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\UniqueConstraint(name: 'uniq_channel_connections_owner_id', columns: ['organization_id', 'client_id', 'id'])]
 #[ORM\UniqueConstraint(name: 'uniq_channel_connections_webhook_route', columns: ['provider', 'webhook_routing_key'])]
 #[ORM\Index(name: 'idx_channel_connections_owner', columns: ['organization_id', 'client_id'])]
+#[ORM\Index(name: 'idx_channel_connections_activation', columns: ['organization_id', 'activation_token_hash'], options: ['where' => '(activation_token_hash IS NOT NULL)'])]
 final class ChannelConnection implements OrganizationOwned
 {
     private function __construct(
@@ -40,6 +41,10 @@ final class ChannelConnection implements OrganizationOwned
         private string $webhookRoutingKey,
         #[ORM\Column(name: 'webhook_secret_hash', length: 128, nullable: true)]
         private ?string $webhookSecretHash,
+        #[ORM\Column(name: 'activation_token_hash', length: 64, nullable: true)]
+        private ?string $activationTokenHash,
+        #[ORM\Column(name: 'activation_expires_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+        private ?DateTimeImmutable $activationExpiresAt,
         #[ORM\Column(options: ['default' => true])]
         private bool $active,
         #[ORM\Column(options: ['default' => false])]
@@ -67,6 +72,8 @@ final class ChannelConnection implements OrganizationOwned
             '',
             bin2hex(random_bytes(24)),
             null,
+            null,
+            null,
             false,
             false,
             new DateTimeImmutable('now', new DateTimeZone('UTC')),
@@ -87,6 +94,8 @@ final class ChannelConnection implements OrganizationOwned
             $this->active = false;
             $this->verified = false;
             $this->webhookSecretHash = null;
+            $this->activationTokenHash = null;
+            $this->activationExpiresAt = null;
         }
         $this->provider = $provider;
         $this->address = $address;
@@ -118,6 +127,22 @@ final class ChannelConnection implements OrganizationOwned
         return null !== $this->webhookSecretHash && hash_equals($this->webhookSecretHash, hash('sha256', $secret));
     }
 
-    public function deactivate(): void { $this->active = false; }
-    public function activate(): void { $this->active = true; $this->verified = true; }
+    public function startActivation(string $token, DateTimeImmutable $expiresAt): void
+    {
+        if (null === $this->webhookSecretHash) {
+            throw new \DomainException('Webhook для этого канала ещё не настроен.');
+        }
+        if ($expiresAt <= new DateTimeImmutable('now', new DateTimeZone('UTC'))) {
+            throw new \InvalidArgumentException('Срок подключения канала должен быть в будущем.');
+        }
+        $this->active = false;
+        $this->verified = false;
+        $this->activationTokenHash = hash('sha256', $token);
+        $this->activationExpiresAt = $expiresAt;
+    }
+
+    public function activationExpiresAt(): ?DateTimeImmutable { return $this->activationExpiresAt; }
+
+    public function deactivate(): void { $this->active = false; $this->verified = true; $this->activationTokenHash = null; $this->activationExpiresAt = null; }
+    public function activate(): void { $this->active = true; $this->verified = true; $this->activationTokenHash = null; $this->activationExpiresAt = null; }
 }

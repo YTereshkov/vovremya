@@ -388,6 +388,7 @@ final class WebhookControllerTest extends WebTestCase
         $this->entityManager->flush();
         $channel = ChannelConnection::create($client, null, 'MAX', '777');
         $channel->configureWebhookSecret('pending-secret');
+        $channel->startActivation('activation-token', new \DateTimeImmutable('+30 minutes'));
         $this->entityManager->persist($channel);
         $this->entityManager->flush();
 
@@ -402,7 +403,7 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
         );
-        $body = '{"update_type":"bot_started","update_id":"activation-1","user":{"user_id":777}}';
+        $body = '{"update_type":"bot_started","update_id":"activation-1","user":{"user_id":777},"payload":"activation-token"}';
         $response = $controller->receive('max', $channel->webhookRoutingKey(), Request::create('/', 'POST', server: [
             'HTTP_X_MAX_BOT_API_SECRET' => 'pending-secret',
             'CONTENT_TYPE' => 'application/json',

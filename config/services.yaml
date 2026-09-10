@@ -42,6 +42,9 @@ services:
     App\Module\Clients\Application\ChannelConnectionResolver:
         alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
 
+    App\Module\Clients\Application\ChannelActivationLinkFactory:
+        alias: App\Module\Communications\Infrastructure\Provider\ChannelActivationLinkFactory
+
     App\Module\Workforce\Application\WorkforceStore:
         alias: App\Module\Workforce\Infrastructure\Persistence\DoctrineWorkforceStore
 
@@ -77,3 +80,6 @@ services:
 
     App\Module\Communications\Application\NormalizedWebhookEventStore:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrineNormalizedWebhookEventSink
+
+    App\Module\Communications\Application\MessageTemplateStore:
+        alias: App\Module\Communications\Infrastructure\Persistence\DoctrineMessageTemplateStore

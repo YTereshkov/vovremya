@@ -89,6 +89,46 @@ final readonly class DoctrineClientStore implements ClientStore, ChannelConnecti
         return $result instanceof ChannelConnection ? $result : null;
     }
 
+    public function activatePendingChannelForTenant(Ulid $id, string $token, string $address): ?ChannelConnection
+    {
+        $address = trim($address);
+        if ('' === $address || 254 < mb_strlen($address)) {
+            return null;
+        }
+        $affected = $this->entityManager->getConnection()->executeStatement(
+            <<<'SQL'
+                UPDATE channel_connections
+                SET address = :address,
+                    active = TRUE,
+                    verified = TRUE,
+                    activation_token_hash = NULL,
+                    activation_expires_at = NULL
+                WHERE organization_id = :organization
+                  AND id = :id
+                  AND active = FALSE
+                  AND verified = FALSE
+                  AND activation_token_hash = :token_hash
+                  AND activation_expires_at >= clock_timestamp()
+                SQL,
+            [
+                'address' => $address,
+                'organization' => $this->organizationContext->currentId()->toRfc4122(),
+                'id' => $id->toRfc4122(),
+                'token_hash' => hash('sha256', $token),
+            ],
+        );
+        if (1 !== $affected) {
+            return null;
+        }
+
+        $channel = $this->findChannelForTenant($id);
+        if (null !== $channel) {
+            $this->entityManager->refresh($channel);
+        }
+
+        return $channel;
+    }
+
     public function save(OrganizationOwned ...$entities): void
     {
         foreach ($entities as $entity) {

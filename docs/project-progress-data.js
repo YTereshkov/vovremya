@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Часть 31 требует проверки зависимостей',
+    state: 'Пачка 13 завершена',
     currentBatch: 13,
     currentPart: 31,
-    currentItem: 'MAX adapter hardened · части 29–30 ещё не завершены',
+    currentItem: 'Шаблоны, lifecycle каналов и MAX adapter завершены',
     updatedAt: '2026-09-09',
   },
   statusLabels: {
@@ -15,18 +15,19 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 13 · Часть 31',
+    title: 'Пачка 13 · Части 29–31',
     items: [
       'Пачка 11 завершена: регулярные правила управляются от формы до календаря.',
       'Communications foundation завершён: outbox, webhook inbox и provider contracts готовы.',
       'MAX adapter hardened: tenant-bound routing, recipient validation, stable event handoff, secure outbox и curl runtime готовы.',
       'Normalized-event processing атомарно фиксирует business transition и PROCESSED; отключённый MAX-канал webhook-ом не реактивируется.',
-      'Минимальный channel lifecycle и normalized-event consumer добавлены; полноценные части 29–30 ещё требуют отдельного завершения.',
+      'Общие и сервисные шаблоны используют утверждённые {variable} placeholders.',
+      'ChannelConnection поддерживает tenant-bound одноразовую активацию и реальные capabilities провайдера.',
     ],
-    description: 'MAX adapter исправлен по security/reliability review; lifecycle и consumer foundation добавлены, финальное закрытие зависит от полного объёма частей 29–30.',
-    outcome: 'MAX outbound/inbound flow tenant-bound, callbacks проверяют recipient и активность канала, credentials не попадают в outbox, normalized events имеют атомарный durable processing lifecycle с DB-инвариантами.',
+    description: 'Communications foundation дополнен шаблонами, подключением клиентских каналов и завершённым MAX adapter.',
+    outcome: 'Шаблоны и каналы работают от PostgreSQL/API до responsive UI; MAX activation, inbound и outbound flow tenant-bound и защищены от replay/concurrency.',
   },
-  nextPartNumbers: [29, 30, 31, 32, 33],
+  nextPartNumbers: [32, 33, 34, 35],
   batches: [
     {
       number: 1,
@@ -126,11 +127,11 @@ window.PROJECT_PROGRESS = {
       title: 'Communications foundation, шаблоны и подключения',
       parts: [
         { number: 28, title: 'Communications foundation', status: 'done', completedAt: '2026-09-08', result: 'Добавлены notification intents, transactional outbox, конкурентно-идемпотентный webhook inbox, authenticated provider contracts, processing leases и scheduled recovery.' },
-        { number: 29, title: 'Шаблоны сообщений', status: 'pending' },
-        { number: 30, title: 'Подключение каналов и capabilities', status: 'in_progress', result: 'Добавлен минимальный pending/verified lifecycle и tenant-scoped webhook secret configuration; полный adapter lifecycle ещё впереди.' },
+        { number: 29, title: 'Шаблоны сообщений', status: 'done', completedAt: '2026-09-09', result: 'Добавлены общие шаблоны, утверждённые {variable} placeholders, preview и сервисный override подтверждения.' },
+        { number: 30, title: 'Подключение каналов и capabilities', status: 'done', completedAt: '2026-09-09', result: 'Добавлены default channel, recipient-bound ChannelConnection lifecycle, одноразовая MAX activation и capabilities-driven UI.' },
       ],
     },
-    { number: 13, title: 'MAX', parts: [{ number: 31, title: 'MAX adapter', status: 'review', result: 'Security/reliability hardening завершён; финальное закрытие зависит от частей 29–30 (templates и channel lifecycle).' }] },
+    { number: 13, title: 'MAX', parts: [{ number: 31, title: 'MAX adapter', status: 'done', completedAt: '2026-09-09', result: 'MAX outbound/inbound flow использует tenant-bound connection, stable event ids, secure outbox и атомарную normalized-event обработку.' }] },
     {
       number: 14,
       title: 'Подтверждения и ответы клиента',
@@ -239,6 +240,9 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-09', title: 'Шаблоны используют утверждённые placeholders', text: 'Поддерживаются {date}, {time}, {service}, {client_name}, {contact_name}; неизвестные переменные отклоняются, а шаблон услуги имеет приоритет только для подтверждения.' },
+    { date: '2026-09-09', title: 'Активация канала одноразовая и tenant-bound', text: 'В БД хранится только SHA-256 activation token с expiry; bot_started атомарно активирует ровно одну scoped connection, повторное и конкурентное использование невозможно.' },
+    { date: '2026-09-09', title: 'Capabilities приходят от активного adapter', text: 'Организационный default channel можно выбрать только среди настроенных providers, а UI не предполагает неподтверждённые возможности доставки, чтения или редактирования.' },
     { date: '2026-09-08', title: 'Зависшая обработка восстанавливается по lease', text: 'Outbound и webhook claims имеют пятиминутный processing lease; Scheduler повторно публикует необработанные и просроченные записи без потери tenant scope.' },
     { date: '2026-09-08', title: 'Webhook аутентифицируется до сохранения', text: 'Настроенный provider проверяет raw body и headers до JSON decode и записи inbox; endpoint ограничен rate limit и размером 256 KiB.' },
     { date: '2026-09-08', title: 'Сообщения проходят через transactional outbox', text: 'NotificationIntent и OutboundMessage сохраняются одной транзакцией; scheduler публикует pending-записи, а Redis/Messenger не являются источником истины.' },
@@ -258,5 +262,5 @@ window.PROJECT_PROGRESS = {
     { date: '2026-09-07', title: 'Дополнительный рабочий день дополняет неделю', text: 'Date-specific интервал специалиста добавляется к недельным часам, а не заменяет их.' },
     { date: '2026-09-07', title: 'Tenant ownership защищён на двух уровнях', text: 'Application stores всегда scoped текущей организацией; составные foreign keys с organization_id запрещают cross-tenant связи в PostgreSQL.' },
   ],
-  blockers: ['Часть 31 не закрыта финально: часть 29 и полный объём части 30 (шаблоны и lifecycle подключений) ещё не завершены.'],
+  blockers: [],
 }

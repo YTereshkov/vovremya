@@ -185,6 +185,29 @@ final readonly class ClientController
         });
     }
 
+    #[Route('/{id}/channels/{channelId}/activation', methods: ['POST'])]
+    public function activateChannel(string $id, string $channelId, Request $request): JsonResponse
+    {
+        return $this->respond(function () use ($id, $channelId, $request): array {
+            $this->checkCsrf($request);
+            $client = $this->owned($id);
+
+            return $this->directory->startChannelActivation($client, $channelId);
+        });
+    }
+
+    #[Route('/{id}/channels/{channelId}/deactivate', methods: ['POST'])]
+    public function deactivateChannel(string $id, string $channelId, Request $request): JsonResponse
+    {
+        return $this->respond(function () use ($id, $channelId, $request): array {
+            $this->checkCsrf($request);
+            $client = $this->owned($id);
+            $this->directory->deactivateChannel($client, $channelId);
+
+            return $this->directory->details($client);
+        });
+    }
+
     private function owned(string $id, string $permission = OrganizationPermission::EDIT): Client
     {
         $client = $this->directory->find($id);

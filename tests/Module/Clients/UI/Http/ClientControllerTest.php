@@ -142,6 +142,56 @@ final class ClientControllerTest extends WebTestCase
         }
     }
 
+    public function testMaxActivationLinkAndDisableLifecycleAreTenantScoped(): void
+    {
+        $client = $this->createClientRecord('Получатель MAX');
+        $withChannel = $this->send('POST', '/api/clients/'.$client['id'].'/channels', [
+            'contactPersonId' => null, 'provider' => 'MAX', 'address' => '+7 900 000-00-00', 'primary' => true,
+        ]);
+        $channelId = $withChannel['channels'][0]['id'];
+
+        $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
+        self::assertResponseStatusCodeSame(409);
+        $this->send('PUT', "/api/clients/{$client['id']}/channels/$channelId/webhook-secret", ['secret' => 'connection-secret']);
+        $activation = $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
+        self::assertResponseIsSuccessful();
+        self::assertStringStartsWith('https://max.ru/VovremyaTestBot?start=', $activation['url']);
+        self::assertNotEmpty($activation['expiresAt']);
+        parse_str((string) parse_url($activation['url'], PHP_URL_QUERY), $query);
+        self::assertIsString($query['start'] ?? null);
+
+        $context = self::getContainer()->get(\App\Module\Organization\Application\OrganizationContext::class);
+        $resolver = self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class);
+        $activated = $context->runWith(
+            $this->administrator->organizationId(),
+            fn () => $resolver->activatePendingChannelForTenant(\Symfony\Component\Uid\Ulid::fromString($channelId), $query['start'], '123456789'),
+        );
+        self::assertNull($context->runWith(
+            $this->administrator->organizationId(),
+            fn () => $resolver->activatePendingChannelForTenant(\Symfony\Component\Uid\Ulid::fromString($channelId), $query['start'], '999'),
+        ));
+        self::assertSame('123456789', $activated?->address());
+        self::assertTrue($activated?->isActive());
+
+        $expiredActivation = $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
+        parse_str((string) parse_url($expiredActivation['url'], PHP_URL_QUERY), $expiredQuery);
+        $this->entityManager->getConnection()->executeStatement(
+            "UPDATE channel_connections SET activation_expires_at = clock_timestamp() - INTERVAL '1 minute' WHERE id = ?",
+            [$channelId],
+        );
+        self::assertNull($context->runWith(
+            $this->administrator->organizationId(),
+            fn () => $resolver->activatePendingChannelForTenant(\Symfony\Component\Uid\Ulid::fromString($channelId), (string) $expiredQuery['start'], '123456789'),
+        ));
+
+        $disabled = $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/deactivate");
+        self::assertSame('DISABLED', $disabled['channels'][0]['status']);
+
+        $this->login($this->otherAdministrator);
+        $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testValidationAndCsrf(): void
     {
         $this->client->jsonRequest('POST', '/api/clients', ['name' => 'Test']);

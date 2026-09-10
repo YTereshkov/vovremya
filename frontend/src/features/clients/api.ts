@@ -21,6 +21,8 @@ export interface ChannelConnection {
   recipientId: string
   recipientName: string
   primary: boolean
+  status: 'PENDING' | 'ACTIVE' | 'DISABLED'
+  activationExpiresAt: string | null
 }
 
 export interface ClientRecord {

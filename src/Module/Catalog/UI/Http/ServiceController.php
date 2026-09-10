@@ -40,7 +40,7 @@ final readonly class ServiceController
     {
         return $this->respond(function () use ($request, $actor): array {
             $data = $this->body($request);
-            $service = $this->catalog->create($actor, $this->string($data, 'name'), ...$this->durations($data));
+            $service = $this->catalog->create($actor, $this->string($data, 'name'), ...[...$this->durations($data), $this->nullableString($data, 'confirmationTemplate')]);
 
             return $this->catalog->present($service);
         }, 201);
@@ -52,7 +52,7 @@ final readonly class ServiceController
         return $this->respond(function () use ($id, $request): array {
             $service = $this->owned($id);
             $data = $this->body($request);
-            $this->catalog->update($service, $this->string($data, 'name'), ...$this->durations($data));
+            $this->catalog->update($service, $this->string($data, 'name'), ...[...$this->durations($data), $this->nullableString($data, 'confirmationTemplate')]);
 
             return $this->catalog->present($service);
         });
@@ -88,7 +88,7 @@ final readonly class ServiceController
         } catch (\JsonException) {
             throw new \InvalidArgumentException('Некорректный JSON.');
         }
-        if (!is_array($data) || array_is_list($data) || array_diff(array_keys($data), ['name', 'defaultDurationMinutes', 'minimumDurationMinutes', 'maximumDurationMinutes'])) {
+        if (!is_array($data) || array_is_list($data) || array_diff(array_keys($data), ['name', 'defaultDurationMinutes', 'minimumDurationMinutes', 'maximumDurationMinutes', 'confirmationTemplate'])) {
             throw new \InvalidArgumentException('Некорректные поля запроса.');
         }
 
@@ -110,6 +110,16 @@ final readonly class ServiceController
         }
 
         return $data[$key];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function nullableString(array $data, string $key): ?string
+    {
+        if (null !== ($data[$key] ?? null) && !is_string($data[$key])) {
+            throw new \InvalidArgumentException('Некорректное текстовое поле.');
+        }
+
+        return $data[$key] ?? null;
     }
 
     /** @param array<string, mixed> $data
