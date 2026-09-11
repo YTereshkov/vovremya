@@ -8,6 +8,8 @@ use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Clients\Application\ClientStore;
 use App\Module\Clients\Application\NotificationRecipient;
 use App\Module\Clients\Application\NotificationRecipientResolver;
+use App\Module\Clients\Application\WaitingClientProfile;
+use App\Module\Clients\Application\WaitingClientReader;
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
 use App\Module\Clients\Domain\Model\ClientAbsence;
@@ -16,11 +18,12 @@ use App\Module\Organization\Application\OrganizationContext;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
 use App\Shared\Domain\MultiTenancy\OrganizationOwned;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class DoctrineClientStore implements ClientStore, ChannelConnectionResolver, NotificationRecipientResolver
+final readonly class DoctrineClientStore implements ClientStore, ChannelConnectionResolver, NotificationRecipientResolver, WaitingClientReader
 {
     public function __construct(private EntityManagerInterface $entityManager, private OrganizationContext $organizationContext)
     {
@@ -174,6 +177,43 @@ final readonly class DoctrineClientStore implements ClientStore, ChannelConnecti
             $client->name(),
             $contactName,
         );
+    }
+
+    public function availableProfiles(array $clientIds, \DateTimeImmutable $localDate): array
+    {
+        if ([] === $clientIds) {
+            return [];
+        }
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            <<<'SQL'
+                SELECT client.id, client.name
+                FROM clients client
+                WHERE client.organization_id = :organization
+                  AND client.id IN (:client_ids)
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM client_absences absence
+                      WHERE absence.organization_id = client.organization_id
+                        AND absence.client_id = client.id
+                        AND absence.starts_on <= :local_date
+                        AND absence.ends_on >= :local_date
+                  )
+                ORDER BY client.name, client.id
+                SQL,
+            [
+                'organization' => $this->organizationContext->currentId()->toRfc4122(),
+                'client_ids' => array_map(static fn (Ulid $id): string => $id->toRfc4122(), $clientIds),
+                'local_date' => $localDate->format('Y-m-d'),
+            ],
+            ['client_ids' => ArrayParameterType::STRING],
+        );
+        $profiles = [];
+        foreach ($rows as $row) {
+            $profile = new WaitingClientProfile(Ulid::fromString((string) $row['id']), (string) $row['name']);
+            $profiles[$profile->id->toRfc4122()] = $profile;
+        }
+
+        return $profiles;
     }
 
     public function save(OrganizationOwned ...$entities): void

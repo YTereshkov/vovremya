@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CalendarOff, ChevronRight, ExternalLink, MessageCircle, Pencil, Phone, Plus, Power, Star, Trash2, UserRound } from 'lucide-react'
+import { CalendarClock, CalendarOff, ChevronRight, ExternalLink, MessageCircle, Pencil, Phone, Plus, Power, Star, Trash2, UserRound } from 'lucide-react'
 
 import { useClient, useClientsKey, type ChannelProvider, type ClientRecord } from '@/features/clients/api'
 import { useChannelSettings } from '@/features/communications/api'
@@ -67,6 +67,7 @@ export function ClientPage() {
       </section>
 
       <Link className={`${resourceSurfaceClass} flex min-h-14 items-center gap-3`} to={`/clients/${id}/absence`}><CalendarOff className="size-5 text-warning" /><span className="flex-1">Оформить отсутствие</span><ChevronRight className="size-5 text-muted" /></Link>
+      <Link className={`${resourceSurfaceClass} flex min-h-14 items-center gap-3`} to={`/clients/${id}/waiting-list`}><CalendarClock className="size-5 text-primary" /><span className="flex-1">Настроить ожидание</span><ChevronRight className="size-5 text-muted" /></Link>
       <Link className={`${resourceSurfaceClass} flex min-h-14 items-center gap-3`} to={`/clients/${id}/edit`}><Pencil className="size-5 text-primary" /><span className="flex-1">Редактировать клиента</span><ChevronRight className="size-5 text-muted" /></Link>
       <button className="flex min-h-11 items-center gap-2 px-2 text-danger" onClick={() => setConfirmDelete(true)}><Trash2 className="size-5" />Удалить клиента</button>
     </div>

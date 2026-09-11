@@ -30,9 +30,12 @@ test('records client cancellation and exposes one managed free window', async ({
   await page.getByLabel('Начало').fill('15:00')
   await page.getByRole('button', { name: 'Создать занятие', exact: true }).click()
   await page.getByRole('link', { name: 'Открыть занятие', exact: true }).click()
-  await page.getByRole('link', { name: 'Указать результат', exact: true }).click()
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/appointments\/[^/]+\/result$/.test(new URL(response.url()).pathname) && response.request().method() === 'GET' && response.ok()),
+    page.getByRole('link', { name: 'Указать результат', exact: true }).click(),
+  ])
   await expect(page.getByRole('heading', { name: 'Результат занятия', exact: true })).toBeVisible()
-  await page.getByLabel('Отменено клиентом', { exact: true }).check()
+  await expect(page.getByLabel('Отменено клиентом', { exact: true })).toBeChecked()
   await page.getByLabel('Создать разовое свободное окно').check()
   await page.getByLabel('Комментарий').fill('Клиент предупредил заранее')
   await page.getByRole('button', { name: 'Сохранить результат', exact: true }).click()
@@ -40,10 +43,22 @@ test('records client cancellation and exposes one managed free window', async ({
   await expect(page.getByText('Клиент предупредил заранее', { exact: true })).toBeVisible()
   await expect(page.getByText('Результат занятия изменён', { exact: true })).toBeVisible()
 
+  let candidateRequests = 0
+  page.on('request', (request) => {
+    if (/\/api\/free-windows\/[^/]+\/candidates$/.test(new URL(request.url()).pathname)) candidateRequests++
+  })
   await page.goto('/waiting')
   await expect(page.getByRole('heading', { name: 'Ожидание', exact: true })).toBeVisible()
   await expect(page.getByText('Логопедическое занятие', { exact: true })).toBeVisible()
   await expect(page.getByText('15:00–15:45', { exact: true })).toBeVisible()
+  expect(candidateRequests).toBe(0)
+
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/free-windows\/[^/]+\/candidates$/.test(new URL(response.url()).pathname) && response.ok()),
+    page.getByRole('button', { name: 'Показать подходящих клиентов', exact: true }).click(),
+  ])
+  expect(candidateRequests).toBe(1)
+  await expect(page.getByRole('button', { name: 'Скрыть подходящих клиентов', exact: true })).toBeVisible()
 
   expect(pageErrors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

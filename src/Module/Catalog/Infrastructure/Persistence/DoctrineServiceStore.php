@@ -34,6 +34,17 @@ final readonly class DoctrineServiceStore implements ServiceStore, ServiceNotifi
         return $result instanceof Service ? $result : null;
     }
 
+    public function find(Ulid $id): ?Service
+    {
+        $result = $this->entityManager->createQueryBuilder()
+            ->select('service')->from(Service::class, 'service')
+            ->andWhere('IDENTITY(service.organization) = :organization')->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->andWhere('service.id = :id')->setParameter('id', $id, 'ulid')
+            ->getQuery()->getOneOrNullResult();
+
+        return $result instanceof Service ? $result : null;
+    }
+
     public function save(Service $service): void
     {
         if (!OrganizationIsolation::belongsTo($this->organizationContext->currentId(), $service)) {

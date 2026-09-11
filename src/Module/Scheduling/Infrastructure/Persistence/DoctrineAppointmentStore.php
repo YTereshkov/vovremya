@@ -6,6 +6,8 @@ namespace App\Module\Scheduling\Infrastructure\Persistence;
 
 use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Scheduling\Application\AppointmentStore;
+use App\Module\Scheduling\Application\EarlierAppointmentCandidate;
+use App\Module\Scheduling\Application\EarlierAppointmentCandidateSource;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentEvent;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
@@ -13,7 +15,7 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Ulid;
 
-final readonly class DoctrineAppointmentStore implements AppointmentStore
+final readonly class DoctrineAppointmentStore implements AppointmentStore, EarlierAppointmentCandidateSource
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -109,6 +111,26 @@ final readonly class DoctrineAppointmentStore implements AppointmentStore
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+    }
+
+    public function laterAppointments(Ulid $specialistId, Ulid $serviceId, \DateTimeImmutable $after, \DateTimeImmutable $before): array
+    {
+        $appointments = $this->appointmentQuery()
+            ->andWhere('appointment.specialistId = :specialist')->setParameter('specialist', $specialistId, 'ulid')
+            ->andWhere('appointment.serviceId = :service')->setParameter('service', $serviceId, 'ulid')
+            ->andWhere('appointment.startsAt > :after')->setParameter('after', $after, 'datetimetz_immutable')
+            ->andWhere('appointment.startsAt < :before')->setParameter('before', $before, 'datetimetz_immutable')
+            ->andWhere('appointment.planningStatus = :status')->setParameter('status', 'PLANNED')
+            ->andWhere('appointment.resultStatus IS NULL')
+            ->orderBy('appointment.startsAt', 'ASC')->addOrderBy('appointment.id', 'ASC')
+            ->getQuery()->getResult();
+
+        return array_map(static fn (Appointment $appointment): EarlierAppointmentCandidate => new EarlierAppointmentCandidate(
+            $appointment->id(),
+            $appointment->clientId(),
+            $appointment->startsAt(),
+            $appointment->durationMinutes(),
+        ), $appointments);
     }
 
     public function history(Ulid $appointmentId): array

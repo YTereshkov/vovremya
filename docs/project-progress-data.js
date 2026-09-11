@@ -1,11 +1,11 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 17 завершена',
-    currentBatch: 17,
-    currentPart: 40,
-    currentItem: 'Перенос без резервирования завершён',
-    updatedAt: '2026-09-10',
+    state: 'Пачка 18 завершена',
+    currentBatch: 18,
+    currentPart: 42,
+    currentItem: 'Waiting List и matching завершены',
+    updatedAt: '2026-09-11',
   },
   statusLabels: {
     done: 'Выполнено',
@@ -15,18 +15,19 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 17 · Части 39–40',
+    title: 'Пачка 18 · Части 41–42',
     items: [
-      'TransferRequest и TransferOption хранят tenant-bound lifecycle и одноразовые callback actions без автоматического timeout.',
-      'Предложенные варианты не создают ScheduleAllocation и остаются доступны для обычной записи.',
-      'При выборе availability проверяется повторно; PostgreSQL exclusion constraint остаётся окончательной гарантией.',
-      'Успешный перенос сохраняет исходный Appointment как RESCHEDULED и создаёт новый Appointment со snapshot услуги.',
-      'Перенос отдельного occurrence не изменяет RegularSchedule; история показывает исходное и новое время.',
+      'Waiting List хранит услугу, частоту, дни, локальные интервалы, дату начала и готовность к разовым окнам.',
+      'Специалист опционален; в режиме одного специалиста поле не перегружает интерфейс.',
+      'Matching сначала показывает поздние занятия, которые можно сдвинуть раньше, затем других подходящих клиентов.',
+      'Подбор учитывает текущую длительность услуги, доступность клиента и повторную availability check.',
+      'Кандидаты загружаются только после раскрытия конкретного окна, без N запросов при открытии страницы.',
+      'Расчёт кандидатов не создаёт Offer, reservation или ScheduleAllocation.',
     ],
-    description: 'Перенос работает сквозным tenant-scoped контуром от кнопки клиента и формы администратора до конкурентно безопасного выбора.',
-    outcome: 'Несколько вариантов предлагаются без резервирования, а окончательный перенос атомарно занимает только реально свободное время.',
+    description: 'Waiting List и рекомендации для явных FreeWindow работают сквозным tenant-scoped контуром от настройки клиента до двух упорядоченных групп кандидатов.',
+    outcome: 'Администратор видит подходящих кандидатов без преждевременного бронирования; фактическое предложение остаётся scope следующей пачки.',
   },
-  nextPartNumbers: [41, 42, 43],
+  nextPartNumbers: [43, 44, 45],
   batches: [
     {
       number: 1,
@@ -168,8 +169,8 @@ window.PROJECT_PROGRESS = {
       number: 18,
       title: 'Waiting List и matching',
       parts: [
-        { number: 41, title: 'Waiting List', status: 'pending' },
-        { number: 42, title: 'Matching и сдвиг позднего клиента раньше', status: 'pending' },
+        { number: 41, title: 'Waiting List', status: 'done', completedAt: '2026-09-11', result: 'Добавлены tenant-scoped настройки ожидания, опциональный специалист, дни, время, частота и готовность к разовым окнам.' },
+        { number: 42, title: 'Matching и сдвиг позднего клиента раньше', status: 'done', completedAt: '2026-09-11', result: 'FreeWindow показывает сначала переносимых раньше клиентов, затем подходящий Waiting List без reservation и allocations.' },
       ],
     },
     { number: 19, title: 'Предложения разовых окон', parts: [{ number: 43, title: 'Offers для FreeWindow', status: 'pending' }] },
@@ -202,6 +203,17 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-11',
+      items: [
+        'Завершена пачка 18: Waiting List и matching кандидатов для разового FreeWindow.',
+        'Настройка ожидания поддерживает услугу, опционального специалиста, частоту, дни, время и дату начала.',
+        'Кандидаты разделены на переносимых раньше и других подходящих клиентов; отсутствие клиента исключает match.',
+        'Matching использует текущую длительность услуги и повторную availability check, не создавая Offer или reservation.',
+        'Кандидаты загружаются лениво после раскрытия конкретного FreeWindow.',
+        'Responsive UI и E2E покрывают настройку ожидания на desktop и mobile.',
+      ],
+    },
     {
       date: '2026-09-10',
       items: [
@@ -276,6 +288,11 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-11', title: 'Waiting List хранит одно активное ожидание клиента', text: 'Активная конфигурация связывает клиента с услугой, опциональным специалистом, частотой и локальными интервалами; завершение сохраняет историю и допускает новое ожидание.' },
+    { date: '2026-09-11', title: 'Matching использует текущую длительность услуги', text: 'Изменение default duration влияет на будущий подбор Waiting List; существующие Appointment сохраняют собственный snapshot.' },
+    { date: '2026-09-11', title: 'Поздний клиент имеет приоритет в подсказке', text: 'Сначала показываются подходящие более поздние Appointment того же дня, специалиста и услуги, затем другие клиенты из Waiting List.' },
+    { date: '2026-09-11', title: 'Matching не резервирует время', text: 'Расчёт кандидатов не создаёт Offer, ScheduleAllocation или сообщение; OFFER_RESERVATION допускается только в будущих FreeWindow/PermanentPlace Offers.' },
+    { date: '2026-09-11', title: 'Разовое окно не уменьшает постоянную потребность', text: 'Готовность клиента принять разовый FreeWindow не изменяет частоту и lifecycle его Waiting List.' },
     { date: '2026-09-10', title: 'TransferOption не резервирует время', text: 'Предложенные интервалы не создают ScheduleAllocation и остаются доступны для обычной записи; OFFER_RESERVATION используется только будущими предложениями FreeWindow/PermanentPlace.' },
     { date: '2026-09-10', title: 'Перенос подтверждается повторной availability check', text: 'Финальный выбор атомарно освобождает исходный allocation и создаёт новый APPOINTMENT allocation; PostgreSQL exclusion constraint преобразует конкурентный проигрыш во «время уже недоступно».' },
     { date: '2026-09-10', title: 'TransferRequest не имеет автоматического timeout', text: 'Запрос закрывается выбором, отказом, отменой администратора либо изменением lifecycle исходного занятия; Scheduler его по возрасту не завершает.' },

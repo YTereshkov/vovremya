@@ -9,6 +9,8 @@ use Symfony\Component\Uid\Ulid;
 
 interface FreeWindowStore
 {
+    public function find(Ulid $id): ?FreeWindow;
+
     public function findBySourceAppointment(Ulid $appointmentId): ?FreeWindow;
 
     /** @return list<FreeWindow> */

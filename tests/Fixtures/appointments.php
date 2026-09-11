@@ -52,6 +52,8 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             continue;
         }
         $connection->transactional(static function () use ($connection, $id): void {
+            $connection->executeStatement('DELETE FROM waiting_list_availability WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM waiting_list_entries WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM free_windows WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM transfer_options WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM transfer_requests WHERE organization_id = ?', [$id]);

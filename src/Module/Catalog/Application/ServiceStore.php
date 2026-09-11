@@ -14,5 +14,7 @@ interface ServiceStore
 
     public function findActive(Ulid $id): ?Service;
 
+    public function find(Ulid $id): ?Service;
+
     public function save(Service $service): void;
 }

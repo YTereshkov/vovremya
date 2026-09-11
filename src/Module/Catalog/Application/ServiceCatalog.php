@@ -31,6 +31,24 @@ final readonly class ServiceCatalog
         return $this->store->findActive($serviceId) ?? throw new \OutOfBoundsException('Услуга не найдена.');
     }
 
+    /** @return array{id: string, name: string, durationMinutes: int, active: bool} */
+    public function reference(string $id): array
+    {
+        try {
+            $serviceId = Ulid::fromString($id);
+        } catch (\InvalidArgumentException) {
+            throw new \OutOfBoundsException('Услуга не найдена.');
+        }
+        $service = $this->store->find($serviceId) ?? throw new \OutOfBoundsException('Услуга не найдена.');
+
+        return [
+            'id' => $service->id()->toRfc4122(),
+            'name' => $service->name(),
+            'durationMinutes' => $service->defaultDurationMinutes(),
+            'active' => null === $service->deletedAt(),
+        ];
+    }
+
     public function create(AdministratorAccount $actor, string $name, int $default, ?int $minimum, ?int $maximum, ?string $confirmationTemplate = null): Service
     {
         $service = Service::create($actor->organization(), $name, $default, $minimum, $maximum);

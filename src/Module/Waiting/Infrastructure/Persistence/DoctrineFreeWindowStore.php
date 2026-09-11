@@ -17,10 +17,16 @@ final readonly class DoctrineFreeWindowStore implements FreeWindowStore
     {
     }
 
+    public function find(Ulid $id): ?FreeWindow
+    {
+        $window = $this->query()->andWhere('window.id = :id')->setParameter('id', $id, 'ulid')->getQuery()->getOneOrNullResult();
+
+        return $window instanceof FreeWindow ? $window : null;
+    }
+
     public function findBySourceAppointment(Ulid $appointmentId): ?FreeWindow
     {
-        $window = $this->entityManager->createQueryBuilder()->select('window')->from(FreeWindow::class, 'window')
-            ->andWhere('IDENTITY(window.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid')
+        $window = $this->query()
             ->andWhere('window.sourceAppointmentId = :appointment')->setParameter('appointment', $appointmentId, 'ulid')
             ->getQuery()->getOneOrNullResult();
 
@@ -29,8 +35,7 @@ final readonly class DoctrineFreeWindowStore implements FreeWindowStore
 
     public function openFuture(\DateTimeImmutable $now): array
     {
-        return $this->entityManager->createQueryBuilder()->select('window')->from(FreeWindow::class, 'window')
-            ->andWhere('IDENTITY(window.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid')
+        return $this->query()
             ->andWhere('window.status = :status')->setParameter('status', 'OPEN')
             ->andWhere('window.startsAt > :now')->setParameter('now', $now, 'datetimetz_immutable')
             ->orderBy('window.startsAt', 'ASC')->addOrderBy('window.id', 'ASC')
@@ -44,5 +49,11 @@ final readonly class DoctrineFreeWindowStore implements FreeWindowStore
         }
         $this->entityManager->persist($window);
         $this->entityManager->flush();
+    }
+
+    private function query(): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->entityManager->createQueryBuilder()->select('window')->from(FreeWindow::class, 'window')
+            ->andWhere('IDENTITY(window.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid');
     }
 }

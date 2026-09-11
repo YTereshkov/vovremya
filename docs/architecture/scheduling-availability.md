@@ -201,6 +201,11 @@ open windows repeats current Scheduling availability, so a subsequently booked
 or otherwise unavailable interval is not offered as free. Reservation belongs
 only to later FreeWindow/PermanentPlace offers through `OFFER_RESERVATION`.
 
+Candidate selection for an open FreeWindow is documented in
+[`waiting-list.md`](waiting-list.md). It remains a read-only recommendation:
+neither a later appointment candidate nor a Waiting List match creates an
+allocation or reserves the interval.
+
 ## Absence effects
 
 Specialist and client absence use cases first preview tenant-scoped planned

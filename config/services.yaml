@@ -48,6 +48,9 @@ services:
     App\Module\Clients\Application\NotificationRecipientResolver:
         alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
 
+    App\Module\Clients\Application\WaitingClientReader:
+        alias: App\Module\Clients\Infrastructure\Persistence\DoctrineClientStore
+
     App\Module\Clients\Application\ChannelActivationLinkFactory:
         alias: App\Module\Communications\Infrastructure\Provider\ChannelActivationLinkFactory
 
@@ -61,6 +64,9 @@ services:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineScheduleAllocationStore
 
     App\Module\Scheduling\Application\AppointmentStore:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentStore
+
+    App\Module\Scheduling\Application\EarlierAppointmentCandidateSource:
         alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineAppointmentStore
 
     App\Module\Scheduling\Application\SchedulingSettingsStore:
@@ -104,6 +110,9 @@ services:
 
     App\Module\Waiting\Application\FreeWindowStore:
         alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowStore
+
+    App\Module\Waiting\Application\WaitingListStore:
+        alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineWaitingListStore
 
     App\Module\Communications\Application\PendingAppointmentNotificationCancellation:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrinePendingAppointmentNotificationCancellation
