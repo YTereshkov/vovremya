@@ -23,7 +23,7 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
     ) {
     }
 
-    public function hasActiveConflict(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): bool
+    public function hasActiveConflict(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null, ?Ulid $excludeOfferId = null): bool
     {
         $conflict = $this->entityManager->getConnection()->fetchOne(
             <<<'SQL'
@@ -34,6 +34,7 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
                       AND specialist_id = :specialist_id
                       AND released_at IS NULL
                       AND (CAST(:exclude_appointment_id AS UUID) IS NULL OR allocation_type <> 'APPOINTMENT' OR source_id <> CAST(:exclude_appointment_id AS UUID))
+                      AND (CAST(:exclude_offer_id AS UUID) IS NULL OR allocation_type <> 'OFFER_RESERVATION' OR source_id <> CAST(:exclude_offer_id AS UUID))
                       AND tstzrange(starts_at, ends_at, '[)')
                           && tstzrange(CAST(:starts_at AS TIMESTAMPTZ), CAST(:ends_at AS TIMESTAMPTZ), '[)')
                 )
@@ -44,13 +45,14 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
                 'starts_at' => $startsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'ends_at' => $endsAt->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'exclude_appointment_id' => $excludeAppointmentId?->toRfc4122(),
+                'exclude_offer_id' => $excludeOfferId?->toRfc4122(),
             ],
         );
 
         return true === $conflict || '1' === $conflict;
     }
 
-    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): array
+    public function activeNear(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null, ?Ulid $excludeOfferId = null): array
     {
         $windowStart = $startsAt->modify('-15 minutes');
         $windowEnd = $endsAt->modify('+15 minutes');
@@ -62,6 +64,7 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
                   AND specialist_id = :specialist_id
                   AND released_at IS NULL
                   AND (CAST(:exclude_appointment_id AS UUID) IS NULL OR allocation_type <> 'APPOINTMENT' OR source_id <> CAST(:exclude_appointment_id AS UUID))
+                  AND (CAST(:exclude_offer_id AS UUID) IS NULL OR allocation_type <> 'OFFER_RESERVATION' OR source_id <> CAST(:exclude_offer_id AS UUID))
                   AND starts_at < CAST(:window_end AS TIMESTAMPTZ)
                   AND ends_at > CAST(:window_start AS TIMESTAMPTZ)
                 ORDER BY starts_at, ends_at
@@ -72,6 +75,7 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
                 'window_start' => $windowStart->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'window_end' => $windowEnd->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'exclude_appointment_id' => $excludeAppointmentId?->toRfc4122(),
+                'exclude_offer_id' => $excludeOfferId?->toRfc4122(),
             ],
         );
 
@@ -133,6 +137,24 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
             [
                 'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
                 'appointment_id' => $appointmentId->toRfc4122(),
+            ],
+        );
+    }
+
+    public function releaseForOffer(Ulid $offerId): void
+    {
+        $this->entityManager->getConnection()->executeStatement(
+            <<<'SQL'
+                UPDATE schedule_allocations
+                SET released_at = CURRENT_TIMESTAMP
+                WHERE organization_id = :organization_id
+                  AND allocation_type = 'OFFER_RESERVATION'
+                  AND source_id = :offer_id
+                  AND released_at IS NULL
+                SQL,
+            [
+                'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
+                'offer_id' => $offerId->toRfc4122(),
             ],
         );
     }

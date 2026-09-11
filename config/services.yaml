@@ -114,5 +114,8 @@ services:
     App\Module\Waiting\Application\WaitingListStore:
         alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineWaitingListStore
 
+    App\Module\Waiting\Application\FreeWindowOfferStore:
+        alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowOfferStore
+
     App\Module\Communications\Application\PendingAppointmentNotificationCancellation:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrinePendingAppointmentNotificationCancellation

@@ -32,19 +32,37 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
         $week[0] = ['weekday' => 1, 'enabled' => true, 'work' => ['start' => '09:00', 'end' => '18:00'], 'lunch' => ['start' => '13:00', 'end' => '14:00']];
         $specialist->setWeeklyHours($week);
         $client = App\Module\Clients\Domain\Model\Client::create($organization, 'Петя Сидоров', 'CHILD', null, null);
+        $waitingClient = App\Module\Clients\Domain\Model\Client::create($organization, 'Яна Ожидает', 'ADULT', null, null);
         $service = App\Module\Catalog\Domain\Model\Service::create($organization, 'Логопедическое занятие', 45, 30, 60);
-        $entityManager->wrapInTransaction(static function () use ($entityManager, $organization, $administrator, $specialist, $client, $service): void {
+        $entityManager->wrapInTransaction(static function () use ($entityManager, $organization, $administrator, $specialist, $client, $waitingClient, $service): void {
             $entityManager->persist($organization);
             $entityManager->persist($administrator);
             $entityManager->persist($specialist);
             $entityManager->persist($client);
+            $entityManager->persist($waitingClient);
             $entityManager->persist($service);
             $entityManager->flush();
             $channel = App\Module\Clients\Domain\Model\ChannelConnection::create($client, null, 'MAX', 'e2e-'.$client->id()->toRfc4122());
             $channel->activate();
             $entityManager->persist($channel);
+            $waitingChannel = App\Module\Clients\Domain\Model\ChannelConnection::create($waitingClient, null, 'MAX', 'e2e-'.$waitingClient->id()->toRfc4122());
+            $waitingChannel->activate();
+            $entityManager->persist($waitingChannel);
+            $entry = App\Module\Waiting\Domain\Model\WaitingListEntry::create(
+                $waitingClient,
+                $service->id(),
+                null,
+                1,
+                true,
+                new DateTimeImmutable('today', new DateTimeZone('UTC')),
+                null,
+                new DateTimeImmutable('now', new DateTimeZone('UTC')),
+            );
+            $entityManager->persist($entry);
+            $entityManager->persist(App\Module\Waiting\Domain\Model\WaitingListAvailability::create($entry, 1, '09:00', null));
             $entityManager->flush();
             $client->selectPrimaryChannel($channel);
+            $waitingClient->selectPrimaryChannel($waitingChannel);
         });
     } else {
         $id = $connection->fetchOne('SELECT o.id FROM organizations o JOIN administrator_accounts a ON a.organization_id = o.id WHERE a.normalized_email = ? AND o.name = ?', [$email, $name]);
@@ -52,6 +70,7 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             continue;
         }
         $connection->transactional(static function () use ($connection, $id): void {
+            $connection->executeStatement('DELETE FROM free_window_offers WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM waiting_list_availability WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM waiting_list_entries WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM free_windows WHERE organization_id = ?', [$id]);

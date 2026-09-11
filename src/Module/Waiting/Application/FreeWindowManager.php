@@ -12,8 +12,12 @@ use Symfony\Component\Uid\Ulid;
 
 final readonly class FreeWindowManager
 {
-    public function __construct(private FreeWindowStore $windows, private AvailabilityService $availability)
-    {
+    public function __construct(
+        private FreeWindowStore $windows,
+        private FreeWindowOfferStore $offers,
+        private FreeWindowOfferService $offerService,
+        private AvailabilityService $availability,
+    ) {
     }
 
     public function createFromCancellation(
@@ -47,6 +51,7 @@ final readonly class FreeWindowManager
         if (null === $window) {
             return;
         }
+        $this->offerService->cancelActiveForWindow($window->id(), $reason, $now);
         $window->close($reason, $now);
         $this->windows->save($window);
     }
@@ -59,9 +64,12 @@ final readonly class FreeWindowManager
     /** @return list<FreeWindow> */
     public function openFuture(\DateTimeImmutable $now): array
     {
+        $windows = $this->windows->openFuture($now);
+        $activeOffers = $this->offers->activeForWindows(array_map(static fn (FreeWindow $window): Ulid => $window->id(), $windows));
+
         return array_values(array_filter(
-            $this->windows->openFuture($now),
-            fn (FreeWindow $window): bool => $this->isAvailable($window),
+            $windows,
+            fn (FreeWindow $window): bool => isset($activeOffers[$window->id()->toRfc4122()]) || $this->isAvailable($window),
         ));
     }
 

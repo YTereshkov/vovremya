@@ -47,5 +47,16 @@ final class WaitingSchemaConstraints
                 'fk_waiting_availability_entry_tenant',
             );
         }
+        if ($schema->hasTable('free_window_offers')) {
+            $offers = $schema->getTable('free_window_offers');
+            $offers->addForeignKeyConstraint('free_windows', ['organization_id', 'free_window_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_free_window_offers_window_tenant');
+            $offers->addForeignKeyConstraint('clients', ['organization_id', 'client_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_client_tenant');
+            $offers->addForeignKeyConstraint('channel_connections', ['organization_id', 'channel_connection_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_channel_tenant');
+            $offers->addForeignKeyConstraint('appointments', ['organization_id', 'candidate_appointment_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_candidate_tenant');
+            $offers->addForeignKeyConstraint('waiting_list_entries', ['organization_id', 'waiting_list_entry_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_waiting_tenant');
+            $offers->addForeignKeyConstraint('services', ['organization_id', 'service_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_service_tenant');
+            $offers->addForeignKeyConstraint('appointments', ['organization_id', 'resulting_appointment_id'], ['organization_id', 'id'], ['onDelete' => 'RESTRICT'], 'fk_free_window_offers_result_tenant');
+            $offers->addUniqueIndex(['organization_id', 'free_window_id'], 'uniq_free_window_offers_active_window', ['where' => "((status)::text = 'ACTIVE'::text)"]);
+        }
     }
 }

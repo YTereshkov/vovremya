@@ -11,6 +11,8 @@ interface FreeWindowStore
 {
     public function find(Ulid $id): ?FreeWindow;
 
+    public function lock(Ulid $id): ?FreeWindow;
+
     public function findBySourceAppointment(Ulid $appointmentId): ?FreeWindow;
 
     /** @return list<FreeWindow> */

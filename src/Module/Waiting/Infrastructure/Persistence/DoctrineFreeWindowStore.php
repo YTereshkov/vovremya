@@ -8,6 +8,7 @@ use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Waiting\Application\FreeWindowStore;
 use App\Module\Waiting\Domain\Model\FreeWindow;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Ulid;
 
@@ -20,6 +21,14 @@ final readonly class DoctrineFreeWindowStore implements FreeWindowStore
     public function find(Ulid $id): ?FreeWindow
     {
         $window = $this->query()->andWhere('window.id = :id')->setParameter('id', $id, 'ulid')->getQuery()->getOneOrNullResult();
+
+        return $window instanceof FreeWindow ? $window : null;
+    }
+
+    public function lock(Ulid $id): ?FreeWindow
+    {
+        $window = $this->query()->andWhere('window.id = :id')->setParameter('id', $id, 'ulid')->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)->getOneOrNullResult();
 
         return $window instanceof FreeWindow ? $window : null;
     }

@@ -59,6 +59,23 @@ test('records client cancellation and exposes one managed free window', async ({
   ])
   expect(candidateRequests).toBe(1)
   await expect(page.getByRole('button', { name: 'Скрыть подходящих клиентов', exact: true })).toBeVisible()
+  await expect(page.getByText('Яна Ожидает', { exact: true })).toBeVisible()
+
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/free-windows\/[^/]+\/offers$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST' && response.ok()),
+    page.getByRole('button', { name: 'Предложить', exact: true }).click(),
+  ])
+  await expect(page.getByRole('heading', { name: 'Активное предложение', exact: true })).toBeVisible()
+  await expect(page.getByText('Временно зарезервировано', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Отменить предложение', exact: true }).click()
+  const cancelDialog = page.getByRole('dialog')
+  await expect(cancelDialog).toBeVisible()
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/free-window-offers\/[^/]+$/.test(new URL(response.url()).pathname) && response.request().method() === 'DELETE' && response.ok()),
+    cancelDialog.getByRole('button', { name: 'Отменить предложение', exact: true }).click(),
+  ])
+  await expect(page.getByRole('button', { name: 'Показать подходящих клиентов', exact: true })).toBeVisible()
 
   expect(pageErrors).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

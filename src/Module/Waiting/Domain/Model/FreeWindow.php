@@ -86,6 +86,7 @@ final class FreeWindow implements OrganizationOwned
     }
 
     public function id(): Ulid { return $this->id; }
+    public function organization(): Organization { return $this->organization; }
     public function organizationId(): Ulid { return $this->organization->id(); }
     public function sourceAppointmentId(): Ulid { return $this->sourceAppointmentId; }
     public function specialistId(): Ulid { return $this->specialistId; }

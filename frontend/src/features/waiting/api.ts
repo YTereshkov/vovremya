@@ -44,6 +44,14 @@ export interface FreeWindowCandidates {
   }>
 }
 
+export interface FreeWindowOffer {
+  id: string
+  client: { id: string; name: string }
+  targetType: 'MOVE_EARLIER' | 'WAITING_LIST'
+  status: 'ACTIVE'
+  createdAt: string
+}
+
 export interface FreeWindow {
   id: string
   sourceAppointmentId: string
@@ -56,6 +64,7 @@ export interface FreeWindow {
   startsAt: string
   endsAt: string
   status: 'OPEN'
+  activeOffer: FreeWindowOffer | null
 }
 
 export function useFreeWindows() {
@@ -90,4 +99,12 @@ export function useFreeWindowCandidates(windowId: string, enabled: boolean) {
     queryFn: ({ signal }) => apiRequest<FreeWindowCandidates>(`/api/free-windows/${windowId}/candidates`, 'GET', undefined, signal),
     enabled: Boolean(windowId) && enabled,
   })
+}
+
+export function createFreeWindowOffer(windowId: string, targetType: FreeWindowOffer['targetType'], candidateId: string) {
+  return apiRequest<FreeWindowOffer>(`/api/free-windows/${windowId}/offers`, 'POST', { targetType, candidateId })
+}
+
+export function cancelFreeWindowOffer(offerId: string) {
+  return apiRequest<void>(`/api/free-window-offers/${offerId}`, 'DELETE')
 }

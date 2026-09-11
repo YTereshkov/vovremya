@@ -1,4 +1,4 @@
-# Scheduling and availability: parts 19–27, 34–40
+# Scheduling and availability: parts 19–27, 34–40, 43
 
 ## Concrete occupancy
 
@@ -13,9 +13,10 @@ The supported allocation types are:
 - `OFFER_RESERVATION` for a future FreeWindow or PermanentPlace offer.
 
 Transfer options never create allocations and therefore never reserve proposed
-times. The offer workflows are not implemented in this batch. Releasing an
-allocation sets `released_at`; the row remains as technical history but stops
-blocking its interval.
+times. An active FreeWindow offer creates `OFFER_RESERVATION` for its concrete
+window interval; PermanentPlace offers will use the same allocation type in a
+later part. Releasing an allocation sets `released_at`; the row remains as
+technical history but stops blocking its interval.
 
 PostgreSQL `btree_gist` and an exclusion constraint reject overlapping active
 intervals for the same `(organization_id, specialist_id)`. Adjacent intervals
@@ -198,13 +199,14 @@ duplicate. Changing the result or clearing the checkbox closes that window.
 
 FreeWindow itself creates no schedule allocation and reserves no time. Listing
 open windows repeats current Scheduling availability, so a subsequently booked
-or otherwise unavailable interval is not offered as free. Reservation belongs
-only to later FreeWindow/PermanentPlace offers through `OFFER_RESERVATION`.
+or otherwise unavailable interval is not offered as free. Creating an offer
+for one selected candidate adds one `OFFER_RESERVATION` for the complete window
+interval. Active-offer windows remain visible for management but unavailable
+to ordinary booking and other offers.
 
-Candidate selection for an open FreeWindow is documented in
-[`waiting-list.md`](waiting-list.md). It remains a read-only recommendation:
-neither a later appointment candidate nor a Waiting List match creates an
-allocation or reserves the interval.
+Candidate selection and offer lifecycle are documented in
+[`waiting-list.md`](waiting-list.md). Candidate calculation remains read-only;
+only explicit offer creation reserves the interval.
 
 ## Absence effects
 

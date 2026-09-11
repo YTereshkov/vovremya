@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 18 завершена',
-    currentBatch: 18,
-    currentPart: 42,
-    currentItem: 'Waiting List и matching завершены',
+    state: 'Пачка 19 завершена',
+    currentBatch: 19,
+    currentPart: 43,
+    currentItem: 'Предложения FreeWindow завершены',
     updatedAt: '2026-09-11',
   },
   statusLabels: {
@@ -15,17 +15,18 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 18 · Части 41–42',
+    title: 'Пачка 19 · Часть 43',
     items: [
-      'Waiting List хранит услугу, частоту, дни, локальные интервалы, дату начала и готовность к разовым окнам.',
-      'Специалист опционален; в режиме одного специалиста поле не перегружает интерфейс.',
-      'Matching сначала показывает поздние занятия, которые можно сдвинуть раньше, затем других подходящих клиентов.',
-      'Подбор учитывает текущую длительность услуги, доступность клиента и повторную availability check.',
-      'Кандидаты загружаются только после раскрытия конкретного окна, без N запросов при открытии страницы.',
-      'Расчёт кандидатов не создаёт Offer, reservation или ScheduleAllocation.',
+      'Администратор выбирает одного кандидата и создаёт активное предложение разового окна.',
+      'Активное предложение создаёт OFFER_RESERVATION; второе одновременное предложение запрещено.',
+      'Автоматического timeout нет; отказ и отмена освобождают reservation.',
+      'Принятие повторно проверяет availability и атомарно заменяет reservation на Appointment allocation.',
+      'Для Waiting List создаётся разовое занятие, а само ожидание остаётся активным.',
+      'Для переноса позднего клиента старое время становится новым FreeWindow.',
+      'Действия клиента tenant-bound, channel-bound и одноразовы; сообщения идут через outbox.',
     ],
-    description: 'Waiting List и рекомендации для явных FreeWindow работают сквозным tenant-scoped контуром от настройки клиента до двух упорядоченных групп кандидатов.',
-    outcome: 'Администратор видит подходящих кандидатов без преждевременного бронирования; фактическое предложение остаётся scope следующей пачки.',
+    description: 'Предложения FreeWindow работают сквозным tenant-scoped контуром: выбор кандида, reservation, outbox, callback и атомарное изменение расписания.',
+    outcome: 'Одно окно можно безопасно предложить одному клиенту; ответ либо создаёт/переносит занятие, либо возвращает окно в работу.',
   },
   nextPartNumbers: [43, 44, 45],
   batches: [
@@ -173,7 +174,7 @@ window.PROJECT_PROGRESS = {
         { number: 42, title: 'Matching и сдвиг позднего клиента раньше', status: 'done', completedAt: '2026-09-11', result: 'FreeWindow показывает сначала переносимых раньше клиентов, затем подходящий Waiting List без reservation и allocations.' },
       ],
     },
-    { number: 19, title: 'Предложения разовых окон', parts: [{ number: 43, title: 'Offers для FreeWindow', status: 'pending' }] },
+    { number: 19, title: 'Предложения разовых окон', parts: [{ number: 43, title: 'Offers для FreeWindow', status: 'done', completedAt: '2026-09-11', result: 'Активное offer резервирует FreeWindow, а ответ атомарно меняет расписание или освобождает reservation.' }] },
     {
       number: 20,
       title: 'Постоянные места и их предложения',
@@ -203,6 +204,17 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-11',
+      items: [
+        'Завершена пачка 19: предложения FreeWindow.',
+        'Одно активное offer создаёт OFFER_RESERVATION и блокирует повторное обещание окна.',
+        'Принятие Waiting List создаёт разовое Appointment без завершения постоянной потребности.',
+        'Сдвиг позднего клиента освобождает его прежнее время как новый FreeWindow.',
+        'Отказ, административная отмена и потеря доступности безопасно освобождают reservation.',
+        'Responsive UI показывает активное предложение и позволяет его отменить.',
+      ],
+    },
     {
       date: '2026-09-11',
       items: [
@@ -288,6 +300,10 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-11', title: 'Активное FreeWindow offer резервирует окно', text: 'Одно предложение владеет полным интервалом через OFFER_RESERVATION; partial unique index запрещает второе активное offer для того же tenant/window.' },
+    { date: '2026-09-11', title: 'Предложение FreeWindow не имеет timeout', text: 'Оно живёт до ответа клиента, отмены администратором или потери доступности окна; Scheduler по возрасту его не завершает.' },
+    { date: '2026-09-11', title: 'Принятие offer повторно проверяет availability', text: 'Собственная OFFER_RESERVATION исключается из проверки, затем в одной транзакции заменяется APPOINTMENT allocation; PostgreSQL exclusion constraint остаётся финальной гарантией.' },
+    { date: '2026-09-11', title: 'Разовое offer не завершает Waiting List', text: 'Принятие создаёт Appointment для одной даты, но постоянная потребность клиента и его активная waiting configuration сохраняются.' },
     { date: '2026-09-11', title: 'Waiting List хранит одно активное ожидание клиента', text: 'Активная конфигурация связывает клиента с услугой, опциональным специалистом, частотой и локальными интервалами; завершение сохраняет историю и допускает новое ожидание.' },
     { date: '2026-09-11', title: 'Matching использует текущую длительность услуги', text: 'Изменение default duration влияет на будущий подбор Waiting List; существующие Appointment сохраняют собственный snapshot.' },
     { date: '2026-09-11', title: 'Поздний клиент имеет приоритет в подсказке', text: 'Сначала показываются подходящие более поздние Appointment того же дня, специалиста и услуги, затем другие клиенты из Waiting List.' },

@@ -6,6 +6,8 @@ namespace App\Module\Waiting\UI\Http;
 
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use App\Module\Waiting\Application\FreeWindowManager;
+use App\Module\Waiting\Application\FreeWindowOfferService;
+use App\Module\Waiting\Application\FreeWindowOfferStore;
 use App\Module\Waiting\Domain\Model\FreeWindow;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
@@ -13,8 +15,11 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final readonly class FreeWindowController
 {
-    public function __construct(private FreeWindowManager $windows)
-    {
+    public function __construct(
+        private FreeWindowManager $windows,
+        private FreeWindowOfferStore $offers,
+        private FreeWindowOfferService $offerService,
+    ) {
     }
 
     #[Route('/api/free-windows', methods: ['GET'])]
@@ -22,9 +27,13 @@ final readonly class FreeWindowController
     {
         $timezone = new \DateTimeZone($actor->organization()->timezone());
 
-        return new JsonResponse(array_map(static function (FreeWindow $window) use ($timezone): array {
+        $windows = $this->windows->openFuture(new \DateTimeImmutable('now', new \DateTimeZone('UTC')));
+        $activeOffers = $this->offers->activeForWindows(array_map(static fn (FreeWindow $window): \Symfony\Component\Uid\Ulid => $window->id(), $windows));
+
+        return new JsonResponse(array_map(function (FreeWindow $window) use ($timezone, $activeOffers): array {
             $start = $window->startsAt()->setTimezone($timezone);
             $end = $window->endsAt()->setTimezone($timezone);
+            $offer = $activeOffers[$window->id()->toRfc4122()] ?? null;
             return [
                 'id' => $window->id()->toRfc4122(),
                 'sourceAppointmentId' => $window->sourceAppointmentId()->toRfc4122(),
@@ -37,7 +46,8 @@ final readonly class FreeWindowController
                 'startsAt' => $start->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'endsAt' => $end->format(\DateTimeInterface::RFC3339_EXTENDED),
                 'status' => $window->status()->value,
+                'activeOffer' => null === $offer ? null : $this->offerService->present($offer),
             ];
-        }, $this->windows->openFuture(new \DateTimeImmutable('now', new \DateTimeZone('UTC')))));
+        }, $windows));
     }
 }

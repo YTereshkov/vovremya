@@ -17,7 +17,7 @@ final readonly class AvailabilityService
     ) {
     }
 
-    public function check(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null): AvailabilityDecision
+    public function check(Ulid $specialistId, \DateTimeImmutable $startsAt, \DateTimeImmutable $endsAt, ?Ulid $excludeAppointmentId = null, ?Ulid $excludeOfferId = null): AvailabilityDecision
     {
         if ($endsAt <= $startsAt) {
             throw new \InvalidArgumentException('Окончание интервала должно быть позже начала.');
@@ -34,7 +34,7 @@ final readonly class AvailabilityService
             return AvailabilityDecision::unavailable(AvailabilityConflict::specialistNotWorking());
         }
 
-        if ($this->allocations->hasActiveConflict($specialistId, $startsAt, $endsAt, $excludeAppointmentId)) {
+        if ($this->allocations->hasActiveConflict($specialistId, $startsAt, $endsAt, $excludeAppointmentId, $excludeOfferId)) {
             return AvailabilityDecision::unavailable(AvailabilityConflict::timeAlreadyUnavailable());
         }
 

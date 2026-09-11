@@ -1,4 +1,4 @@
-# Waiting List and free-window matching: parts 41–42
+# Waiting List, free-window matching, and offers: parts 41–43
 
 ## Waiting need
 
@@ -54,8 +54,36 @@ not start one candidate request per window.
 
 Candidate calculation is advisory. It creates no appointment, transfer,
 message, offer, reservation, or `ScheduleAllocation`. Accepting a one-off
-window does not reduce or end the client's permanent waiting need. Creating an
-offer and any `OFFER_RESERVATION` belongs to parts 43–45.
+window does not reduce or end the client's permanent waiting need.
+
+## Free-window offers
+
+An administrator selects exactly one candidate for an open `FreeWindow`.
+Creating the offer locks the window row, repeats current availability and
+candidate matching, resolves the client's active primary channel, and creates
+one `OFFER_RESERVATION` for the complete window interval. A partial unique
+index permits only one active offer per tenant and window. PostgreSQL's
+schedule exclusion constraint remains the final protection from overlapping
+bookings.
+
+The offer has no automatic timeout. It remains active until the client accepts
+or declines it, the administrator cancels it, or the source window becomes
+unavailable. Decline and administrator cancellation release the reservation
+and leave the window open. Other lifecycle changes that close the window also
+cancel its active offer and release the reservation.
+
+Acceptance repeats availability while excluding only the offer's own
+reservation. A Waiting List offer creates a one-off appointment and leaves the
+waiting entry active. A move-earlier offer reschedules the selected later
+appointment into the proposed window and creates a new `FreeWindow` for the
+vacated interval. Both flows replace the reservation with an `APPOINTMENT`
+allocation and close the source window in one transaction.
+
+Client actions use tenant-bound, channel-bound, single-use opaque tokens. Only
+structured button callbacks reach the application consumer; plain text cannot
+accept or decline an offer. Initial offers and administrator cancellation
+messages use the existing transactional outbox. Permanent-place offers remain
+separate work in parts 44–45.
 
 ## Tenant isolation
 
