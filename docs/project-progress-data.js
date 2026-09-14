@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 21 завершена',
-    currentBatch: 21,
-    currentPart: 46,
-    currentItem: 'Уведомления и контроль доставки завершены',
+    state: 'Пачка 22 завершена',
+    currentBatch: 22,
+    currentPart: 48,
+    currentItem: 'Telegram и WhatsApp adapters завершены',
     updatedAt: '2026-09-14',
   },
   statusLabels: {
@@ -15,19 +15,19 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 21 · Часть 46',
+    title: 'Пачка 22 · Части 47–48',
     items: [
-      'Центр уведомлений агрегирует подтверждения, переносы, свободные окна, постоянные места и массовые отмены.',
-      'Состояние доставки хранится отдельно от бизнес-ответа клиента и обновляется монотонно.',
-      'DELIVERED и READ отображаются только при подтверждённых capabilities конкретного provider adapter.',
-      'Массовая отмена открывает tenant-scoped отчёт по каждому получателю и состоянию сообщения.',
-      'FAILED-сообщение можно вернуть в durable outbox; worker заново проверит актуальный канал и tenant.',
-      'У каждого администратора собственная отметка «прочитано до», не меняющая бизнес-состояния.',
+      'Telegram отправляет текст и inline-кнопки, принимает callback и активируется через /start deep link.',
+      'WhatsApp Cloud API отправляет текст и reply-кнопки, принимает delivery/read/failed webhooks.',
+      'Webhook обоих providers разрешается через tenant-owned ChannelConnection до записи inbox.',
+      'Telegram secret token и WhatsApp HMAC проверяются по документированным provider contracts.',
+      'Credentials загружаются только из deployment configuration и не сохраняются в outbox.',
+      'Обычный текст не запускает business action; клиент получает инструкцию использовать кнопки.',
     ],
-    description: 'Операционные события и критические ошибки доставки собраны в одном responsive экране без смешивания transport status и ответа клиента.',
-    outcome: 'Администратор видит, кто получил критическое сообщение, где статус недоступен и какие отправки требуют ручного действия.',
+    description: 'Telegram и WhatsApp подключены к общему provider-neutral outbox/inbox lifecycle без зависимости бизнес-модулей от внешних API.',
+    outcome: 'Активированный клиентский канал может получать сообщения с кнопками и безопасно передавать callbacks; WhatsApp также сообщает delivery/read status.',
   },
-  nextPartNumbers: [47, 48, 49],
+  nextPartNumbers: [49, 50, 51],
   batches: [
     {
       number: 1,
@@ -187,8 +187,8 @@ window.PROJECT_PROGRESS = {
       number: 22,
       title: 'Telegram и WhatsApp',
       parts: [
-        { number: 47, title: 'Telegram adapter', status: 'pending' },
-        { number: 48, title: 'WhatsApp adapter', status: 'pending' },
+        { number: 47, title: 'Telegram adapter', status: 'done', completedAt: '2026-09-14', result: 'Bot API transport, inline buttons, authenticated webhook, stable update id и одноразовая /start activation.' },
+        { number: 48, title: 'WhatsApp adapter', status: 'done', completedAt: '2026-09-14', result: 'Cloud API transport, reply buttons, HMAC webhook, activation и capability-aware delivery/read statuses.' },
       ],
     },
     { number: 23, title: 'Статистика', parts: [{ number: 49, title: 'Статистика', status: 'pending' }] },
@@ -206,6 +206,11 @@ window.PROJECT_PROGRESS = {
     {
       date: '2026-09-14',
       items: [
+        'Завершена пачка 22: Telegram и WhatsApp adapters.',
+        'Telegram Bot API поддерживает inline callbacks и /start activation без фиктивных delivery/read статусов.',
+        'WhatsApp Cloud API поддерживает reply buttons и отдельные delivered/read/failed webhook events.',
+        'Provider credentials остаются в environment; webhook до inbox связан с tenant-owned connection.',
+        'Неподдерживаемый свободный текст не становится бизнес-действием и получает ответ с инструкцией использовать кнопки.',
         'Завершена пачка 21: центр уведомлений и контроль доставки критических сообщений.',
         'Статусы SENT, DELIVERED, READ и FAILED хранятся отдельно от бизнес-ответа клиента.',
         'Capability-aware UI не показывает фиктивные статусы доставки и прочтения.',
@@ -328,6 +333,9 @@ window.PROJECT_PROGRESS = {
     { date: '2026-09-10', title: 'TransferRequest не имеет автоматического timeout', text: 'Запрос закрывается выбором, отказом, отменой администратора либо изменением lifecycle исходного занятия; Scheduler его по возрасту не завершает.' },
     { date: '2026-09-10', title: 'Lifecycle использует единый порядок row locks', text: 'Результат, отсутствие, изменение регулярного правила и выбор переноса блокируют и повторно проверяют Appointment перед TransferRequest; это не заменяет exclusion constraint и не вводит specialist/date lock.' },
     { date: '2026-09-10', title: 'Отсутствие специалиста не создаёт FreeWindow', text: 'Затронутые Appointment отменяются как CANCELLED_BY_SPECIALIST, allocations освобождаются, но свободные окна не создаются.' },
+    { date: '2026-09-14', title: 'Telegram не заявляет неподтверждённые статусы', text: 'Bot API adapter поддерживает text, inline callbacks и deep link, но capabilities delivered/read остаются false.' },
+    { date: '2026-09-14', title: 'WhatsApp transport status отделён от ответа', text: 'Cloud API delivered/read/failed нормализуются по wamid; reply button остаётся отдельным business event.' },
+    { date: '2026-09-14', title: 'Свободный текст не является командой', text: 'TEXT_UNSUPPORTED проверяет tenant-owned connection и sender, после чего через durable outbox отвечает инструкцией использовать кнопки.' },
     { date: '2026-09-10', title: 'Режим отсутствия клиента определяет lifecycle места', text: 'KEEP_PERMANENT_PLACE сохраняет RegularSchedule и может создать FreeWindow; RELEASE_PERMANENT_PLACE завершает активные правила без удаления клиента и истории.' },
     { date: '2026-09-10', title: 'FreeWindow не равен календарному пробелу', text: 'Окно создаётся только явным действием при будущей отмене клиентом; один Appointment имеет максимум одно окно, а текущая availability проверяется при чтении.' },
     { date: '2026-09-10', title: 'FreeWindow не резервирует интервал', text: 'Создание FreeWindow не создаёт ScheduleAllocation; только будущий Offer для FreeWindow/PermanentPlace вправе создать OFFER_RESERVATION.' },

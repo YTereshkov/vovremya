@@ -53,8 +53,8 @@ not advertise it.
 `communication_webhook_inbox` is an append-once ingress log keyed by
 `(organization_id, provider, external_event_id)`. `WebhookInboxRecorder` uses
 PostgreSQL `INSERT ... ON CONFLICT`, so concurrent duplicates return the
-original row and receive the same acknowledgement (`200` for MAX, `202` for
-providers using the generic response).
+original row and receive the same HTTP `200` acknowledgement with the
+`{accepted, duplicate}` response contract for every configured provider.
 
 Only a configured provider adapter can activate its endpoint. The adapter must
 authenticate the original request body and headers before anything is stored;
@@ -191,3 +191,36 @@ report shows channel capabilities explicitly: a plain `SENT` status is never
 presented as delivered or read when the provider cannot supply that fact.
 For a critical specialist-absence cancellation, affected clients remain in the
 report even when no primary channel exists or no message could be queued.
+
+## Telegram adapter (part 47)
+
+`TelegramChannelProvider` sends text and inline callback/link keyboards through
+the Bot API. The bot token is resolved from protected deployment configuration
+at send time and is never stored in the outbox. Telegram `update_id` is the
+stable provider event identifier. Callback queries become provider-neutral
+`BUTTON` events; all ordinary text remains `TEXT_UNSUPPORTED`.
+
+Telegram webhook authentication uses the documented
+`X-Telegram-Bot-Api-Secret-Token` value bound to the tenant-owned connection.
+The `/start` deep link carries the existing expiring, single-use activation
+token, and the worker replaces the provisional address with the verified
+numeric Telegram user/chat identifier. Telegram exposes buttons and deep links,
+but not delivery/read capabilities.
+
+## WhatsApp adapter (part 48)
+
+`WhatsAppChannelProvider` uses the versioned Cloud API messages endpoint. Access
+token, sender phone-number ID, Graph API version, and Meta app secret are
+deployment configuration and never durable message metadata. Text and up to
+three documented reply buttons are supported. The accepted `wamid` is stored as
+the provider message identifier so later `delivered`, `read`, and `failed`
+webhooks can update the separate transport lifecycle monotonically.
+
+POST webhooks require Meta's `X-Hub-Signature-256` HMAC over the exact raw body;
+GET subscription verification compares the connection-bound verify token before
+returning `hub.challenge`. Incoming reply buttons become `BUTTON` events, while
+unknown delivery states are ignored. A `wa.me` prefilled activation message
+contains `VOVREMYA_CONNECT {token}`, where `{token}` is expiring and single-use;
+the verified sender `wa_id` becomes the connection address. Arbitrary text from
+either bot is never interpreted as a command and receives the provider-neutral
+instruction to use message buttons.

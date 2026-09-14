@@ -43,13 +43,18 @@ final class ChannelSettingsControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $settings = $this->json();
         self::assertSame('MAX', $settings['defaultProvider']);
-        self::assertCount(1, $settings['providers']);
-        self::assertSame('MAX', $settings['providers'][0]['provider']);
-        self::assertTrue($settings['providers'][0]['capabilities']['supportsButtons']);
-        self::assertFalse($settings['providers'][0]['capabilities']['supportsReadStatus']);
+        self::assertCount(3, $settings['providers']);
+        $providers = array_column($settings['providers'], null, 'provider');
+        ksort($providers);
+        self::assertSame(['MAX', 'TELEGRAM', 'WHATSAPP'], array_keys($providers));
+        self::assertTrue($providers['MAX']['capabilities']['supportsButtons']);
+        self::assertFalse($providers['MAX']['capabilities']['supportsReadStatus']);
+        self::assertFalse($providers['TELEGRAM']['capabilities']['supportsReadStatus']);
+        self::assertTrue($providers['WHATSAPP']['capabilities']['supportsDeliveredStatus']);
+        self::assertTrue($providers['WHATSAPP']['capabilities']['supportsReadStatus']);
 
         $this->client->jsonRequest('PUT', '/api/communications/channels/default', ['provider' => 'TELEGRAM'], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
-        self::assertResponseStatusCodeSame(422);
+        self::assertResponseIsSuccessful();
         $this->client->jsonRequest('PUT', '/api/communications/channels/default', ['provider' => 'MAX'], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
         self::assertResponseIsSuccessful();
     }

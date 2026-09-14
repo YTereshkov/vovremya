@@ -15,6 +15,10 @@ final readonly class ChannelActivationLinkFactory implements ChannelActivationLi
         private ChannelProviderRegistry $providers,
         #[Autowire('%env(MAX_BOT_USERNAME)%')]
         private string $maxBotUsername,
+        #[Autowire('%env(TELEGRAM_BOT_USERNAME)%')]
+        private string $telegramBotUsername,
+        #[Autowire('%env(WHATSAPP_BUSINESS_PHONE)%')]
+        private string $whatsAppBusinessPhone,
     ) {
     }
 
@@ -25,14 +29,30 @@ final readonly class ChannelActivationLinkFactory implements ChannelActivationLi
         if (!$capabilities->supportsDeepLink) {
             throw new \DomainException('Этот канал не поддерживает подключение по ссылке.');
         }
-        if (CommunicationProvider::MAX !== $provider) {
-            throw new \DomainException(sprintf('Подключение %s пока не настроено.', $provider->value));
-        }
-        $username = trim($this->maxBotUsername, " \t\n\r\0\x0B@/");
+        return match ($provider) {
+            CommunicationProvider::MAX => $this->botLink('https://max.ru', $this->maxBotUsername, $token, 'MAX'),
+            CommunicationProvider::TELEGRAM => $this->botLink('https://t.me', $this->telegramBotUsername, $token, 'Telegram'),
+            CommunicationProvider::WHATSAPP => $this->whatsAppLink($token),
+        };
+    }
+
+    private function botLink(string $baseUrl, string $configuredUsername, string $token, string $label): string
+    {
+        $username = trim($configuredUsername, " \t\n\r\0\x0B@/");
         if ('' === $username || !preg_match('/^[A-Za-z0-9_.-]+$/', $username)) {
-            throw new \DomainException('Для MAX не настроено имя бота.');
+            throw new \DomainException(sprintf('Для %s не настроено имя бота.', $label));
         }
 
-        return sprintf('https://max.ru/%s?start=%s', rawurlencode($username), rawurlencode($token));
+        return sprintf('%s/%s?start=%s', $baseUrl, rawurlencode($username), rawurlencode($token));
+    }
+
+    private function whatsAppLink(string $token): string
+    {
+        $phone = preg_replace('/\D+/', '', $this->whatsAppBusinessPhone) ?? '';
+        if (!preg_match('/^[1-9]\d{4,14}$/D', $phone)) {
+            throw new \DomainException('Для WhatsApp не настроен номер отправителя.');
+        }
+
+        return sprintf('https://wa.me/%s?text=%s', $phone, rawurlencode('VOVREMYA_CONNECT '.$token));
     }
 }

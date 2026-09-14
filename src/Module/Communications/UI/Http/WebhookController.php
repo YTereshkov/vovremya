@@ -12,17 +12,16 @@ use App\Module\Clients\Application\ChannelConnectionResolver;
 use App\Module\Communications\Application\Message\ProcessWebhookInbox;
 use App\Module\Communications\Domain\Model\CommunicationProvider;
 use App\Module\Organization\Application\OrganizationContext;
-use App\Module\Organization\Application\OrganizationExistenceChecker;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\TransportException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Uid\Ulid;
 
-#[Route('/webhooks/communications/{provider}/{routingKey}', methods: ['POST'])]
+#[Route('/webhooks/communications/{provider}/{routingKey}')]
 final readonly class WebhookController
 {
     private const MAX_PAYLOAD_BYTES = 262_144;
@@ -31,7 +30,6 @@ final readonly class WebhookController
         private WebhookInboxRecorder $recorder,
         private ChannelProviderRegistry $providers,
         private OrganizationContext $organizationContext,
-        private OrganizationExistenceChecker $organizations,
         private ChannelConnectionResolver $connections,
         private MessageBusInterface $bus,
         #[Autowire(service: 'limiter.communication_webhooks')]
@@ -44,21 +42,12 @@ final readonly class WebhookController
     {
         try {
             $provider = CommunicationProvider::from(strtoupper($provider));
-            $channelConnectionId = null;
-            $connection = null;
-            if (CommunicationProvider::MAX === $provider) {
-                $connection = $this->connections->findChannelByRoutingKey($provider->value, $routingKey);
-                if (null === $connection || null === $connection->webhookSecretHash() || (!$connection->isActive() && !$connection->isPendingActivation())) {
-                    return new JsonResponse(['message' => 'Webhook для этого подключения не найден.'], 404);
-                }
-                $organization = $connection->organizationId();
-                $channelConnectionId = $connection->id();
-            } else {
-                $organization = Ulid::fromString($routingKey);
-                if (!$this->organizations->exists($organization)) {
-                    return new JsonResponse(['message' => 'Организация не найдена.'], 404);
-                }
+            $connection = $this->connections->findChannelByRoutingKey($provider->value, $routingKey);
+            if (null === $connection || null === $connection->webhookSecretHash() || (!$connection->isActive() && !$connection->isPendingActivation())) {
+                return new JsonResponse(['message' => 'Webhook для этого подключения не найден.'], 404);
             }
+            $organization = $connection->organizationId();
+            $channelConnectionId = $connection->id();
 
             $rateLimit = $this->communicationWebhooksLimiter
                 ->create(hash('sha256', $provider->value.'|'.$organization->toRfc4122().'|'.($request->getClientIp() ?? 'unknown')))
@@ -95,24 +84,16 @@ final readonly class WebhookController
                 return new JsonResponse(['message' => 'Webhook должен содержать JSON-объект.'], 422);
             }
 
-            // MAX event identity comes from the authenticated provider payload;
-            // a caller-controlled generic header must never override it.
-            $eventId = CommunicationProvider::MAX === $provider
-                ? ''
-                : trim((string) $request->headers->get('X-Webhook-Event-Id', ''));
-            if (CommunicationProvider::MAX === $provider) {
-                // MAX's stable update/callback identifier is used for inbox idempotency;
-                // the raw envelope is only the final fallback for undocumented payloads.
-                $eventIds = $channelProvider instanceof WebhookEventIdExtractor
-                    ? $channelProvider->extractWebhookEventIds($payload)
-                    : [];
-                sort($eventIds);
-                $eventId = match (count($eventIds)) {
-                    0 => 'max-'.hash('sha256', $rawBody),
-                    1 => $eventIds[0],
-                    default => 'max-batch-'.hash('sha256', implode("\n", $eventIds)),
-                };
-            }
+            // Event identity always comes from the authenticated provider payload.
+            $eventIds = $channelProvider instanceof WebhookEventIdExtractor
+                ? $channelProvider->extractWebhookEventIds($payload)
+                : [];
+            sort($eventIds);
+            $eventId = match (count($eventIds)) {
+                0 => strtolower($provider->value).'-'.hash('sha256', $rawBody),
+                1 => $eventIds[0],
+                default => strtolower($provider->value).'-batch-'.hash('sha256', implode("\n", $eventIds)),
+            };
             if ('' === $eventId) {
                 return new JsonResponse(['message' => 'Отсутствует идентификатор события webhook.'], 422);
             }
@@ -126,11 +107,29 @@ final readonly class WebhookController
                 // PostgreSQL remains the source of truth; the scheduler republishes unprocessed inbox rows.
             }
 
-            // MAX requires a fast HTTP 200 acknowledgement; other providers keep the generic 202 response.
-            $status = CommunicationProvider::MAX === $provider ? 200 : 202;
-
-            return new JsonResponse(['accepted' => true, 'duplicate' => $result['duplicate']], $status);
+            return new JsonResponse(['accepted' => true, 'duplicate' => $result['duplicate']], 200);
         } catch (\ValueError|\JsonException|\InvalidArgumentException) {
+            return new JsonResponse(['message' => 'Некорректный webhook.'], 422);
+        }
+    }
+
+    #[Route('', methods: ['GET'])]
+    public function verify(string $provider, string $routingKey, Request $request): Response
+    {
+        try {
+            $provider = CommunicationProvider::from(strtoupper($provider));
+            if (CommunicationProvider::WHATSAPP !== $provider || 'subscribe' !== $request->query->get('hub_mode')) {
+                return new JsonResponse(['message' => 'Проверка webhook не поддерживается.'], 404);
+            }
+            $connection = $this->connections->findChannelByRoutingKey($provider->value, $routingKey);
+            $token = $request->query->get('hub_verify_token');
+            $challenge = $request->query->get('hub_challenge');
+            if (null === $connection || !is_string($token) || !is_string($challenge) || !$connection->verifyWebhookSecret($token)) {
+                return new JsonResponse(['message' => 'Не удалось проверить webhook.'], 401);
+            }
+
+            return new Response($challenge, 200, ['Content-Type' => 'text/plain']);
+        } catch (\ValueError) {
             return new JsonResponse(['message' => 'Некорректный webhook.'], 422);
         }
     }

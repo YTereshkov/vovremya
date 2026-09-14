@@ -15,7 +15,6 @@ use App\Module\Identity\Application\CreateAdministrator\CreateAdministratorHandl
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Organization\Application\OrganizationDirectory;
-use App\Module\Organization\Application\OrganizationExistenceChecker;
 use App\Module\Communications\UI\Http\WebhookController;
 use App\Module\Clients\Domain\Model\ChannelConnection;
 use App\Module\Clients\Domain\Model\Client;
@@ -110,7 +109,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             $bus,
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -223,7 +221,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -264,7 +261,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -297,7 +293,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -398,7 +393,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -432,7 +426,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
@@ -484,7 +477,6 @@ final class WebhookControllerTest extends WebTestCase
             self::getContainer()->get(WebhookInboxRecorder::class),
             $registry,
             self::getContainer()->get(OrganizationContext::class),
-            self::getContainer()->get(OrganizationExistenceChecker::class),
             self::getContainer()->get(\App\Module\Clients\Application\ChannelConnectionResolver::class),
             self::getContainer()->get(MessageBusInterface::class),
             self::getContainer()->get('limiter.communication_webhooks'),
