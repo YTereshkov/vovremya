@@ -61,6 +61,36 @@ final readonly class DoctrineWaitingListStore implements WaitingListStore
             ->getQuery()->getResult();
     }
 
+    public function matchingPermanent(Ulid $serviceId, Ulid $specialistId, \DateTimeImmutable $date): array
+    {
+        return $this->entryQuery()
+            ->andWhere('entry.active = TRUE')
+            ->andWhere('entry.serviceId = :service')->setParameter('service', $serviceId, 'ulid')
+            ->andWhere('(entry.specialistId IS NULL OR entry.specialistId = :specialist)')->setParameter('specialist', $specialistId, 'ulid')
+            ->andWhere('entry.effectiveFrom <= :date')->setParameter('date', $date, 'date_immutable')
+            ->orderBy('entry.createdAt', 'ASC')->addOrderBy('entry.id', 'ASC')
+            ->getQuery()->getResult();
+    }
+
+    public function availabilityForEntries(array $entryIds): array
+    {
+        if ([] === $entryIds) {
+            return [];
+        }
+        $rows = $this->entityManager->createQueryBuilder()->select('availability')->from(WaitingListAvailability::class, 'availability')
+            ->andWhere('IDENTITY(availability.organization) = :organization')->setParameter('organization', $this->context->currentId(), 'ulid')
+            ->andWhere('availability.waitingListEntryId IN (:entries)')->setParameter('entries', array_map(static fn (Ulid $id): string => $id->toRfc4122(), $entryIds))
+            ->orderBy('availability.weekday', 'ASC')->getQuery()->getResult();
+        $result = [];
+        foreach ($rows as $row) {
+            if ($row instanceof WaitingListAvailability) {
+                $result[$row->waitingListEntryId()->toRfc4122()][] = $row;
+            }
+        }
+
+        return $result;
+    }
+
     public function save(WaitingListEntry|WaitingListAvailability ...$entities): void
     {
         foreach ($entities as $entity) {

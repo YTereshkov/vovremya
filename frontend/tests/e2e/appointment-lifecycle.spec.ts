@@ -15,6 +15,7 @@ test('records client cancellation and exposes one managed free window', async ({
   const lateCancellation = page.getByLabel('Поздняя отмена — менее чем за')
   await expect(lateCancellation).toHaveValue('12')
   await lateCancellation.fill('24')
+  await expect(lateCancellation).toHaveValue('24')
   await Promise.all([
     page.waitForResponse((response) => response.url().endsWith('/api/scheduling/settings') && response.request().method() === 'PUT' && response.ok()),
     lateCancellation.locator('xpath=ancestor::form').getByRole('button', { name: 'Сохранить', exact: true }).click(),
@@ -74,6 +75,28 @@ test('records client cancellation and exposes one managed free window', async ({
   await Promise.all([
     page.waitForResponse((response) => /\/api\/free-window-offers\/[^/]+$/.test(new URL(response.url()).pathname) && response.request().method() === 'DELETE' && response.ok()),
     cancelDialog.getByRole('button', { name: 'Отменить предложение', exact: true }).click(),
+  ])
+  await expect(page.getByRole('button', { name: 'Показать подходящих клиентов', exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Постоянные места', exact: true }).click()
+  await expect(page.getByText('Логопедическое занятие · постоянное место', { exact: true })).toBeVisible()
+  await expect(page.getByText(/Понедельник · 10:00–10:45/)).toBeVisible()
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/permanent-places\/[^/]+\/candidates$/.test(new URL(response.url()).pathname) && response.ok()),
+    page.getByRole('button', { name: 'Показать подходящих клиентов', exact: true }).click(),
+  ])
+  await expect(page.getByText('Яна Ожидает', { exact: true })).toBeVisible()
+  await expect(page.getByText('Нужно ещё: 1 в неделю', { exact: true })).toBeVisible()
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/permanent-places\/[^/]+\/offers$/.test(new URL(response.url()).pathname) && response.request().method() === 'POST' && response.ok()),
+    page.getByRole('button', { name: 'Предложить', exact: true }).click(),
+  ])
+  await expect(page.getByText('Место временно зарезервировано', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Отменить предложение', exact: true }).click()
+  const permanentCancelDialog = page.getByRole('dialog')
+  await Promise.all([
+    page.waitForResponse((response) => /\/api\/permanent-place-offers\/[^/]+$/.test(new URL(response.url()).pathname) && response.request().method() === 'DELETE' && response.ok()),
+    permanentCancelDialog.getByRole('button', { name: 'Отменить предложение', exact: true }).click(),
   ])
   await expect(page.getByRole('button', { name: 'Показать подходящих клиентов', exact: true })).toBeVisible()
 

@@ -1,4 +1,4 @@
-# Waiting List, free-window matching, and offers: parts 41–43
+# Waiting List, free windows, and permanent places: parts 41–45
 
 ## Waiting need
 
@@ -82,8 +82,36 @@ allocation and close the source window in one transaction.
 Client actions use tenant-bound, channel-bound, single-use opaque tokens. Only
 structured button callbacks reach the application consumer; plain text cannot
 accept or decline an offer. Initial offers and administrator cancellation
-messages use the existing transactional outbox. Permanent-place offers remain
-separate work in parts 44–45.
+messages use the existing transactional outbox.
+
+## Permanent places and bundles
+
+Ending a whole regular schedule creates one `PermanentPlace` bundle from all
+days active on the effective date. Ending only one day creates one single
+place. Source rules and generated appointments remain historical; the place
+stores the service and duration snapshot required to display the released
+schedule independently of later catalog changes.
+
+A bundle is offered only as a whole. Permanent matching repeats the active
+Waiting List conditions for service, optional specialist, effective date, all
+weekdays and time ranges. It also subtracts the client's current active regular
+frequency from the requested frequency. A bundle larger than the remaining
+need is not a candidate. One-off appointments and accepted FreeWindow offers do
+not reduce that permanent need.
+
+One active permanent-place offer may exist per place and has no automatic
+timeout. It creates `OFFER_RESERVATION` allocations for every concrete bundle
+occurrence inside the configured rolling horizon. A dedicated daily scheduler
+extends active reservations as the horizon moves. Repeated runs are idempotent.
+Decline and administrator cancellation release all reservations and keep the
+place open.
+
+Acceptance is channel-bound and single-use. It repeats candidate matching and
+hard availability, then replaces the offer reservations with a new regular
+schedule and its materialized appointments in one transaction. PostgreSQL's
+exclusion constraint remains the final concurrency guarantee. If any interval
+became unavailable, acceptance creates no schedule, cancels the offer, releases
+its reservations, and leaves the permanent place open.
 
 ## Tenant isolation
 

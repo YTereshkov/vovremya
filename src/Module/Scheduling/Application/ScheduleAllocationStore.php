@@ -20,5 +20,8 @@ interface ScheduleAllocationStore
 
     public function releaseForOffer(Ulid $offerId): void;
 
+    /** @return list<array{startsAt: \DateTimeImmutable, endsAt: \DateTimeImmutable}> */
+    public function activeForOffer(Ulid $offerId): array;
+
     public function restoreForAppointment(Ulid $appointmentId): void;
 }

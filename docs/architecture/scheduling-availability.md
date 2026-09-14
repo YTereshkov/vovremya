@@ -13,9 +13,10 @@ The supported allocation types are:
 - `OFFER_RESERVATION` for a future FreeWindow or PermanentPlace offer.
 
 Transfer options never create allocations and therefore never reserve proposed
-times. An active FreeWindow offer creates `OFFER_RESERVATION` for its concrete
-window interval; PermanentPlace offers will use the same allocation type in a
-later part. Releasing an allocation sets `released_at`; the row remains as
+times. An active FreeWindow offer reserves its concrete interval. An active
+PermanentPlace offer reserves every concrete occurrence of the whole place or
+bundle inside the configured rolling horizon. Releasing an allocation sets
+`released_at`; the row remains as
 technical history but stops blocking its interval.
 
 PostgreSQL `btree_gist` and an exclusion constraint reject overlapping active
@@ -225,8 +226,9 @@ being skipped silently.
 Client `KEEP_PERMANENT_PLACE` cancellation leaves the regular rule active and
 may create explicit FreeWindow records. Client `RELEASE_PERMANENT_PLACE` ends
 active regular schedules at the absence start, invokes the established removal
-lifecycle for future generated occurrences, and creates no FreeWindow records.
-This does not delete the client or past appointments/results.
+lifecycle for future generated occurrences, creates the corresponding single
+or bundled PermanentPlace, and creates no FreeWindow records. This does not
+delete the client or past appointments/results.
 
 ## Appointment transfers
 

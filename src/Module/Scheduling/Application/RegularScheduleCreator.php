@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Module\Scheduling\Application;
 
 use App\Module\Catalog\Application\ServiceStore;
+use App\Module\Catalog\Domain\Model\Service;
 use App\Module\Clients\Application\ClientStore;
+use App\Module\Clients\Domain\Model\Client;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
+use App\Module\Organization\Domain\Model\Organization;
 use App\Module\Scheduling\Domain\Model\RegularSchedule;
 use App\Module\Scheduling\Domain\Model\RegularScheduleDay;
 use App\Module\Scheduling\Domain\RegularScheduleConflicts;
 use App\Module\Workforce\Application\WorkforceStore;
+use App\Module\Workforce\Domain\Model\Specialist;
 use App\Shared\Domain\MultiTenancy\OrganizationIsolation;
 use Symfony\Component\Uid\Ulid;
 
@@ -23,6 +27,7 @@ final readonly class RegularScheduleCreator
         private WorkforceStore $workforce,
         private ClientStore $clients,
         private ServiceStore $services,
+        private ScheduleAllocationStore $allocations,
     ) {
     }
 
@@ -53,7 +58,56 @@ final readonly class RegularScheduleCreator
             throw new \InvalidArgumentException('Добавьте от одного до семи дней расписания.');
         }
 
-        $schedule = RegularSchedule::create($actor->organization(), $specialist, $client, $service, $start, $end);
+        return $this->createResolved($actor->organization(), $specialist, $client, $service, $start, $end, $rules, $today);
+    }
+
+    /** @param list<array{weekday: int, startTime: string, durationMinutes?: int|null}> $rules */
+    public function createFromPermanentPlace(
+        Organization $organization,
+        Ulid $offerId,
+        Ulid $specialistId,
+        Ulid $clientId,
+        Ulid $serviceId,
+        \DateTimeImmutable $availableFrom,
+        array $rules,
+        \DateTimeImmutable $now,
+    ): RegularSchedule {
+        $specialist = $this->workforce->find($specialistId) ?? throw new \OutOfBoundsException('Специалист не найден.');
+        $client = $this->clients->find($clientId) ?? throw new \OutOfBoundsException('Клиент не найден.');
+        $service = $this->services->findActive($serviceId) ?? throw new \OutOfBoundsException('Услуга не найдена.');
+        if (!OrganizationIsolation::belongsTo($organization->id(), $specialist, $client, $service)) {
+            throw new \LogicException('Cannot create a regular schedule across organizations.');
+        }
+        $timezone = new \DateTimeZone($organization->timezone());
+        $localNow = $now->setTimezone($timezone);
+        $today = new \DateTimeImmutable($localNow->format('Y-m-d'), $timezone);
+        $start = new \DateTimeImmutable(max($today->format('Y-m-d'), $availableFrom->format('Y-m-d')), $timezone);
+        foreach ($rules as $rule) {
+            if ($start == $today && ($rule['weekday'] ?? null) === (int) $today->format('N') && is_string($rule['startTime'] ?? null) && $rule['startTime'] <= $localNow->format('H:i')) {
+                $start = $start->modify('+1 day');
+                break;
+            }
+        }
+
+        return $this->createResolved($organization, $specialist, $client, $service, $start, null, $rules, $today, $offerId);
+    }
+
+    /** @param list<array{weekday: int, startTime: string, durationMinutes?: int|null}> $rules */
+    private function createResolved(
+        Organization $organization,
+        Specialist $specialist,
+        Client $client,
+        Service $service,
+        \DateTimeImmutable $start,
+        ?\DateTimeImmutable $end,
+        array $rules,
+        \DateTimeImmutable $today,
+        ?Ulid $excludeOfferId = null,
+    ): RegularSchedule {
+        if ([] === $rules || 7 < count($rules)) {
+            throw new \InvalidArgumentException('Добавьте от одного до семи дней расписания.');
+        }
+        $schedule = RegularSchedule::create($organization, $specialist, $client, $service, $start, $end);
         $days = [];
         $weekdays = [];
         foreach ($rules as $rule) {
@@ -73,7 +127,7 @@ final readonly class RegularScheduleCreator
 
         $conflicts = [];
         foreach ($this->materializer->occurrences($schedule, $days, $today) as $occurrence) {
-            $decision = $this->availability->check($specialist->id(), $occurrence->startsAt, $occurrence->endsAt);
+            $decision = $this->availability->check($specialist->id(), $occurrence->startsAt, $occurrence->endsAt, null, $excludeOfferId);
             if (!$decision->available) {
                 $conflict = $decision->conflict ?? throw new \LogicException('Missing availability conflict.');
                 $conflicts[] = new RegularScheduleConflict($occurrence->date->format('Y-m-d'), $occurrence->day->startTime(), $conflict->code, $conflict->message);
@@ -83,8 +137,16 @@ final readonly class RegularScheduleCreator
             throw new RegularScheduleConflicts($conflicts);
         }
 
-        $this->schedules->transactional(fn () => $this->schedules->save($schedule, ...$days));
-        $this->materializer->materialize($schedule, $today);
+        if (null !== $excludeOfferId) {
+            $this->schedules->transactional(function () use ($schedule, $days, $excludeOfferId, $today): void {
+                $this->schedules->save($schedule, ...$days);
+                $this->allocations->releaseForOffer($excludeOfferId);
+                $this->materializer->materialize($schedule, $today);
+            });
+        } else {
+            $this->schedules->transactional(fn () => $this->schedules->save($schedule, ...$days));
+            $this->materializer->materialize($schedule, $today);
+        }
 
         return $schedule;
     }

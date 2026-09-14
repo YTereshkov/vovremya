@@ -117,5 +117,14 @@ services:
     App\Module\Waiting\Application\FreeWindowOfferStore:
         alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowOfferStore
 
+    App\Module\Waiting\Application\PermanentPlaceStore:
+        alias: App\Module\Waiting\Infrastructure\Persistence\DoctrinePermanentPlaceStore
+
+    App\Module\Waiting\Application\PermanentPlaceOfferStore:
+        alias: App\Module\Waiting\Infrastructure\Persistence\DoctrinePermanentPlaceOfferStore
+
+    App\Module\Scheduling\Application\RegularScheduleCoverageReader:
+        alias: App\Module\Scheduling\Infrastructure\Persistence\DoctrineRegularScheduleCoverageReader
+
     App\Module\Communications\Application\PendingAppointmentNotificationCancellation:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrinePendingAppointmentNotificationCancellation

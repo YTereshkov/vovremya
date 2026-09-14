@@ -60,6 +60,16 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             );
             $entityManager->persist($entry);
             $entityManager->persist(App\Module\Waiting\Domain\Model\WaitingListAvailability::create($entry, 1, '09:00', null));
+            $availableFrom = new DateTimeImmutable('next monday', new DateTimeZone('UTC'));
+            $sourceSchedule = App\Module\Scheduling\Domain\Model\RegularSchedule::create($organization, $specialist, $client, $service, $availableFrom->modify('-7 days'), null);
+            $sourceDay = App\Module\Scheduling\Domain\Model\RegularScheduleDay::create($sourceSchedule, 1, '10:00', 45, $sourceSchedule->startsOn());
+            $sourceSchedule->endFrom($availableFrom);
+            $sourceDay->endFrom($availableFrom);
+            $place = App\Module\Waiting\Domain\Model\PermanentPlace::create($sourceSchedule, [$sourceDay], $availableFrom, new DateTimeImmutable('now', new DateTimeZone('UTC')));
+            $entityManager->persist($sourceSchedule);
+            $entityManager->persist($sourceDay);
+            $entityManager->persist($place);
+            $entityManager->persist(App\Module\Waiting\Domain\Model\PermanentPlaceSlot::create($place, $sourceDay));
             $entityManager->flush();
             $client->selectPrimaryChannel($channel);
             $waitingClient->selectPrimaryChannel($waitingChannel);
@@ -70,7 +80,10 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             continue;
         }
         $connection->transactional(static function () use ($connection, $id): void {
+            $connection->executeStatement('DELETE FROM permanent_place_offers WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM free_window_offers WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM permanent_place_slots WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM permanent_places WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM waiting_list_availability WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM waiting_list_entries WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM free_windows WHERE organization_id = ?', [$id]);
@@ -85,6 +98,9 @@ foreach (['desktop', 'mobile', 'browser'] as $device) {
             $connection->executeStatement('DELETE FROM appointment_events WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM schedule_allocations WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM appointments WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM schedule_generation_issues WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM regular_schedule_days WHERE organization_id = ?', [$id]);
+            $connection->executeStatement('DELETE FROM regular_schedules WHERE organization_id = ?', [$id]);
             $connection->executeStatement('UPDATE clients SET primary_channel_id = NULL WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM channel_connections WHERE organization_id = ?', [$id]);
             $connection->executeStatement('DELETE FROM clients WHERE organization_id = ?', [$id]);

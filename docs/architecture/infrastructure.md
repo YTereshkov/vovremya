@@ -29,12 +29,14 @@ the production hardening phase.
 
 ## Scheduler
 
-The `infrastructure` schedule runs in its own process. Scheduled work is wrapped
-in `RedispatchMessage`, so the scheduler only produces work and the async worker
-executes it. Schedule state is stored in Redis, and only the latest missed run is
-processed after downtime.
+Infrastructure, regular scheduling, communications, and waiting schedules run
+as separate scheduler receivers. Scheduled work is wrapped in
+`RedispatchMessage`, so schedulers only produce work and the async worker
+executes it. Schedule state is stored in Redis, and only the latest missed run
+is processed after downtime.
 
 The infrastructure heartbeat interval is configured through
 `INFRASTRUCTURE_HEARTBEAT_INTERVAL`. It is a technical setting, not a business
-rule. Future business schedules should receive their own providers instead of
-growing one global schedule class.
+rule. `scheduler_waiting` extends concrete reservations for active
+PermanentPlace offers once per day. Repeated runs are safe and do not duplicate
+allocations.

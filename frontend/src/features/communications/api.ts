@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/features/auth/AuthProvider'
 import { apiRequest } from '@/shared/api/request'
 
-export type MessageTemplateType = 'CONFIRMATION' | 'TRANSFER' | 'FREE_WINDOW'
+export type MessageTemplateType = 'CONFIRMATION' | 'TRANSFER' | 'FREE_WINDOW' | 'PERMANENT_PLACE'
 
 export interface MessageTemplate {
   type: MessageTemplateType

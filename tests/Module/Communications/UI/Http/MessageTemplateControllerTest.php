@@ -44,8 +44,8 @@ final class MessageTemplateControllerTest extends WebTestCase
         $this->client->request('GET', '/api/communications/templates');
         self::assertResponseIsSuccessful();
         $defaults = $this->json();
-        self::assertCount(3, $defaults);
-        self::assertSame(['CONFIRMATION', 'TRANSFER', 'FREE_WINDOW'], array_column($defaults, 'type'));
+        self::assertCount(4, $defaults);
+        self::assertSame(['CONFIRMATION', 'TRANSFER', 'FREE_WINDOW', 'PERMANENT_PLACE'], array_column($defaults, 'type'));
         self::assertTrue($defaults[0]['isDefault']);
 
         $custom = 'Здравствуйте, {contact_name}. {date} в {time} — {service} для {client_name}.';

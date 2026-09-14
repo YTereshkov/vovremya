@@ -14,6 +14,7 @@ final readonly class MessageTemplateCatalog
         'CONFIRMATION' => 'Напоминаем: {date}, в {time} у вас {service}. Подтвердите, пожалуйста, сможете ли прийти.',
         'TRANSFER' => 'Для занятия {date} в {time} доступны новые варианты времени. Выберите подходящий вариант.',
         'FREE_WINDOW' => 'Появилось свободное окно: {date} в {time}, {service}. Подойдёт ли вам это время?',
+        'PERMANENT_PLACE' => 'Освободилось постоянное место {service} {date}: {time}. Хотите закрепить это расписание?',
     ];
 
     public function __construct(private MessageTemplateStore $store)

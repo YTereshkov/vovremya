@@ -176,6 +176,8 @@ final class AbsenceControllerTest extends WebTestCase
         self::assertSame('REMOVED_FROM_SCHEDULE', $this->planningStatus($regular));
         self::assertSame($date, $this->entityManager->getConnection()->fetchOne('SELECT inactive_from FROM regular_schedules WHERE id = :id', ['id' => $schedule->id()->toRfc4122()]));
         self::assertSame(0, $this->countRows('free_windows'));
+        self::assertSame(1, $this->countRows('permanent_places'));
+        self::assertSame(1, $this->countRows('permanent_place_slots'));
     }
 
     public function testForeignTenantCannotCreateAbsences(): void

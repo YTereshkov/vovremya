@@ -20,6 +20,14 @@ interface WaitingListStore
     /** @return list<WaitingListEntry> */
     public function matchingOneOff(Ulid $serviceId, Ulid $specialistId, \DateTimeImmutable $date, int $weekday, string $startTime, string $endTime): array;
 
+    /** @return list<WaitingListEntry> */
+    public function matchingPermanent(Ulid $serviceId, Ulid $specialistId, \DateTimeImmutable $date): array;
+
+    /** @param list<Ulid> $entryIds
+     *  @return array<string, list<WaitingListAvailability>>
+     */
+    public function availabilityForEntries(array $entryIds): array;
+
     public function save(WaitingListEntry|WaitingListAvailability ...$entities): void;
 
     public function replaceAvailability(WaitingListEntry $entry, WaitingListAvailability ...$availability): void;

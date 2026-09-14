@@ -1,11 +1,11 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 19 завершена',
-    currentBatch: 19,
-    currentPart: 43,
-    currentItem: 'Предложения FreeWindow завершены',
-    updatedAt: '2026-09-11',
+    state: 'Пачка 20 завершена',
+    currentBatch: 20,
+    currentPart: 45,
+    currentItem: 'Постоянные места и их предложения завершены',
+    updatedAt: '2026-09-14',
   },
   statusLabels: {
     done: 'Выполнено',
@@ -15,20 +15,20 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 19 · Часть 43',
+    title: 'Пачка 20 · Части 44–45',
     items: [
-      'Администратор выбирает одного кандидата и создаёт активное предложение разового окна.',
-      'Активное предложение создаёт OFFER_RESERVATION; второе одновременное предложение запрещено.',
-      'Автоматического timeout нет; отказ и отмена освобождают reservation.',
-      'Принятие повторно проверяет availability и атомарно заменяет reservation на Appointment allocation.',
-      'Для Waiting List создаётся разовое занятие, а само ожидание остаётся активным.',
-      'Для переноса позднего клиента старое время становится новым FreeWindow.',
-      'Действия клиента tenant-bound, channel-bound и одноразовы; сообщения идут через outbox.',
+      'Завершение всего регулярного расписания создаёт комплект постоянных мест; завершение одного дня — отдельное место.',
+      'Комплект сопоставляется Waiting List целиком с учётом уже существующей регулярной частоты клиента.',
+      'Активное предложение создаёт OFFER_RESERVATION для всех появлений внутри rolling horizon.',
+      'Ежедневный scheduler идемпотентно продлевает резервы; автоматического timeout нет.',
+      'Принятие повторно проверяет availability и создаёт новое регулярное расписание только при полной доступности.',
+      'Отказ, отмена и потеря доступности освобождают резервы и оставляют место открытым.',
+      'Клиентские действия tenant-bound, channel-bound и одноразовы; сообщения идут через outbox.',
     ],
-    description: 'Предложения FreeWindow работают сквозным tenant-scoped контуром: выбор кандида, reservation, outbox, callback и атомарное изменение расписания.',
-    outcome: 'Одно окно можно безопасно предложить одному клиенту; ответ либо создаёт/переносит занятие, либо возвращает окно в работу.',
+    description: 'Постоянные места работают сквозным tenant-scoped контуром: освобождение правила, matching, rolling reservation, outbox, callback и новое регулярное расписание.',
+    outcome: 'Освобождённое место или комплект можно безопасно предложить одному подходящему клиенту целиком.',
   },
-  nextPartNumbers: [43, 44, 45],
+  nextPartNumbers: [46, 47, 48],
   batches: [
     {
       number: 1,
@@ -179,8 +179,8 @@ window.PROJECT_PROGRESS = {
       number: 20,
       title: 'Постоянные места и их предложения',
       parts: [
-        { number: 44, title: 'PermanentPlace и комплекты', status: 'pending' },
-        { number: 45, title: 'Offers для PermanentPlace', status: 'pending' },
+        { number: 44, title: 'PermanentPlace и комплекты', status: 'done', completedAt: '2026-09-14', result: 'Освобождение регулярного расписания создаёт single/bundle место; matching учитывает весь комплект и оставшуюся частоту.' },
+        { number: 45, title: 'Offers для PermanentPlace', status: 'done', completedAt: '2026-09-14', result: 'Offer резервирует все появления rolling horizon, а принятие атомарно создаёт новое регулярное расписание после повторной availability check.' },
       ],
     },
     { number: 21, title: 'Уведомления и контроль доставки', parts: [{ number: 46, title: 'Уведомления и контроль доставки', status: 'pending' }] },
@@ -204,6 +204,17 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-14',
+      items: [
+        'Завершена пачка 20: PermanentPlace, комплекты и предложения постоянных мест.',
+        'Полное освобождение регулярного расписания создаёт один bundle; освобождение дня создаёт single place.',
+        'Matching учитывает все слоты комплекта и вычитает текущую регулярную частоту клиента.',
+        'Активное предложение без timeout резервирует появления внутри rolling horizon; scheduler продлевает их идемпотентно.',
+        'Принятие повторно проверяет availability и создаёт RegularSchedule; отказ или отмена освобождают reservation.',
+        'Responsive Waiting UI поддерживает просмотр, выбор кандидата и отмену предложения.',
+      ],
+    },
     {
       date: '2026-09-11',
       items: [

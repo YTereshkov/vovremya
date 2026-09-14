@@ -67,11 +67,52 @@ export interface FreeWindow {
   activeOffer: FreeWindowOffer | null
 }
 
+export interface PermanentPlaceOffer {
+  id: string
+  client: { id: string; name: string }
+  status: 'ACTIVE'
+  createdAt: string
+}
+
+export interface PermanentPlaceSlot {
+  weekday: number
+  startTime: string
+  durationMinutes: number
+}
+
+export interface PermanentPlace {
+  id: string
+  type: 'SINGLE' | 'BUNDLE'
+  specialistId: string
+  service: { id: string; name: string }
+  availableFrom: string
+  slots: PermanentPlaceSlot[]
+  activeOffer: PermanentPlaceOffer | null
+}
+
+export interface PermanentPlaceCandidate {
+  waitingListEntryId: string
+  client: { id: string; name: string }
+  requiredFrequency: number
+  currentFrequency: number
+  remainingFrequency: number
+  availability: string
+}
+
 export function useFreeWindows() {
   const { user } = useAuth()
   return useQuery({
     queryKey: ['free-windows', user?.organization.id],
     queryFn: ({ signal }) => apiRequest<FreeWindow[]>('/api/free-windows', 'GET', undefined, signal),
+  })
+}
+
+export function usePermanentPlaces(enabled = true) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['permanent-places', user?.organization.id],
+    queryFn: ({ signal }) => apiRequest<PermanentPlace[]>('/api/permanent-places', 'GET', undefined, signal),
+    enabled,
   })
 }
 
@@ -107,4 +148,21 @@ export function createFreeWindowOffer(windowId: string, targetType: FreeWindowOf
 
 export function cancelFreeWindowOffer(offerId: string) {
   return apiRequest<void>(`/api/free-window-offers/${offerId}`, 'DELETE')
+}
+
+export function usePermanentPlaceCandidates(placeId: string, enabled: boolean) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['permanent-place-candidates', user?.organization.id, placeId],
+    queryFn: ({ signal }) => apiRequest<PermanentPlaceCandidate[]>(`/api/permanent-places/${placeId}/candidates`, 'GET', undefined, signal),
+    enabled: Boolean(placeId) && enabled,
+  })
+}
+
+export function createPermanentPlaceOffer(placeId: string, waitingListEntryId: string) {
+  return apiRequest<PermanentPlaceOffer>(`/api/permanent-places/${placeId}/offers`, 'POST', { waitingListEntryId })
+}
+
+export function cancelPermanentPlaceOffer(offerId: string) {
+  return apiRequest<void>(`/api/permanent-place-offers/${offerId}`, 'DELETE')
 }

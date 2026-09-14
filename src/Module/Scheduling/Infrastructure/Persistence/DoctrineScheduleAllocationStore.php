@@ -159,6 +159,31 @@ final readonly class DoctrineScheduleAllocationStore implements ScheduleAllocati
         );
     }
 
+    public function activeForOffer(Ulid $offerId): array
+    {
+        return array_map(
+            static fn (array $row): array => [
+                'startsAt' => new \DateTimeImmutable((string) $row['starts_at']),
+                'endsAt' => new \DateTimeImmutable((string) $row['ends_at']),
+            ],
+            $this->entityManager->getConnection()->fetchAllAssociative(
+                <<<'SQL'
+                    SELECT starts_at, ends_at
+                    FROM schedule_allocations
+                    WHERE organization_id = :organization_id
+                      AND allocation_type = 'OFFER_RESERVATION'
+                      AND source_id = :offer_id
+                      AND released_at IS NULL
+                    ORDER BY starts_at
+                    SQL,
+                [
+                    'organization_id' => $this->organizationContext->currentId()->toRfc4122(),
+                    'offer_id' => $offerId->toRfc4122(),
+                ],
+            ),
+        );
+    }
+
     public function restoreForAppointment(Ulid $appointmentId): void
     {
         try {

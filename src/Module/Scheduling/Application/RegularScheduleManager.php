@@ -7,6 +7,7 @@ namespace App\Module\Scheduling\Application;
 use App\Module\Scheduling\Domain\Model\RegularSchedule;
 use App\Module\Scheduling\Domain\Model\RegularScheduleDay;
 use App\Module\Scheduling\Domain\Model\AppointmentPlanningStatus;
+use App\Module\Waiting\Application\PermanentPlaceRegistrar;
 use Symfony\Component\Uid\Ulid;
 
 final readonly class RegularScheduleManager
@@ -17,17 +18,20 @@ final readonly class RegularScheduleManager
         private ScheduleAllocationStore $allocations,
         private RegularScheduleMaterializer $materializer,
         private TransferService $transfers,
+        private PermanentPlaceRegistrar $permanentPlaces,
     ) {
     }
 
     public function end(string $scheduleId, \DateTimeImmutable $from): RegularSchedule
     {
         $schedule = $this->schedule($scheduleId);
-        $this->schedules->transactional(function () use ($schedule, $from): void {
+        $days = $this->activeDays($schedule, $from);
+        $this->schedules->transactional(function () use ($schedule, $days, $from): void {
             $schedule->endFrom($from);
             $this->removeMaterialized($schedule, $from);
             $this->resolveObsoleteIssues($schedule, $from);
             $this->schedules->save($schedule);
+            $this->permanentPlaces->register($schedule, $days, $from, new \DateTimeImmutable());
         });
 
         return $schedule;
@@ -37,11 +41,15 @@ final readonly class RegularScheduleManager
     {
         $schedule = $this->schedule($scheduleId);
         $day = $this->day($schedule, $dayId);
-        $this->schedules->transactional(function () use ($schedule, $day, $from): void {
+        $release = $schedule->isActiveOn($from) && $day->isActiveOn($from);
+        $this->schedules->transactional(function () use ($schedule, $day, $from, $release): void {
             $day->endFrom($from);
             $this->removeMaterialized($schedule, $from, $day->id());
             $this->resolveObsoleteIssues($schedule, $from, $day->id());
             $this->schedules->save($day);
+            if ($release) {
+                $this->permanentPlaces->register($schedule, [$day], $from, new \DateTimeImmutable());
+            }
         });
 
         return $day;
@@ -52,10 +60,12 @@ final readonly class RegularScheduleManager
         $schedules = $this->schedules->activeForClient($clientId, $from);
         $this->schedules->transactional(function () use ($schedules, $from): void {
             foreach ($schedules as $schedule) {
+                $days = $this->activeDays($schedule, $from);
                 $schedule->endFrom($from);
                 $this->removeMaterialized($schedule, $from);
                 $this->resolveObsoleteIssues($schedule, $from);
                 $this->schedules->save($schedule);
+                $this->permanentPlaces->register($schedule, $days, $from, new \DateTimeImmutable());
             }
         });
 
@@ -120,6 +130,19 @@ final readonly class RegularScheduleManager
                 $this->schedules->save($issue);
             }
         }
+    }
+
+    /** @return list<RegularScheduleDay> */
+    private function activeDays(RegularSchedule $schedule, \DateTimeImmutable $from): array
+    {
+        if (!$schedule->isActiveOn($from)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->schedules->days($schedule->id(), true),
+            static fn (RegularScheduleDay $day): bool => $day->isActiveOn($from),
+        ));
     }
 
     private function schedule(string $id): RegularSchedule

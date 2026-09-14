@@ -10,6 +10,7 @@ const tabs: Array<{ type: MessageTemplateType; label: string; title: string }> =
   { type: 'CONFIRMATION', label: 'Подтверждение', title: 'Запрос подтверждения' },
   { type: 'TRANSFER', label: 'Перенос', title: 'Предложение переноса' },
   { type: 'FREE_WINDOW', label: 'Свободное окно', title: 'Предложение свободного окна' },
+  { type: 'PERMANENT_PLACE', label: 'Постоянное место', title: 'Предложение постоянного места' },
 ]
 
 export function MessageTemplatesPage() {
@@ -19,7 +20,7 @@ export function MessageTemplatesPage() {
 
   return <ResourceFrame title="Общие шаблоны сообщений" back="/settings">
     <p className="-mt-3 mb-6 text-sm text-muted">Используются для услуг без собственного шаблона</p>
-    <div className="mb-6 grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-white/70">
+    <div className="mb-6 grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-white/70 sm:grid-cols-4">
       {tabs.map((tab) => <button aria-pressed={tab.type === activeType} className={`min-h-14 px-2 text-sm sm:text-base ${tab.type === activeType ? 'bg-primary text-white' : ''}`} key={tab.type} onClick={() => setActiveType(tab.type)} type="button">{tab.label}</button>)}
     </div>
     <ResourceFeedback error={query.error} />
