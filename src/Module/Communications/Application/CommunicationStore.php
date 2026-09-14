@@ -20,6 +20,8 @@ interface CommunicationStore
 
     public function findOutbound(Ulid $id): ?OutboundMessage;
 
+    public function findOutboundByProviderMessageId(string $provider, string $providerMessageId): ?OutboundMessage;
+
     public function findWebhook(string $provider, string $externalEventId): ?WebhookInbox;
 
     public function findWebhookById(Ulid $id): ?WebhookInbox;

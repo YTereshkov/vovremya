@@ -108,6 +108,12 @@ services:
     App\Module\Communications\Application\ConfirmationSettingsStore:
         alias: App\Module\Communications\Infrastructure\Persistence\DoctrineConfirmationSettingsStore
 
+    App\Module\Communications\Application\NotificationReadStateStore:
+        alias: App\Module\Communications\Infrastructure\Persistence\DoctrineNotificationReadStateStore
+
+    App\Module\Reporting\Application\NotificationCenterQuery:
+        alias: App\Module\Reporting\Infrastructure\Persistence\DoctrineNotificationCenterQuery
+
     App\Module\Waiting\Application\FreeWindowStore:
         alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowStore
 

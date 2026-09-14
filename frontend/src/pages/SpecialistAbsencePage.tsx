@@ -21,14 +21,14 @@ export function SpecialistAbsencePage() {
   const [notifyClients, setNotifyClients] = useState(true)
   const impact = useAbsenceImpact('specialists', id, startsOn, endsOn)
   const save = useMutation({
-    mutationFn: () => apiRequest(`/api/specialists/${id}/absences`, 'POST', { type, startsOn, endsOn, comment: comment || null, notifyClients }),
-    onSuccess: async () => {
+    mutationFn: () => apiRequest<{ id: string; affectedAppointments: number; queuedNotifications: number }>(`/api/specialists/${id}/absences`, 'POST', { type, startsOn, endsOn, comment: comment || null, notifyClients }),
+    onSuccess: async (result) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['workforce'] }),
         queryClient.invalidateQueries({ queryKey: ['calendar'] }),
         queryClient.invalidateQueries({ queryKey: ['free-windows'] }),
       ])
-      navigate(`/specialists/${id}`)
+      navigate(notifyClients && result.affectedAppointments > 0 ? `/notifications/delivery/${result.id}` : `/specialists/${id}`)
     },
   })
   const profile = specialist.data

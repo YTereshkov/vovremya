@@ -9,5 +9,7 @@ enum OutboundMessageStatus: string
     case PENDING = 'PENDING';
     case PROCESSING = 'PROCESSING';
     case SENT = 'SENT';
+    case DELIVERED = 'DELIVERED';
+    case READ = 'READ';
     case FAILED = 'FAILED';
 }

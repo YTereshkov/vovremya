@@ -25,7 +25,10 @@ final class FakeChannelProvider implements ChannelProvider
 
     public ?\Throwable $webhookFailure = null;
 
-    public function __construct(private readonly CommunicationProvider $communicationProvider = CommunicationProvider::MAX)
+    public function __construct(
+        private readonly CommunicationProvider $communicationProvider = CommunicationProvider::MAX,
+        private readonly ?ChannelCapabilities $channelCapabilities = null,
+    )
     {
     }
 
@@ -36,7 +39,7 @@ final class FakeChannelProvider implements ChannelProvider
 
     public function capabilities(): ChannelCapabilities
     {
-        return new ChannelCapabilities(true, false, false, false, true);
+        return $this->channelCapabilities ?? new ChannelCapabilities(true, false, false, false, true);
     }
 
     public function send(OutboundMessageRequest $request): ProviderSendResult

@@ -7,11 +7,15 @@ namespace App\Tests\Module\Communications\Application;
 use App\Module\Communications\Application\NotificationOutbox;
 use App\Module\Communications\Application\CommunicationStore;
 use App\Module\Communications\Application\ChannelProviderRegistry;
+use App\Module\Communications\Application\ChannelCapabilities;
+use App\Module\Communications\Application\DeliveryStatusConsumer;
+use App\Module\Communications\Application\OutboundMessageRetryService;
 use App\Module\Communications\Application\Message\SendOutboundMessage;
 use App\Module\Communications\Application\Message\SendOutboundMessageHandler;
 use App\Module\Communications\Domain\Model\CommunicationProvider;
 use App\Module\Communications\Domain\Model\NotificationIntent;
 use App\Module\Communications\Domain\Model\OutboundMessage;
+use App\Module\Communications\Domain\Model\NormalizedWebhookEvent;
 use App\Module\Identity\Application\CreateAdministrator\CreateAdministratorHandler;
 use App\Module\Identity\Domain\Model\AdministratorAccount;
 use App\Module\Clients\Domain\Model\ChannelConnection;
@@ -182,6 +186,90 @@ final class NotificationOutboxTest extends KernelTestCase
         $sent = $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->findOutbound($message->id()));
         self::assertSame('SENT', $sent?->status()->value);
         self::assertSame(2, $sent?->attempts());
+    }
+
+    public function testDeliveryStatusesAreCapabilityGuardedAndMonotonic(): void
+    {
+        $message = $this->queue();
+        $message->markSent('provider-delivery-1');
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->save($message));
+        $consumer = new DeliveryStatusConsumer(
+            $this->store,
+            new ChannelProviderRegistry([new FakeChannelProvider(CommunicationProvider::MAX, new ChannelCapabilities(true, false, true, true, true))]),
+        );
+
+        $this->consumeDelivery($consumer, 'event-read', 'READ', '2026-09-14T12:00:00+00:00');
+        self::assertSame('READ', $message->status()->value);
+        self::assertSame('2026-09-14T12:00:00+00:00', $message->readAt()?->format(DATE_ATOM));
+
+        $this->consumeDelivery($consumer, 'event-delivered-late', 'DELIVERED', '2026-09-14T11:00:00+00:00');
+        self::assertSame('READ', $message->status()->value);
+        self::assertSame('2026-09-14T12:00:00+00:00', $message->deliveredAt()?->format(DATE_ATOM));
+
+        $unsupported = new DeliveryStatusConsumer($this->store, new ChannelProviderRegistry([new FakeChannelProvider()]));
+        $this->consumeDelivery($unsupported, 'event-unsupported', 'FAILED', null);
+        self::assertSame('READ', $message->status()->value);
+    }
+
+    public function testManualRetryResetsProviderDeliveryStateAndIsTenantScoped(): void
+    {
+        $message = $this->queue();
+        $message->markSent('provider-retry-1');
+        $message->fail('Temporary failure');
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->save($message));
+        $retry = new OutboundMessageRetryService($this->store);
+
+        $this->context->runWith($this->administrator->organizationId(), fn () => $retry->retry($this->administrator, $message->id(), new \DateTimeImmutable('2026-09-14T13:00:00+00:00')));
+        self::assertSame('PENDING', $message->status()->value);
+        self::assertNull($message->providerMessageId());
+        self::assertNull($message->sentAt());
+        self::assertNull($message->lastError());
+
+        $foreign = self::getContainer()->get(CreateAdministratorHandler::class)
+            ->create('Foreign retry', 'foreign-retry-'.bin2hex(random_bytes(4)).'@example.test', 'test-password', 'UTC');
+        $this->expectException(\OutOfBoundsException::class);
+        $this->context->runWith($foreign->organizationId(), fn () => $retry->retry($foreign, $message->id(), new \DateTimeImmutable()));
+    }
+
+    public function testProviderMessageIdentifierCannotBeReusedInsideTenant(): void
+    {
+        $first = $this->queue();
+        $first->markSent('provider-unique-1');
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->save($first));
+        $second = $this->queue();
+        $second->markSent('provider-unique-1');
+
+        $this->expectException(\DomainException::class);
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->save($second));
+    }
+
+    public function testDeliveryStatusCannotCrossTenantBoundary(): void
+    {
+        $message = $this->queue();
+        $message->markSent('provider-tenant-1');
+        $this->context->runWith($this->administrator->organizationId(), fn () => $this->store->save($message));
+        $foreign = self::getContainer()->get(CreateAdministratorHandler::class)
+            ->create('Foreign delivery', 'foreign-delivery-'.bin2hex(random_bytes(4)).'@example.test', 'test-password', 'UTC');
+        $event = NormalizedWebhookEvent::create($foreign->organization(), null, CommunicationProvider::MAX, 'foreign-event', [
+            'kind' => 'DELIVERY_STATUS', 'providerMessageId' => 'provider-tenant-1', 'status' => 'READ',
+        ]);
+        $consumer = new DeliveryStatusConsumer(
+            $this->store,
+            new ChannelProviderRegistry([new FakeChannelProvider(CommunicationProvider::MAX, new ChannelCapabilities(true, false, true, true, true))]),
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->context->runWith($foreign->organizationId(), fn () => $consumer->consume($event));
+    }
+
+    private function consumeDelivery(DeliveryStatusConsumer $consumer, string $eventId, string $status, ?string $occurredAt): void
+    {
+        $payload = ['kind' => 'DELIVERY_STATUS', 'providerMessageId' => 'provider-delivery-1', 'status' => $status];
+        if (null !== $occurredAt) {
+            $payload['occurredAt'] = $occurredAt;
+        }
+        $event = NormalizedWebhookEvent::create($this->administrator->organization(), $this->channel->id(), CommunicationProvider::MAX, $eventId, $payload);
+        $this->context->runWith($this->administrator->organizationId(), fn () => $consumer->consume($event));
     }
 
     private function queue(): OutboundMessage

@@ -15,9 +15,11 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Entity]
 #[ORM\Table(name: 'communication_outbox')]
 #[ORM\UniqueConstraint(name: 'uniq_communication_outbox_tenant_id', columns: ['organization_id', 'id'])]
+#[ORM\UniqueConstraint(name: 'uniq_communication_outbox_provider_message', columns: ['organization_id', 'provider', 'provider_message_id'], options: ['where' => '(provider_message_id IS NOT NULL)'])]
 #[ORM\Index(name: 'idx_communication_outbox_pending', columns: ['organization_id', 'status', 'available_at'])]
 #[ORM\Index(name: 'idx_communication_outbox_processing', columns: ['organization_id', 'status', 'processing_started_at'])]
 #[ORM\Index(name: 'idx_communication_outbox_intent', columns: ['organization_id', 'notification_intent_id'])]
+#[ORM\Index(name: 'idx_communication_outbox_attention', columns: ['organization_id', 'status', 'created_at'])]
 final class OutboundMessage implements OrganizationOwned
 {
     private function __construct(
@@ -53,6 +55,10 @@ final class OutboundMessage implements OrganizationOwned
         private ?DateTimeImmutable $publishedAt,
         #[ORM\Column(name: 'sent_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
         private ?DateTimeImmutable $sentAt,
+        #[ORM\Column(name: 'delivered_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+        private ?DateTimeImmutable $deliveredAt,
+        #[ORM\Column(name: 'read_at', type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
+        private ?DateTimeImmutable $readAt,
         #[ORM\Column(name: 'provider_message_id', length: 200, nullable: true)]
         private ?string $providerMessageId,
         #[ORM\Column(name: 'last_error', length: 500, nullable: true)]
@@ -107,6 +113,8 @@ final class OutboundMessage implements OrganizationOwned
             null,
             null,
             null,
+            null,
+            null,
             new DateTimeImmutable('now', new DateTimeZone('UTC')),
         );
     }
@@ -125,10 +133,73 @@ final class OutboundMessage implements OrganizationOwned
 
     public function markSent(?string $providerMessageId = null): void
     {
-        $this->status = OutboundMessageStatus::SENT;
-        $this->providerMessageId = $providerMessageId;
-        $this->sentAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        if (
+            null !== $providerMessageId
+            && null !== $this->providerMessageId
+            && $providerMessageId !== $this->providerMessageId
+        ) {
+            throw new \DomainException('Идентификатор сообщения провайдера уже назначен.');
+        }
+
+        if (!in_array($this->status, [OutboundMessageStatus::DELIVERED, OutboundMessageStatus::READ], true)) {
+            $this->status = OutboundMessageStatus::SENT;
+        }
+        $this->providerMessageId ??= $providerMessageId;
+        $this->sentAt ??= new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $this->processingStartedAt = null;
+        $this->lastError = null;
+    }
+
+    public function markDelivered(DateTimeImmutable $at): void
+    {
+        if (OutboundMessageStatus::READ === $this->status) {
+            return;
+        }
+        if (!in_array($this->status, [OutboundMessageStatus::SENT, OutboundMessageStatus::DELIVERED], true)) {
+            throw new \DomainException('Статус доставки нельзя применить к неотправленному сообщению.');
+        }
+        $this->status = OutboundMessageStatus::DELIVERED;
+        $this->deliveredAt ??= $at->setTimezone(new DateTimeZone('UTC'));
+    }
+
+    public function markRead(DateTimeImmutable $at): void
+    {
+        if (OutboundMessageStatus::READ === $this->status) {
+            return;
+        }
+        if (!in_array($this->status, [OutboundMessageStatus::SENT, OutboundMessageStatus::DELIVERED], true)) {
+            throw new \DomainException('Статус прочтения нельзя применить к неотправленному сообщению.');
+        }
+        $this->status = OutboundMessageStatus::READ;
+        $this->deliveredAt ??= $at->setTimezone(new DateTimeZone('UTC'));
+        $this->readAt ??= $at->setTimezone(new DateTimeZone('UTC'));
+    }
+
+    public function markDeliveryFailed(string $error): void
+    {
+        if (in_array($this->status, [OutboundMessageStatus::DELIVERED, OutboundMessageStatus::READ], true)) {
+            return;
+        }
+        if (OutboundMessageStatus::SENT !== $this->status) {
+            throw new \DomainException('Ошибка доставки относится только к отправленному сообщению.');
+        }
+        $this->fail($error);
+    }
+
+    public function retryManually(DateTimeImmutable $at): void
+    {
+        if (OutboundMessageStatus::FAILED !== $this->status) {
+            throw new \DomainException('Повторить можно только сообщение с ошибкой.');
+        }
+        $this->status = OutboundMessageStatus::PENDING;
+        $this->attempts = 0;
+        $this->availableAt = $at->setTimezone(new DateTimeZone('UTC'));
+        $this->processingStartedAt = null;
+        $this->publishedAt = null;
+        $this->sentAt = null;
+        $this->deliveredAt = null;
+        $this->readAt = null;
+        $this->providerMessageId = null;
         $this->lastError = null;
     }
 
@@ -159,6 +230,12 @@ final class OutboundMessage implements OrganizationOwned
     public function metadata(): array { return $this->metadata; }
     public function status(): OutboundMessageStatus { return $this->status; }
     public function attempts(): int { return $this->attempts; }
+    public function sentAt(): ?DateTimeImmutable { return $this->sentAt; }
+    public function deliveredAt(): ?DateTimeImmutable { return $this->deliveredAt; }
+    public function readAt(): ?DateTimeImmutable { return $this->readAt; }
+    public function providerMessageId(): ?string { return $this->providerMessageId; }
+    public function lastError(): ?string { return $this->lastError; }
+    public function createdAt(): DateTimeImmutable { return $this->createdAt; }
 
     /** @param array<string, mixed> $metadata */
     public static function assertMetadata(array $metadata): void

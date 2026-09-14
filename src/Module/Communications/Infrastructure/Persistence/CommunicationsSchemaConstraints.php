@@ -70,5 +70,16 @@ final class CommunicationsSchemaConstraints
                 'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_confirmation_settings_organization',
             );
         }
+
+        if ($schema->hasTable('administrator_notification_states')) {
+            $schema->getTable('administrator_notification_states')->addForeignKeyConstraint(
+                'organizations', ['organization_id'], ['id'], ['onDelete' => 'RESTRICT'], 'fk_admin_notification_states_organization',
+            );
+            if ($schema->hasTable('administrator_accounts')) {
+                $schema->getTable('administrator_notification_states')->addForeignKeyConstraint(
+                    'administrator_accounts', ['organization_id', 'administrator_id'], ['organization_id', 'id'], ['onDelete' => 'CASCADE'], 'fk_admin_notification_states_admin_tenant',
+                );
+            }
+        }
     }
 }

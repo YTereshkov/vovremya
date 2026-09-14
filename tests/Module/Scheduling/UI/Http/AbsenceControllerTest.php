@@ -122,6 +122,55 @@ final class AbsenceControllerTest extends WebTestCase
         self::assertNull($schedule->inactiveFrom());
     }
 
+    public function testSpecialistAbsenceDeliveryReportShowsClientWithoutChannel(): void
+    {
+        $this->appointment($this->client, '10:00');
+        $date = $this->date->format('Y-m-d');
+
+        $this->browser->jsonRequest('POST', '/api/specialists/'.$this->specialist->id()->toRfc4122().'/absences', [
+            'type' => 'VACATION',
+            'startsOn' => $date,
+            'endsOn' => $date,
+            'comment' => null,
+            'notifyClients' => true,
+        ], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
+        self::assertResponseStatusCodeSame(201);
+        $absenceId = $this->json()['id'];
+        self::assertSame(0, $this->json()['queuedNotifications']);
+
+        $this->browser->request('GET', '/api/notifications/delivery/'.$absenceId);
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $this->json()['items']);
+        self::assertSame('Петя', $this->json()['items'][0]['clientName']);
+        self::assertSame('NO_CHANNEL', $this->json()['items'][0]['status']);
+        self::assertNull($this->json()['items'][0]['messageId']);
+    }
+
+    public function testSpecialistAbsenceDeliveryReportShowsQueuedMessage(): void
+    {
+        $channel = ChannelConnection::create($this->client, null, 'MAX', '123456789');
+        $channel->activate();
+        $this->entityManager->persist($channel);
+        $this->entityManager->flush();
+        $this->client->selectPrimaryChannel($channel);
+        $this->entityManager->flush();
+        $this->appointment($this->client, '10:00');
+        $date = $this->date->format('Y-m-d');
+
+        $this->browser->jsonRequest('POST', '/api/specialists/'.$this->specialist->id()->toRfc4122().'/absences', [
+            'type' => 'VACATION', 'startsOn' => $date, 'endsOn' => $date, 'comment' => null, 'notifyClients' => true,
+        ], ['HTTP_X_CSRF_TOKEN' => $this->csrf]);
+        self::assertResponseStatusCodeSame(201);
+        $absenceId = $this->json()['id'];
+        self::assertSame(1, $this->json()['queuedNotifications']);
+
+        $this->browser->request('GET', '/api/notifications/delivery/'.$absenceId);
+        self::assertResponseIsSuccessful();
+        self::assertSame('PENDING', $this->json()['items'][0]['status']);
+        self::assertSame('MAX', $this->json()['items'][0]['provider']);
+        self::assertFalse($this->json()['items'][0]['capabilities']['supportsDeliveredStatus']);
+    }
+
     public function testClientAbsenceKeepsRuleAndCreatesWindowsForAffectedAppointments(): void
     {
         $channel = ChannelConnection::create($this->client, null, 'MAX', 'absence-recipient');

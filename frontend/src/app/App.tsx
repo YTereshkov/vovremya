@@ -28,6 +28,7 @@ import { SpecialistAbsencePage } from '@/pages/SpecialistAbsencePage'
 import { ClientAbsencePage } from '@/pages/ClientAbsencePage'
 import { AppointmentTransferPage } from '@/pages/AppointmentTransferPage'
 import { WaitingListFormPage } from '@/pages/WaitingListFormPage'
+import { DeliveryReportPage } from '@/pages/DeliveryReportPage'
 
 export function App() {
   return (
@@ -53,6 +54,8 @@ export function App() {
           <Route path="clients/:id/absence" element={<ClientAbsencePage />} />
           <Route path="waiting" element={<WaitingPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="notifications/delivery" element={<DeliveryReportPage />} />
+          <Route path="notifications/delivery/:absenceId" element={<DeliveryReportPage />} />
           <Route path="specialists" element={<SpecialistsPage />} />
           <Route path="specialists/:id" element={<SpecialistPage />} />
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />

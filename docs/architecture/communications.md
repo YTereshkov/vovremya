@@ -167,3 +167,27 @@ The connection-specific webhook routing key and secret must be provisioned by
 the provider integration before an activation link can be issued. Bot username,
 activation lifetime, API credential, and webhook secret material remain
 deployment/provider configuration and are never returned by settings APIs.
+
+## Notification center and delivery control (part 46)
+
+`Reporting` builds the notification center as a tenant-scoped read model from
+the modules that own confirmation, transfer, free-window, permanent-place, and
+communication state. It does not own or mutate that business state. Each
+administrator has an independent `read_through` marker; marking the list read
+does not change appointment, offer, or delivery lifecycles.
+
+Outbound delivery state is separate from a client's business response. The
+monotonic message lifecycle is `SENT -> DELIVERED -> READ`; a provider-reported
+delivery failure may move only `SENT` to `FAILED`. Delivered/read updates are
+accepted only when the active provider adapter advertises the corresponding
+capability and the normalized event matches the tenant-owned channel and
+provider message identifier. PostgreSQL prevents duplicate provider message
+identifiers within a tenant and provider.
+
+Failed messages remain visible and can be manually returned to the durable
+outbox. Retry clears the old provider identifier and delivery timestamps, then
+uses the normal tenant-scoped worker checks before another send. The delivery
+report shows channel capabilities explicitly: a plain `SENT` status is never
+presented as delivered or read when the provider cannot supply that fact.
+For a critical specialist-absence cancellation, affected clients remain in the
+report even when no primary channel exists or no message could be queued.

@@ -79,6 +79,21 @@ final readonly class DoctrineCommunicationStore implements CommunicationStore
         return $result instanceof OutboundMessage ? $result : null;
     }
 
+    public function findOutboundByProviderMessageId(string $provider, string $providerMessageId): ?OutboundMessage
+    {
+        $result = $this->entityManager->createQueryBuilder()
+            ->select('item')->from(OutboundMessage::class, 'item')
+            ->andWhere('IDENTITY(item.organization) = :organization')
+            ->andWhere('item.provider = :provider')
+            ->andWhere('item.providerMessageId = :message')
+            ->setParameter('organization', $this->organizationContext->currentId(), 'ulid')
+            ->setParameter('provider', $provider)
+            ->setParameter('message', $providerMessageId)
+            ->getQuery()->getOneOrNullResult();
+
+        return $result instanceof OutboundMessage ? $result : null;
+    }
+
     public function findWebhook(string $provider, string $externalEventId): ?WebhookInbox
     {
         $result = $this->entityManager->createQueryBuilder()
