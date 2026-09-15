@@ -114,6 +114,9 @@ services:
     App\Module\Reporting\Application\NotificationCenterQuery:
         alias: App\Module\Reporting\Infrastructure\Persistence\DoctrineNotificationCenterQuery
 
+    App\Module\Reporting\Application\StatisticsQuery:
+        alias: App\Module\Reporting\Infrastructure\Persistence\DoctrineStatisticsQuery
+
     App\Module\Waiting\Application\FreeWindowStore:
         alias: App\Module\Waiting\Infrastructure\Persistence\DoctrineFreeWindowStore
 

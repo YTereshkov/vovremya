@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/app/layout/AppShell'
 import { ScrollToTop } from '@/app/ScrollToTop'
 import { RequireAuthentication } from '@/features/auth/RequireAuthentication'
-import { SectionPlaceholderPage } from '@/pages/SectionPlaceholderPage'
 import { TodayPage } from '@/pages/TodayPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -29,6 +28,7 @@ import { ClientAbsencePage } from '@/pages/ClientAbsencePage'
 import { AppointmentTransferPage } from '@/pages/AppointmentTransferPage'
 import { WaitingListFormPage } from '@/pages/WaitingListFormPage'
 import { DeliveryReportPage } from '@/pages/DeliveryReportPage'
+import { StatisticsPage } from '@/pages/StatisticsPage'
 
 export function App() {
   return (
@@ -60,7 +60,7 @@ export function App() {
           <Route path="specialists/:id" element={<SpecialistPage />} />
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />
           <Route path="specialists/:id/absence" element={<SpecialistAbsencePage />} />
-          <Route path="statistics" element={<SectionPlaceholderPage title="Статистика" />} />
+          <Route path="statistics" element={<StatisticsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/services" element={<ServicesPage />} />
           <Route path="settings/services/new" element={<ServiceFormPage />} />

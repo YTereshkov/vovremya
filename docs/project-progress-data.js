@@ -1,11 +1,11 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 22 завершена',
-    currentBatch: 22,
-    currentPart: 48,
-    currentItem: 'Telegram и WhatsApp adapters завершены',
-    updatedAt: '2026-09-14',
+    state: 'Пачка 23 завершена',
+    currentBatch: 23,
+    currentPart: 49,
+    currentItem: 'Статистика завершена',
+    updatedAt: '2026-09-15',
   },
   statusLabels: {
     done: 'Выполнено',
@@ -15,19 +15,18 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 22 · Части 47–48',
+    title: 'Пачка 23 · Часть 49',
     items: [
-      'Telegram отправляет текст и inline-кнопки, принимает callback и активируется через /start deep link.',
-      'WhatsApp Cloud API отправляет текст и reply-кнопки, принимает delivery/read/failed webhooks.',
-      'Webhook обоих providers разрешается через tenant-owned ChannelConnection до записи inbox.',
-      'Telegram secret token и WhatsApp HMAC проверяются по документированным provider contracts.',
-      'Credentials загружаются только из deployment configuration и не сохраняются в outbox.',
-      'Обычный текст не запускает business action; клиент получает инструкцию использовать кнопки.',
+      'Месячные показатели рассчитываются read-only запросами PostgreSQL в часовом поясе кабинета.',
+      'Занятия, отмены, переносы и подтверждения используют независимые сохранённые состояния.',
+      'Заполнение из листа ожидания учитывает только принятые WAITING_LIST offers.',
+      'Фильтр специалиста и каждый запрос ограничены текущим tenant.',
+      'Единый responsive экран статистики следует утверждённым mobile/desktop макетам.',
     ],
-    description: 'Telegram и WhatsApp подключены к общему provider-neutral outbox/inbox lifecycle без зависимости бизнес-модулей от внешних API.',
-    outcome: 'Активированный клиентский канал может получать сообщения с кнопками и безопасно передавать callbacks; WhatsApp также сообщает delivery/read status.',
+    description: 'Reporting собирает существующие бизнес-состояния без отдельного write model, миграций и кэша.',
+    outcome: 'Администратор видит статистику месяца и, при нескольких специалистах, может выбрать нужное расписание.',
   },
-  nextPartNumbers: [49, 50, 51],
+  nextPartNumbers: [50, 51, 52],
   batches: [
     {
       number: 1,
@@ -191,7 +190,7 @@ window.PROJECT_PROGRESS = {
         { number: 48, title: 'WhatsApp adapter', status: 'done', completedAt: '2026-09-14', result: 'Cloud API transport, reply buttons, HMAC webhook, activation и capability-aware delivery/read statuses.' },
       ],
     },
-    { number: 23, title: 'Статистика', parts: [{ number: 49, title: 'Статистика', status: 'pending' }] },
+    { number: 23, title: 'Статистика', parts: [{ number: 49, title: 'Статистика', status: 'done', completedAt: '2026-09-15', result: 'Read-only месячная статистика, tenant-scoped specialist filter и responsive экран по макетам.' }] },
     {
       number: 24,
       title: 'PWA и offline',
@@ -203,6 +202,15 @@ window.PROJECT_PROGRESS = {
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-15',
+      items: [
+        'Завершена пачка 23: статистика занятий, отмен, переносов, подтверждений и листа ожидания.',
+        'Период определяется часовым поясом кабинета; исторические результаты и поздняя отмена берутся из Appointment.',
+        'Reporting не владеет бизнес-состоянием и не добавляет кэш, миграции или отдельный write model.',
+        'Tenant isolation и границы месяца проверены функциональными тестами; desktop/mobile UI проверен Playwright и в браузере.',
+      ],
+    },
     {
       date: '2026-09-14',
       items: [
