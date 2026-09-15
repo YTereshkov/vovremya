@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+run_id="$(date +%s)-$$"
+trap 'docker compose exec -T php php tests/Fixtures/calendar.php remove "$run_id"' EXIT
+docker compose exec -T php php tests/Fixtures/calendar.php create "$run_id"
+docker compose --profile test run --rm -e PWA_E2E_RUN="$run_id" -e PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 playwright bash -c \
+  'node ../bin/playwright-localhost-proxy.mjs & proxy_pid=$!; trap "kill $proxy_pid" EXIT
+   ready=0
+   for attempt in {1..50}; do
+     if (true > /dev/tcp/127.0.0.1/5173) 2>/dev/null; then ready=1; break; fi
+     sleep 0.1
+   done
+   if [ "$ready" -ne 1 ]; then echo "PWA test proxy did not become ready" >&2; exit 1; fi
+   npm run test:e2e -- --grep "installable PWA keeps"'

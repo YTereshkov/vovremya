@@ -60,7 +60,7 @@ export interface CalendarResponse {
   appointments: CalendarAppointment[]
 }
 
-export function useCalendar(from: string, to: string, specialistId = '') {
+export function useCalendar(from: string, to: string, specialistId = '', enabled = true) {
   const { user } = useAuth()
   return useQuery({
     queryKey: ['calendar', user?.organization.id, from, to, specialistId],
@@ -69,6 +69,7 @@ export function useCalendar(from: string, to: string, specialistId = '') {
       if (specialistId) query.set('specialistId', specialistId)
       return apiRequest<CalendarResponse>(`/api/calendar?${query}`, 'GET', undefined, signal)
     },
+    enabled,
   })
 }
 

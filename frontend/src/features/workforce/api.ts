@@ -28,9 +28,9 @@ export function useWorkforceKey() {
   return ['workforce', user?.organization.id, user?.id] as const
 }
 
-export function useSpecialists() {
+export function useSpecialists(enabled = true) {
   const key = useWorkforceKey()
-  return useQuery({ queryKey: [...key, 'list'], queryFn: ({ signal }) => workforceRequest<Specialist[]>('', 'GET', undefined, signal), staleTime: 0 })
+  return useQuery({ queryKey: [...key, 'list'], queryFn: ({ signal }) => workforceRequest<Specialist[]>('', 'GET', undefined, signal), staleTime: 0, enabled })
 }
 
 export function useSpecialist(id: string) {

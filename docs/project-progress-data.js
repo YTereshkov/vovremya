@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 23 завершена',
-    currentBatch: 23,
-    currentPart: 49,
-    currentItem: 'Статистика завершена',
+    state: 'Пачка 24 завершена',
+    currentBatch: 24,
+    currentPart: 51,
+    currentItem: 'Installable PWA и read-only offline schedule завершены',
     updatedAt: '2026-09-15',
   },
   statusLabels: {
@@ -195,13 +195,24 @@ window.PROJECT_PROGRESS = {
       number: 24,
       title: 'PWA и offline',
       parts: [
-        { number: 50, title: 'Installable PWA', status: 'pending' },
-        { number: 51, title: 'Read-only offline schedule', status: 'pending' },
+        { number: 50, title: 'Installable PWA', status: 'done', completedAt: '2026-09-15', result: 'Manifest, 192/512 maskable icons и Service Worker с shell/static asset cache без кэширования API.' },
+        { number: 51, title: 'Read-only offline schedule', status: 'done', completedAt: '2026-09-15', result: 'Tenant/account-bound IndexedDB snapshot на 7 прошедших и 30 будущих дней, read-only календарь и восстановление серверной синхронизации.' },
       ],
     },
     { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
   ],
   changes: [
+    {
+      date: '2026-09-15',
+      items: [
+        'Завершена пачка 24: standalone PWA с manifest, иконками и Service Worker для shell и статических assets.',
+        'API и изменения данных не кэшируются; без сети доступен только read-only snapshot календаря в IndexedDB.',
+        'Snapshot привязан к AdministratorAccount и Organization, очищается при logout/401/смене аккаунта и показывает время последней синхронизации.',
+        'После восстановления сети текущий account и расписание проверяются заново; desktop/mobile Playwright проверен на временных организациях.',
+        'По ревью пачки 24 добавлен независимый /health probe для восстановления после временного сбоя API без online-события.',
+        'Logout теперь очищает communications query cache; PWA E2E runner ждёт готовности localhost-прокси.',
+      ],
+    },
     {
       date: '2026-09-15',
       items: [

@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/app/layout/AppShell'
 import { ScrollToTop } from '@/app/ScrollToTop'
 import { RequireAuthentication } from '@/features/auth/RequireAuthentication'
+import { HealthProbe } from '@/features/health/HealthProbe'
 import { TodayPage } from '@/pages/TodayPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -34,6 +35,7 @@ export function App() {
   return (
     <>
       <ScrollToTop />
+      <HealthProbe />
       <Routes>
       <Route path="login" element={<LoginPage />} />
       <Route element={<RequireAuthentication />}>

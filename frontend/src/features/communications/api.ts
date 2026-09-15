@@ -121,11 +121,12 @@ export function useConfirmationAttention() {
   })
 }
 
-export function useNotificationCenter() {
+export function useNotificationCenter(enabled = true) {
   const key = useCommunicationsKey()
   return useQuery({
     queryKey: [...key, 'notification-center'],
     queryFn: ({ signal }) => apiRequest<NotificationCenter>('/api/notifications', 'GET', undefined, signal),
+    enabled,
   })
 }
 
