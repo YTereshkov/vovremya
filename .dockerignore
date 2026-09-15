@@ -1,7 +1,18 @@
 .git
 .idea
 .vscode
+.agents
+.codex
+AGENTS.md
+.env.dev
+.env.test
+.env.*.local
 node_modules
+**/node_modules
 vendor
 var
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+.phpunit.cache
 Дизайн-концепты Vovremya — итерация 2

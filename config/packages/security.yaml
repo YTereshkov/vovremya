@@ -30,6 +30,10 @@ security:
                 success_handler: App\Module\Identity\Infrastructure\Security\AuthenticationSuccessHandler
                 failure_handler: App\Module\Identity\Infrastructure\Security\AuthenticationFailureHandler
 
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
+
             logout:
                 path: /api/logout
                 enable_csrf: true

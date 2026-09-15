@@ -13,3 +13,12 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+
+when@prod:
+    framework:
+        trusted_proxies: '%env(SYMFONY_TRUSTED_PROXIES)%'
+        trusted_headers: [ 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto' ]
+        session:
+            cookie_secure: true
+            cookie_httponly: true
+            cookie_samesite: lax

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+env_file="${VOVREMYA_ENV_FILE:-.env.prod.local}"
+backup_dir="${1:?Usage: bin/backup-production <backup-directory>}"
+release="${VOVREMYA_IMAGE_TAG:-$(git rev-parse --short=12 HEAD)}"
+export VOVREMYA_ENV_FILE="$env_file"
+export VOVREMYA_IMAGE_TAG="$release"
+
+bash bin/validate-production-env "$env_file"
+umask 077
+mkdir -p "$backup_dir"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+temporary="$(mktemp "$backup_dir/.vovremya-$timestamp.XXXXXX.dump.partial")"
+target="${temporary/.vovremya-/vovremya-}"
+target="${target%.partial}"
+
+cleanup() {
+  rm -f "$temporary"
+}
+trap cleanup EXIT
+
+docker compose --env-file "$env_file" -f compose.prod.yaml exec -T postgres \
+  pg_dump --username=vovremya --dbname=vovremya --format=custom --no-owner --no-privileges > "$temporary"
+
+test -s "$temporary"
+mv "$temporary" "$target"
+trap - EXIT
+echo "Backup written to $target."

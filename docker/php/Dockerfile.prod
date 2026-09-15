@@ -1,0 +1,55 @@
+FROM php:8.4-fpm-bookworm AS build
+
+ARG PHP_REDIS_VERSION=6.2.0
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        $PHPIZE_DEPS \
+        git \
+        libicu-dev \
+        libcurl4-openssl-dev \
+        libonig-dev \
+        libpq-dev \
+        libxml2-dev \
+        libzip-dev \
+        unzip \
+    && docker-php-ext-install -j"$(nproc)" curl dom intl mbstring opcache pcntl pdo_pgsql xml xmlwriter zip \
+    && pecl install "redis-${PHP_REDIS_VERSION}" \
+    && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+WORKDIR /app
+
+COPY composer.json composer.lock symfony.lock ./
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts --optimize-autoloader
+
+COPY --chown=www-data:www-data . .
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
+    && mkdir -p var/cache var/log \
+    && chown -R www-data:www-data var
+
+FROM php:8.4-fpm-bookworm
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        libcurl4 \
+        libicu72 \
+        libonig5 \
+        libpq5 \
+        libxml2 \
+        libzip4 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/local /usr/local
+COPY --from=build --chown=www-data:www-data /app /app
+COPY docker/php/conf.d/app.ini /usr/local/etc/php/conf.d/app.ini
+COPY docker/php/conf.d/prod.ini /usr/local/etc/php/conf.d/prod.ini
+
+COPY --chmod=755 docker/php/prod-entrypoint.sh /usr/local/bin/vovremya-prod-entrypoint
+
+WORKDIR /app
+USER www-data
+ENTRYPOINT ["vovremya-prod-entrypoint"]
+CMD ["php-fpm", "-F"]

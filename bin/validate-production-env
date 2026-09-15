@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+env_file="${1:-.env.prod.local}"
+
+if [[ ! -f "$env_file" ]]; then
+  echo "Missing $env_file. Copy .env.prod.example and fill it." >&2
+  exit 1
+fi
+
+permissions="$(stat -c '%a' "$env_file")"
+if [[ "$permissions" != "600" && "$permissions" != "400" ]]; then
+  echo "$env_file must have mode 600 or 400; current mode is $permissions." >&2
+  exit 1
+fi
+
+required=(
+  APP_DOMAIN
+  ACME_EMAIL
+  APP_SECRET
+  DEFAULT_URI
+  SYMFONY_TRUSTED_PROXIES
+  DATABASE_URL
+  POSTGRES_PASSWORD
+  REDIS_URL
+  MESSENGER_TRANSPORT_DSN
+)
+
+for name in "${required[@]}"; do
+  count="$(grep -Ec "^${name}=" "$env_file" || true)"
+
+  if [[ "$count" == "0" ]]; then
+    echo "Missing non-empty $name in $env_file." >&2
+    exit 1
+  fi
+
+  if [[ "$count" != "1" ]]; then
+    echo "$env_file must contain exactly one $name assignment." >&2
+    exit 1
+  fi
+
+  if ! grep -Eq "^${name}=.+" "$env_file"; then
+    echo "Missing non-empty $name in $env_file." >&2
+    exit 1
+  fi
+done
+
+if grep -Eq '(^|=).*replace-with|example\.com' "$env_file"; then
+  echo "$env_file still contains example placeholders." >&2
+  exit 1
+fi
+
+app_secret="$(sed -n 's/^APP_SECRET=//p' "$env_file" | tail -n 1)"
+if (( ${#app_secret} < 32 )); then
+  echo "APP_SECRET must contain at least 32 characters." >&2
+  exit 1
+fi
+
+if ! grep -Eq '^DEFAULT_URI=https://' "$env_file"; then
+  echo "DEFAULT_URI must use HTTPS." >&2
+  exit 1
+fi
+
+echo "Production environment file is valid."

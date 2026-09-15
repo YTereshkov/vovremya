@@ -1,10 +1,10 @@
 window.PROJECT_PROGRESS = {
   project: {
     name: 'Vovremya',
-    state: 'Пачка 24 завершена',
-    currentBatch: 24,
-    currentPart: 51,
-    currentItem: 'Installable PWA и read-only offline schedule завершены',
+    state: 'Пачка 25 завершена',
+    currentBatch: 25,
+    currentPart: 52,
+    currentItem: 'Production hardening и VPS deployment завершены',
     updatedAt: '2026-09-15',
   },
   statusLabels: {
@@ -15,18 +15,18 @@ window.PROJECT_PROGRESS = {
     review: 'Требует проверки',
   },
   current: {
-    title: 'Пачка 23 · Часть 49',
+    title: 'Пачка 25 · Часть 52',
     items: [
-      'Месячные показатели рассчитываются read-only запросами PostgreSQL в часовом поясе кабинета.',
-      'Занятия, отмены, переносы и подтверждения используют независимые сохранённые состояния.',
-      'Заполнение из листа ожидания учитывает только принятые WAITING_LIST offers.',
-      'Фильтр специалиста и каждый запрос ограничены текущим tenant.',
-      'Единый responsive экран статистики следует утверждённым mobile/desktop макетам.',
+      'Production Compose запускает Caddy, PHP-FPM, PostgreSQL, Redis, Messenger и Scheduler на одном VPS.',
+      'Миграции выполняются до запуска приложения, а PostgreSQL и Redis не публикуются наружу.',
+      'Секреты проверяются до deploy и не встраиваются в образы или access logs webhook-маршрутов.',
+      'Добавлены backup, image rollback и изолированная smoke-проверка production-контура.',
+      'Caddy обслуживает HTTPS, security headers, React SPA и проксирует только backend-маршруты.',
     ],
-    description: 'Reporting собирает существующие бизнес-состояния без отдельного write model, миграций и кэша.',
-    outcome: 'Администратор видит статистику месяца и, при нескольких специалистах, может выбрать нужное расписание.',
+    description: 'Production runtime остаётся простым контуром для обычного VPS без Kubernetes и enterprise-инфраструктуры.',
+    outcome: 'Проект готов к воспроизводимому deploy, резервному копированию, наблюдению и безопасному image rollback.',
   },
-  nextPartNumbers: [50, 51, 52],
+  nextPartNumbers: [],
   batches: [
     {
       number: 1,
@@ -199,9 +199,20 @@ window.PROJECT_PROGRESS = {
         { number: 51, title: 'Read-only offline schedule', status: 'done', completedAt: '2026-09-15', result: 'Tenant/account-bound IndexedDB snapshot на 7 прошедших и 30 будущих дней, read-only календарь и восстановление серверной синхронизации.' },
       ],
     },
-    { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'pending' }] },
+    { number: 25, title: 'Production hardening', parts: [{ number: 52, title: 'Production hardening и VPS deployment', status: 'done', completedAt: '2026-09-15', result: 'Добавлены immutable production images, Caddy HTTPS, migrations gate, изолированные workers, backup/rollback и проверенный VPS runbook.' }] },
   ],
   changes: [
+    {
+      date: '2026-09-15',
+      items: [
+        'Завершена пачка 25: production hardening и развёртывание на обычном VPS.',
+        'Добавлены immutable PHP/Caddy images, production Compose, автоматический HTTPS и security headers.',
+        'Миграции блокируют запуск приложения до успеха; Messenger и Scheduler работают отдельными восстанавливаемыми процессами.',
+        'Добавлены проверка секретного env-файла, backup, безопасный image rollback и эксплуатационный runbook.',
+        'Изолированный production smoke test подтвердил миграции, Doctrine schema, health/API/SPA/PWA маршруты и все runtime services.',
+        'По ревью усилены bounded health retries, проверка env-дубликатов, конкурентный backup и проверка настоящих PWA assets вместо SPA fallback.',
+      ],
+    },
     {
       date: '2026-09-15',
       items: [
@@ -338,6 +349,8 @@ window.PROJECT_PROGRESS = {
     },
   ],
   decisions: [
+    { date: '2026-09-15', title: 'Production остаётся single-VPS контуром', text: 'Caddy, PHP-FPM, PostgreSQL, Redis, Messenger и Scheduler запускаются через Docker Compose; Kubernetes и отдельная enterprise-инфраструктура не вводятся.' },
+    { date: '2026-09-15', title: 'Rollback не откатывает схему автоматически', text: 'Rollback переключает только immutable application images; миграции должны быть backward-compatible, а разрушительный down migration требует отдельного решения оператора.' },
     { date: '2026-09-11', title: 'Активное FreeWindow offer резервирует окно', text: 'Одно предложение владеет полным интервалом через OFFER_RESERVATION; partial unique index запрещает второе активное offer для того же tenant/window.' },
     { date: '2026-09-11', title: 'Предложение FreeWindow не имеет timeout', text: 'Оно живёт до ответа клиента, отмены администратором или потери доступности окна; Scheduler по возрасту его не завершает.' },
     { date: '2026-09-11', title: 'Принятие offer повторно проверяет availability', text: 'Собственная OFFER_RESERVATION исключается из проверки, затем в одной транзакции заменяется APPOINTMENT allocation; PostgreSQL exclusion constraint остаётся финальной гарантией.' },

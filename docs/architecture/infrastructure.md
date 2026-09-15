@@ -24,8 +24,9 @@ stream. Failed messages are copied to the separate `failed` stream after three
 retries with bounded exponential delays.
 
 Each running worker must use a unique `MESSENGER_CONSUMER_NAME`. Local Compose
-runs one async worker. Production process management and worker counts belong to
-the production hardening phase.
+runs one async worker. Production Compose runs Messenger and Scheduler as
+separate restartable services with unique consumer names. PostgreSQL outbox and
+inbox state remains authoritative across worker restarts.
 
 ## Scheduler
 
@@ -40,3 +41,24 @@ The infrastructure heartbeat interval is configured through
 rule. `scheduler_waiting` extends concrete reservations for active
 PermanentPlace offers once per day. Repeated runs are safe and do not duplicate
 allocations.
+
+## Production runtime
+
+`compose.prod.yaml` targets a single ordinary VPS. It builds immutable PHP and
+Caddy images for a release tag, runs database migrations as a one-shot service,
+and starts PHP-FPM, Caddy, Messenger, Scheduler, PostgreSQL, and Redis with
+health checks and bounded rotated logs. PostgreSQL and Redis are not published
+to the host network.
+
+Caddy terminates HTTPS, serves the compiled React SPA (including direct client
+routes), and forwards only API, health, and webhook paths to Symfony. Webhook
+paths are excluded from access logs because their routing credential is
+tenant-bound. Application containers run read-only with writable temporary
+filesystems for Symfony runtime data.
+
+Production secrets live only in an operator-owned mode-600 environment file.
+The deployment validates that file before building or starting a release.
+Backups use PostgreSQL custom format and must be copied to independent storage;
+rollback changes application images only and never performs a down migration.
+The operational procedure and restore cautions are documented in
+`docs/deployment-vps.md`.

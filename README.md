@@ -167,6 +167,24 @@ Provider-neutral notification intents, transactional outbox delivery, and
 idempotent webhook ingestion are documented in
 [`docs/architecture/communications.md`](docs/architecture/communications.md).
 
+## Production VPS
+
+Production uses a separate immutable PHP-FPM image and a Caddy image containing
+the built React SPA. Copy `.env.prod.example` to the ignored
+`.env.prod.local`, set real secrets, and deploy:
+
+```bash
+chmod 600 .env.prod.local
+bash bin/validate-production-env
+bash bin/deploy-production
+```
+
+The production Compose stack does not publish PostgreSQL or Redis ports. Caddy
+terminates HTTPS, migrations run once before application containers start, and
+Messenger/Scheduler run as separate restartable processes. VPS preparation,
+backup, monitoring, and rollback procedures are documented in
+[`docs/deployment-vps.md`](docs/deployment-vps.md).
+
 Stop the environment without deleting database or Redis data:
 
 ```bash

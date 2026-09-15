@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+env_file="${VOVREMYA_ENV_FILE:-.env.prod.local}"
+target_release="${1:?Usage: bin/rollback-production <existing-image-tag>}"
+export VOVREMYA_ENV_FILE="$env_file"
+export VOVREMYA_IMAGE_TAG="$target_release"
+
+bash bin/validate-production-env "$env_file"
+docker image inspect "vovremya-app:$target_release" >/dev/null
+docker image inspect "vovremya-web:$target_release" >/dev/null
+
+compose=(docker compose --env-file "$env_file" -f compose.prod.yaml)
+"${compose[@]}" up -d --no-deps php messenger scheduler caddy
+
+base_url="$(sed -n 's/^DEFAULT_URI=//p' "$env_file" | tail -n 1)"
+curl --fail --silent --show-error \
+  --connect-timeout 5 --max-time 15 \
+  --retry 6 --retry-delay 5 --retry-connrefused --retry-max-time 60 \
+  "${base_url%/}/health" >/dev/null
+
+echo "Application containers rolled back to $target_release. Database was not changed."

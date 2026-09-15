@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+env_file="${VOVREMYA_ENV_FILE:-.env.prod.local}"
+release="${1:-$(git rev-parse --short=12 HEAD)}"
+export VOVREMYA_ENV_FILE="$env_file"
+export VOVREMYA_IMAGE_TAG="$release"
+
+bash bin/validate-production-env "$env_file"
+
+compose=(docker compose --env-file "$env_file" -f compose.prod.yaml)
+"${compose[@]}" build --pull php caddy
+"${compose[@]}" up -d --remove-orphans
+"${compose[@]}" exec -T php php bin/console doctrine:schema:validate --env=prod --no-interaction
+
+base_url="$(sed -n 's/^DEFAULT_URI=//p' "$env_file" | tail -n 1)"
+curl --fail --silent --show-error \
+  --connect-timeout 5 --max-time 15 \
+  --retry 6 --retry-delay 5 --retry-connrefused --retry-max-time 60 \
+  "${base_url%/}/health" >/dev/null
+
+echo "Release $release is healthy at $base_url."
