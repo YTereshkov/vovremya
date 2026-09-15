@@ -12,7 +12,7 @@ const gridEndHour = 20
 const hourHeight = 64
 
 export function AppointmentAgendaItem({ appointment, showSpecialist = false, readOnly = false }: { appointment: CalendarAppointment; showSpecialist?: boolean; readOnly?: boolean }) {
-  const className = cn('grid min-h-16 grid-cols-[60px_minmax(0,1fr)_20px] items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0 sm:grid-cols-[72px_minmax(0,1fr)_20px]', !readOnly ? 'hover:bg-white focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary' : null)
+  const className = cn('grid min-h-16 grid-cols-[60px_minmax(0,1fr)_20px] items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0 sm:grid-cols-[72px_minmax(0,1fr)_20px]', !readOnly ? 'hover:bg-surface-raised focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary' : null)
   const content = <>
     <span className="border-r border-border pr-3 text-sm font-semibold tabular-nums">{appointment.startTime}</span>
     <span className="min-w-0">
@@ -35,7 +35,7 @@ export function EmptySchedule({ compact = false }: { compact?: boolean }) {
 }
 
 export function DayAgenda({ appointments, showSpecialist = false, readOnly = false }: { appointments: CalendarAppointment[]; showSpecialist?: boolean; readOnly?: boolean }) {
-  return <section aria-label="Список занятий" className="overflow-hidden rounded-lg border border-border bg-white/75 shadow-surface">
+  return <section aria-label="Список занятий" className="overflow-hidden rounded-lg border border-border bg-surface shadow-surface">
     {appointments.length ? appointments.map((appointment) => <AppointmentAgendaItem appointment={appointment} key={appointment.id} readOnly={readOnly} showSpecialist={showSpecialist} />) : <EmptySchedule />}
   </section>
 }
@@ -46,7 +46,7 @@ export function WeekAgenda({ appointments, dates, showSpecialist = false, readOn
       const dayAppointments = appointments.filter((appointment) => appointment.date === date)
       return <section key={date}>
         <h2 className="mb-2 px-1 text-sm font-semibold capitalize">{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
-        <div className="overflow-hidden rounded-lg border border-border bg-white/75 shadow-surface">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-surface">
           {dayAppointments.length ? dayAppointments.map((appointment) => <AppointmentAgendaItem appointment={appointment} key={appointment.id} readOnly={readOnly} showSpecialist={showSpecialist} />) : <EmptySchedule compact />}
         </div>
       </section>
@@ -63,7 +63,7 @@ function TimedAppointment({ appointment, showSpecialist, readOnly }: { appointme
   const top = Math.max(0, minutesFromStart(appointment.startTime) / 60 * hourHeight)
   const end = Math.min((gridEndHour - gridStartHour) * hourHeight, minutesFromStart(appointment.endTime) / 60 * hourHeight)
   const height = Math.max(38, end - top)
-  const className = cn('absolute inset-x-1 z-10 overflow-hidden rounded-md border border-primary/25 bg-primary-soft px-2 py-1.5 text-xs text-ink shadow-sm', !readOnly ? 'hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-primary' : null)
+  const className = cn('absolute inset-x-1 z-10 overflow-hidden rounded-md border border-primary/30 bg-primary-soft px-2 py-1.5 text-xs text-ink shadow-surface', !readOnly ? 'hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-primary' : null)
   const content = <>
     <strong className="block truncate tabular-nums">{appointment.startTime} {appointment.client.name}</strong>
     <span className="mt-0.5 block truncate text-muted">{appointment.service.name}</span>
@@ -74,7 +74,7 @@ function TimedAppointment({ appointment, showSpecialist, readOnly }: { appointme
 }
 
 function TimeRuler() {
-  return <div className="border-r border-border bg-white/50">
+  return <div className="border-r border-border bg-surface">
     <div className="h-14 border-b border-border" />
     <div className="relative" style={{ height: (gridEndHour - gridStartHour) * hourHeight }}>
       {Array.from({ length: gridEndHour - gridStartHour }, (_, index) => <span className="absolute right-2 -translate-y-1/2 text-[11px] tabular-nums text-muted" key={index} style={{ top: index * hourHeight }}>{String(gridStartHour + index).padStart(2, '0')}:00</span>)}
@@ -85,7 +85,7 @@ function TimeRuler() {
 function GridColumn({ appointments, label, showSpecialist, readOnly }: { appointments: CalendarAppointment[]; label: string; showSpecialist: boolean; readOnly: boolean }) {
   return <div className="min-w-0 border-r border-border last:border-r-0">
     <div className="flex h-14 items-center justify-center border-b border-border px-2 text-center text-xs font-semibold">{label}</div>
-    <div className="relative bg-white/65" style={{ height: (gridEndHour - gridStartHour) * hourHeight }}>
+    <div className="relative bg-surface-raised" style={{ height: (gridEndHour - gridStartHour) * hourHeight }}>
       {Array.from({ length: gridEndHour - gridStartHour }, (_, index) => <span aria-hidden="true" className="absolute inset-x-0 border-t border-border/70" key={index} style={{ top: index * hourHeight }} />)}
       {appointments.map((appointment) => <TimedAppointment appointment={appointment} key={appointment.id} readOnly={readOnly} showSpecialist={showSpecialist} />)}
     </div>

@@ -32,12 +32,12 @@ export function TodayPage() {
 
   return <div className="mx-auto w-full max-w-[1306px] px-4 pb-28 pt-[calc(env(safe-area-inset-top)+20px)] sm:px-7 lg:px-8 lg:py-8">
     {!connected ? <OfflineNotice snapshot={snapshot} timezone={user?.organization.timezone ?? 'UTC'} /> : null}
-    <header className="flex items-center gap-4">
+    <header className="flex items-center gap-4 max-[385px]:flex-col max-[385px]:items-stretch">
       <div className="min-w-0 flex-1">
         <p className="text-sm capitalize text-muted">{longDate(today)}</p>
         <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Сегодня</h1>
       </div>
-      {connected ? <Button asChild size="compact"><Link to="/appointments/new"><CalendarPlus className="size-5" />Новое занятие</Link></Button> : <Button disabled size="compact" title="Доступно после подключения"><CalendarPlus className="size-5" />Новое занятие</Button>}
+      {connected ? <Button asChild className="max-[385px]:w-full" size="compact"><Link to="/appointments/new"><CalendarPlus className="size-5" />Новое занятие</Link></Button> : <Button className="max-[385px]:w-full" disabled size="compact" title="Доступно после подключения"><CalendarPlus className="size-5" />Новое занятие</Button>}
     </header>
 
     {available ? <section aria-label="Сводка занятий" className="mt-6 border-y border-border py-5">
@@ -56,8 +56,8 @@ export function TodayPage() {
     </div>
     {loading ? <p className="py-12 text-center text-muted" role="status">Загружаем расписание...</p> : null}
     <ResourceFeedback error={error} />
-    {!connected && !loading && !error && !snapshot ? <p className="mt-4 rounded-lg border border-border bg-white/75 p-5 text-muted">Копия расписания недоступна. Подключитесь к интернету, чтобы синхронизировать данные.</p> : null}
-    {!connected && snapshot && !withinSnapshot ? <p className="mt-4 rounded-lg border border-border bg-white/75 p-5 text-muted">За сегодня нет сохранённых данных. Подключитесь к интернету, чтобы обновить расписание.</p> : null}
+    {!connected && !loading && !error && !snapshot ? <p className="mt-4 rounded-lg border border-border bg-surface p-5 text-muted">Копия расписания недоступна. Подключитесь к интернету, чтобы синхронизировать данные.</p> : null}
+    {!connected && snapshot && !withinSnapshot ? <p className="mt-4 rounded-lg border border-border bg-surface p-5 text-muted">За сегодня нет сохранённых данных. Подключитесь к интернету, чтобы обновить расписание.</p> : null}
     {available ? <div className="mt-3"><DayAgenda appointments={appointments} readOnly={!connected} showSpecialist={showSpecialist} /></div> : null}
     {!connected ? <ReadOnlyNotice /> : null}
   </div>

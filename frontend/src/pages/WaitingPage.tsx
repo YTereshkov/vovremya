@@ -20,6 +20,7 @@ import {
   type PermanentPlaceOffer,
 } from '@/features/waiting/api'
 import { Button } from '@/shared/ui/Button'
+import { formatNumericDate, formatNumericDateTime } from '@/shared/lib/date'
 import { ResourceFeedback, ResourceModal, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
 export function WaitingPage() {
@@ -28,7 +29,7 @@ export function WaitingPage() {
   const places = usePermanentPlaces(tab === 'PERMANENT')
   return <section className="mx-auto min-h-screen w-full max-w-[1306px] px-5 pb-28 pt-[calc(env(safe-area-inset-top)+36px)] sm:px-8 lg:px-7 lg:py-8">
     <h1 className="text-[32px] font-semibold leading-tight lg:text-[36px]">Ожидание</h1>
-    <div className="mt-6 grid grid-cols-2 border-b border-border text-sm font-medium"><button aria-pressed={tab === 'ONE_OFF'} className={`border-b-2 px-1 pb-3 ${tab === 'ONE_OFF' ? 'border-primary text-primary' : 'border-transparent text-muted'}`} onClick={() => setTab('ONE_OFF')} type="button">Разовые окна</button><button aria-pressed={tab === 'PERMANENT'} className={`border-b-2 px-1 pb-3 ${tab === 'PERMANENT' ? 'border-primary text-primary' : 'border-transparent text-muted'}`} onClick={() => setTab('PERMANENT')} type="button">Постоянные места</button></div>
+    <div className="mt-6 grid grid-cols-2 border-b border-border text-sm font-medium"><button aria-pressed={tab === 'ONE_OFF'} className={`border-b-2 px-1 pb-3 ${tab === 'ONE_OFF' ? 'border-accent text-accent' : 'border-transparent text-muted'}`} onClick={() => setTab('ONE_OFF')} type="button">Разовые окна</button><button aria-pressed={tab === 'PERMANENT'} className={`border-b-2 px-1 pb-3 ${tab === 'PERMANENT' ? 'border-accent text-accent' : 'border-transparent text-muted'}`} onClick={() => setTab('PERMANENT')} type="button">Постоянные места</button></div>
     {tab === 'ONE_OFF' ? <>
       <ResourceFeedback error={windows.error} />
       {windows.isPending ? <p className="py-10 text-muted" role="status">Загружаем свободные окна...</p> : null}
@@ -128,7 +129,7 @@ function PermanentPlaceWithCandidates({ place }: { place: PermanentPlace }) {
 }
 
 function ActiveOffer({ offer, cancel, timezone, subject = 'окно' }: { offer: FreeWindowOffer | PermanentPlaceOffer; cancel: () => void; timezone: string; subject?: string }) {
-  return <section><h2 className="mb-3 text-xl font-semibold">Активное предложение</h2><div className={resourceSurfaceClass}><p className="font-semibold">{offer.client.name}</p><p className="mt-1 text-sm text-muted">Отправлено {new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(offer.createdAt))}</p><Button className="mt-5 w-full border-danger text-danger" onClick={cancel} type="button" variant="outline">Отменить предложение</Button></div><p className="mt-4 flex items-start gap-2 rounded-lg border border-border p-4 text-sm text-muted"><Info className="mt-0.5 size-4 shrink-0 text-primary" />Пока предложение активно, {subject} недоступно другим клиентам.</p></section>
+  return <section><h2 className="mb-3 text-xl font-semibold">Активное предложение</h2><div className={resourceSurfaceClass}><p className="font-semibold">{offer.client.name}</p><p className="mt-1 text-sm text-muted">Отправлено {formatNumericDateTime(offer.createdAt, timezone)}</p><Button className="mt-5 w-full border-danger text-danger" onClick={cancel} type="button" variant="outline">Отменить предложение</Button></div><p className="mt-4 flex items-start gap-2 rounded-lg border border-border p-4 text-sm text-muted"><Info className="mt-0.5 size-4 shrink-0 text-primary" />Пока предложение активно, {subject} недоступно другим клиентам.</p></section>
 }
 
 function CandidateGroup({ title, children }: { title: string; children: ReactNode }) {
@@ -150,7 +151,7 @@ function endTime(start: string, durationMinutes: number): string {
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
+  return formatNumericDate(date)
 }
 
 function clientWord(count: number): string {

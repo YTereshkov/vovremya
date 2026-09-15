@@ -13,6 +13,7 @@ use App\Module\Organization\Application\OrganizationContext;
 use App\Module\Scheduling\Application\ConfirmationAutomation;
 use App\Module\Scheduling\Domain\Model\Appointment;
 use App\Module\Scheduling\Domain\Model\AppointmentConfirmationRequest;
+use App\Module\Scheduling\Domain\Model\AppointmentResultStatus;
 use App\Module\Workforce\Domain\Model\Specialist;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -65,9 +66,9 @@ final class ConfirmationAutomationTest extends KernelTestCase
         $this->process('2026-09-12 13:00:00');
         $this->process('2026-09-12 13:01:00');
         self::assertSame(2, $this->countRows('communication_outbox'));
-        self::assertSame(4, $this->countRows('appointment_confirmation_actions'));
+        self::assertSame(6, $this->countRows('appointment_confirmation_actions'));
         $buttons = $this->entityManager->getConnection()->fetchOne("SELECT outbox.buttons FROM communication_outbox outbox INNER JOIN notification_intents intent ON intent.id = outbox.notification_intent_id WHERE intent.type = 'APPOINTMENT_REMINDER'");
-        self::assertCount(2, json_decode((string) $buttons, true, 512, JSON_THROW_ON_ERROR));
+        self::assertCount(3, json_decode((string) $buttons, true, 512, JSON_THROW_ON_ERROR));
     }
 
     public function testQuietHoursDelayRequestAndMissingChannelIsRetriedWithoutPartialState(): void
@@ -89,6 +90,36 @@ final class ConfirmationAutomationTest extends KernelTestCase
         self::assertSame(0, $this->countRows('appointment_confirmation_requests'));
         $this->process('2026-09-11 15:00:00');
         self::assertSame(1, $this->countRows('appointment_confirmation_requests'));
+        self::assertSame(1, $this->countRows('communication_outbox'));
+    }
+
+    public function testConfirmedAppointmentStillReceivesReminder(): void
+    {
+        $this->appointment('2026-09-12 15:00:00', true);
+        $this->process('2026-09-11 14:00:00');
+        $this->entityManager->getConnection()->executeStatement("UPDATE appointment_confirmation_requests SET status = 'CONFIRMED', responded_at = requested_at");
+        $this->entityManager->clear();
+
+        $this->process('2026-09-12 13:00:00');
+
+        self::assertSame(2, $this->countRows('communication_outbox'));
+    }
+
+    public function testCancelledAppointmentDoesNotReceiveReminder(): void
+    {
+        $appointment = $this->appointment('2026-09-12 15:00:00', true);
+        $this->process('2026-09-11 14:00:00');
+        $appointment->recordResult(
+            AppointmentResultStatus::CancelledByClient,
+            new \DateTimeImmutable('2026-09-12 12:00:00', new \DateTimeZone('Europe/Moscow')),
+            12,
+            false,
+            null,
+        );
+        $this->entityManager->flush();
+
+        $this->process('2026-09-12 13:00:00');
+
         self::assertSame(1, $this->countRows('communication_outbox'));
     }
 

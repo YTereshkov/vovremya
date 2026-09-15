@@ -6,6 +6,7 @@ import { CalendarClock, CalendarOff, ChevronRight, ExternalLink, MessageCircle, 
 import { useClient, useClientsKey, type ChannelProvider, type ClientRecord } from '@/features/clients/api'
 import { useChannelSettings } from '@/features/communications/api'
 import { apiRequest } from '@/shared/api/request'
+import { formatNumericDate } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceAvatar, ResourceFeedback, ResourceFrame, ResourceModal, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -103,7 +104,7 @@ function ChannelForm({ client, close }: { client: ClientRecord; close: () => voi
     <label className="block space-y-2"><span>Получатель</span><select className={resourceFieldClass} value={contactPersonId} onChange={(event) => setContactPersonId(event.target.value)}><option value="">{client.name} · клиент</option>{client.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name} · контактное лицо</option>)}</select></label>
     <label className="block space-y-2"><span>Канал</span><select className={resourceFieldClass} value={provider} onChange={(event) => setProvider(event.target.value as ChannelProvider)}>{channelSettings.data?.providers.map(({ provider: value }) => <option key={value} value={value}>{providerLabel(value)}</option>) ?? <option value="MAX">MAX</option>}</select></label>
     <label className="block space-y-2"><span>Телефон или адрес</span><input className={resourceFieldClass} maxLength={254} required value={address} onChange={(event) => setAddress(event.target.value)} /></label>
-    <label className="flex items-center gap-3"><input className="size-5 accent-primary" checked={primary} onChange={(event) => setPrimary(event.target.checked)} type="checkbox" /><span>Использовать как основной канал</span></label>
+    <label className="flex items-center gap-3"><input className="size-5 accent-accent" checked={primary} onChange={(event) => setPrimary(event.target.checked)} type="checkbox" /><span>Использовать как основной канал</span></label>
     <ResourceFeedback error={save.error} /><Button className="w-full" disabled={save.isPending}>Добавить канал</Button><Button className="w-full" disabled={save.isPending} onClick={close} type="button" variant="outline">Отмена</Button>
   </form></ResourceModal>
 }
@@ -121,5 +122,5 @@ function providerLabel(provider: ChannelProvider): string {
 }
 
 function formatDate(value: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
+  return formatNumericDate(value)
 }

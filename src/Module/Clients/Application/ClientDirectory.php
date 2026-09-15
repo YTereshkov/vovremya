@@ -55,6 +55,8 @@ final readonly class ClientDirectory
         ?array $contactInput,
         ?array $channelInput,
     ): Client {
+        $this->validateRequiredCommunication($type, $phone, $contactInput, $channelInput);
+
         return $this->store->transactional(function () use ($actor, $name, $type, $phone, $note, $contactInput, $channelInput): Client {
             $client = Client::create($actor->organization(), $name, $type, $phone, $note);
             $this->store->save($client);
@@ -84,6 +86,45 @@ final readonly class ClientDirectory
 
             return $client;
         });
+    }
+
+    /** @param array<string, mixed>|null $contactInput
+     *  @param array<string, mixed>|null $channelInput
+     */
+    private function validateRequiredCommunication(string $type, ?string $phone, ?array $contactInput, ?array $channelInput): void
+    {
+        if (null === $channelInput) {
+            throw new \InvalidArgumentException('Добавьте основной канал связи.');
+        }
+
+        $recipient = $this->inputString($channelInput, 'recipient');
+        if ('CHILD' === $type) {
+            if (null !== $phone && '' !== trim($phone)) {
+                throw new \InvalidArgumentException('Для ребёнка укажите телефон родителя, а не клиента.');
+            }
+            if (null === $contactInput) {
+                throw new \InvalidArgumentException('Укажите родителя ребёнка.');
+            }
+            $this->inputString($contactInput, 'name');
+            $this->inputString($contactInput, 'phone');
+            if ('CONTACT_PERSON' !== $recipient) {
+                throw new \InvalidArgumentException('Получателем уведомлений ребёнка должен быть родитель.');
+            }
+
+            return;
+        }
+
+        if ('ADULT' === $type) {
+            if (null === $phone || '' === trim($phone)) {
+                throw new \InvalidArgumentException('Укажите телефон взрослого клиента.');
+            }
+            if (null !== $contactInput) {
+                throw new \InvalidArgumentException('При создании взрослого клиента контактное лицо не требуется.');
+            }
+            if ('CLIENT' !== $recipient) {
+                throw new \InvalidArgumentException('Получателем уведомлений должен быть сам взрослый клиент.');
+            }
+        }
     }
 
     public function update(Client $client, string $name, string $type, ?string $phone, ?string $note): void

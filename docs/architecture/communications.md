@@ -119,6 +119,11 @@ delay outbound work rather than discarding it. The scheduler scans due work
 every minute; database uniqueness and outbox deduplication make repeated or
 overlapping scans safe.
 
+The repeat reminder is sent for `PENDING`, `NO_RESPONSE`, and `CONFIRMED`
+requests. It is skipped for a `CANNOT_ATTEND` response, an appointment with a
+recorded final result, an already started appointment, or a request that already
+received its reminder.
+
 Each appointment has at most one confirmation request bound to the active
 primary `ChannelConnection` selected when the request is created. The request
 creates opaque, separately hashed, single-use actions for `CONFIRMED`,
@@ -138,7 +143,7 @@ same provider-neutral normalized-event boundary and never reserve their times.
 ## Message templates (part 29)
 
 `Communications` owns organization-wide templates for confirmation, transfer,
-and free-window messages. The supported variables are `{date}`, `{time}`,
+free-window, and permanent-place messages. The supported variables are `{date}`, `{time}`,
 `{service}`, `{client_name}`, and `{contact_name}`. Unknown or malformed
 placeholders are rejected before persistence. Each type has a usable built-in
 Russian default, while an organization may save or restore its override.
@@ -146,7 +151,10 @@ Russian default, while an organization may save or restore its override.
 `Catalog.Service` may contain an optional confirmation-template override. It is
 used only for confirmation messages and takes precedence over the organization
 template; other message types always use their matching organization template.
-The UI exposes no separate template archive.
+The UI exposes no separate template archive. Confirmation button labels are
+stored with the organization confirmation template and are used by real
+provider-neutral callback buttons. The preview substitutes safe demo values for
+all placeholders; template bodies still store the placeholders themselves.
 
 ## Channel connection lifecycle (part 30)
 

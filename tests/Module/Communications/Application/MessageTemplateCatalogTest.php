@@ -37,7 +37,7 @@ final class MessageTemplateCatalogTest extends TestCase
             ),
         );
         self::assertSame(
-            'Для занятия 12 сентября в 15:30 доступны новые варианты времени. Выберите подходящий вариант.',
+            'Анна, для занятия 12 сентября в 15:30 доступны новые варианты времени. Выберите подходящий вариант.',
             $catalog->render(MessageTemplateType::TRANSFER, $variables, 'Этот текст не должен использоваться.'),
         );
     }

@@ -57,7 +57,7 @@ export function StatisticsPage() {
 }
 
 function MonthPicker({ month, onChange }: { month: string; onChange: (month: string) => void }) {
-  return <div className="flex h-11 items-center overflow-hidden rounded-lg border border-border bg-white/90 shadow-surface">
+  return <div className="flex h-11 items-center overflow-hidden rounded-lg border border-border bg-surface-raised shadow-surface">
     <button aria-label="Предыдущий месяц" className="grid h-full w-11 place-items-center text-muted hover:bg-primary-soft hover:text-primary" onClick={() => onChange(shiftMonth(month, -1))} type="button"><ChevronLeft className="size-5" /></button>
     <div className="flex min-w-0 flex-1 items-center justify-center gap-2 border-x border-border px-4 text-sm font-medium sm:min-w-48"><CalendarDays className="size-4 text-primary" /><span>{monthLabel(month)}</span></div>
     <button aria-label="Следующий месяц" className="grid h-full w-11 place-items-center text-muted hover:bg-primary-soft hover:text-primary" onClick={() => onChange(shiftMonth(month, 1))} type="button"><ChevronRight className="size-5" /></button>

@@ -8,6 +8,7 @@ import { useAppointment, useAppointmentResult } from '@/features/calendar/api'
 import { appointmentResultLabel } from '@/features/calendar/AppointmentResultStatus'
 import { useSchedulingSettings } from '@/features/scheduling/api'
 import { apiRequest } from '@/shared/api/request'
+import { formatNumericDate } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -55,8 +56,8 @@ export function AppointmentResultPage() {
 
   return <ResourceFrame back={`/appointments/${id}`} title="Результат занятия">
     <ResourceFeedback error={appointment.error ?? currentResult.error ?? settings.error ?? save.error} />
-    {appointment.data ? <form className={`${resourceSurfaceClass} mx-auto max-w-2xl`} onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
-      <p className="text-sm text-muted">{appointment.data.client.name} · {appointment.data.date} в {appointment.data.startTime}</p>
+    {appointment.data ? <form className={resourceSurfaceClass} onSubmit={(event) => { event.preventDefault(); save.mutate() }}>
+      <p className="text-sm text-muted">{appointment.data.client.name} · {formatNumericDate(appointment.data.date)} в {appointment.data.startTime}</p>
       <fieldset className="mt-6 grid gap-3">
         <legend className="mb-2 font-semibold">Что произошло с занятием?</legend>
         {statuses.map((value) => <label className="flex min-h-12 items-center gap-3 rounded-lg border border-border px-4" key={value}><input checked={status === value} name="status" onChange={() => { setStatus(value); if (value !== 'CANCELLED_BY_CLIENT') { setRespectfulReason(false); setCreateFreeWindow(false) } }} type="radio" />{appointmentResultLabel(value)}</label>)}

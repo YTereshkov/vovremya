@@ -70,7 +70,7 @@ final readonly class AppointmentConfirmationService
 
     public function remind(Appointment $appointment, AppointmentConfirmationRequest $request, \DateTimeImmutable $now): void
     {
-        if (null !== $appointment->resultStatus() || null !== $request->reminderSentAt() || $appointment->startsAt() <= $now || !in_array($request->status(), [AppointmentConfirmationStatus::Pending, AppointmentConfirmationStatus::NoResponse], true)) {
+        if (null !== $appointment->resultStatus() || null !== $request->reminderSentAt() || $appointment->startsAt() <= $now || !in_array($request->status(), [AppointmentConfirmationStatus::Pending, AppointmentConfirmationStatus::NoResponse, AppointmentConfirmationStatus::Confirmed], true)) {
             return;
         }
         $recipient = $this->recipients->byChannel($appointment->clientId(), $request->channelConnectionId())
@@ -159,6 +159,7 @@ final readonly class AppointmentConfirmationService
     /** @return list<list<array{label: string, action: string}>> */
     private function createButtons(AppointmentConfirmationRequest $request, \DateTimeImmutable $now): array
     {
+        $labels = $this->templates->confirmationButtonLabels();
         $confirmToken = self::token();
         $cannotToken = self::token();
         $transferToken = self::token();
@@ -170,9 +171,9 @@ final readonly class AppointmentConfirmationService
         $this->store->save($transfer);
 
         return [
-            [['label' => 'Будем', 'action' => self::callback($confirm, $confirmToken)]],
-            [['label' => 'Не сможем', 'action' => self::callback($cannot, $cannotToken)]],
-            [['label' => 'Хотим перенести', 'action' => self::callback($transfer, $transferToken)]],
+            [['label' => $labels['confirm'], 'action' => self::callback($confirm, $confirmToken)]],
+            [['label' => $labels['cannotAttend'], 'action' => self::callback($cannot, $cannotToken)]],
+            [['label' => $labels['transfer'], 'action' => self::callback($transfer, $transferToken)]],
         ];
     }
 

@@ -1,29 +1,132 @@
 # Frontend design system
 
-The approved mockups remain the visual source of truth. The application shell
-uses these primary references:
+Утверждённое направление Vovremya — светлая тёплая серо-каменная система с
+шалфейным цветом действий и лавандовым цветом выбранных состояний. Интерфейс
+остаётся спокойным и плотным: цвет помогает различать уровни поверхности и
+состояния, но не меняет структуру экранов.
 
-- `01-mobile-сегодня.png` for mobile header, agenda cards, and bottom navigation;
-- `26-desktop-календарь-день.png` for desktop sidebar and content proportions;
-- `10-mobile-настройки.png` for grouped surfaces and form density;
-- `32-mobile-клиенты-список.png` for list spacing and selected navigation states.
+## Визуальные ориентиры
 
-## Tokens
+Актуальный утверждённый коллаж `new-style.png` задаёт палитру, характер
+поверхностей и ключевые состояния. При развитии интерфейса сверяться минимум со
+следующими экранами:
 
-- Background: cool near-white with restrained sage radial light.
-- Primary: indigo `#3431d8`; selected surface `#ececfc`.
-- Text: deep navy `#101827`; secondary text `#495b73`.
-- Border: cool gray `#d6dddc`.
-- Semantic statuses: green `#008f68`, orange `#df6500`, red `#f01822`.
-- Surfaces: translucent white, thin border, 16 px radius, minimal shadow.
-- Typography: Inter-compatible system sans serif with compact tracking on headings.
-- Icons: Lucide outline icons at 1.8 stroke width where they match the mockups.
+- «Сегодня» — общая иерархия, карточки расписания и статусы;
+- календарь на день и неделю — плотность, сетка, границы и считываемость записей;
+- карточка клиента — группировка информации и поднятые действия;
+- создание занятия — поля, выбранная вкладка, primary action и предупреждение;
+- настройки — сгруппированные поверхности и плотность форм;
+- список клиентов — карточки списка и активная навигация;
+- dialog подтверждения или предупреждения — raised surface и затемнённый backdrop.
+
+Прежние mockup-файлы остаются ориентирами для размеров и информационной
+архитектуры, если не противоречат новому цветовому направлению:
+
+- `01-mobile-сегодня.png`;
+- `26-desktop-календарь-день.png`;
+- `10-mobile-настройки.png`;
+- `32-mobile-клиенты-список.png`.
+
+## Семантические токены
+
+| Токен | Значение | Назначение |
+| --- | --- | --- |
+| `canvas` | `#F3F1ED` | Общий фон приложения, осветлённый по обратной связи |
+| `surface` | `#F7F5F1` | Карточки, секции, списки, календарные области |
+| `surface-raised` | `#FCFBF8` | Поля, dialog, dropdown и поднятые элементы |
+| `border` | `#CEC9C0` | Границы, разделители, сетка |
+| `ink` | `#17243A` | Основной текст |
+| `muted` | `#596273` | Вторичный текст |
+| `primary` | `#65527C` | Основные действия и ссылки, сливовый оттенок |
+| `primary-hover` | `#514269` | Hover primary action |
+| `primary-soft` | `#EFE9F2` | Мягкие сливовые информационные области |
+| `accent` | `#7658C4` | Выбранные элементы и активная навигация |
+| `accent-soft` | `#EEE9FA` | Фон выбранных элементов |
+| `success` | `#087B5B` | Подтверждение и успешный результат |
+| `warning` | `#C85C08` | Ожидание и предупреждение |
+| `danger` | `#D92B35` | Ошибка, отмена и критическое состояние |
+
+Единственная стандартная тень поверхности —
+`0 1px 2px rgb(23 36 58 / 0.06)`. Большие декоративные тени, градиенты,
+glassmorphism и цветные фоновые засветки не используются.
+
+## Правила поверхностей
+
+- Корневая оболочка и полноэкранный календарь используют `bg-canvas`.
+- Обычная карточка или секция использует `bg-surface border-border`.
+- Поле ввода использует `bg-surface-raised border-border`; disabled-поле —
+  `bg-surface text-muted`.
+- Dialog, dropdown и фиксированная mobile navigation используют
+  `bg-surface-raised`.
+- Desktop sidebar использует `bg-surface` и отделяется от canvas границей.
+- Счётчик уведомлений в desktop sidebar и mobile «Ещё» виден даже при `0`:
+  production показывает `0` до ответа, затем фактическое `unreadCount` из API.
+- Чистый белый не используется для больших поверхностей. `text-white` допустим
+  на тёмной primary-кнопке или badge.
+
+## Действия и выбранные состояния
+
+- Primary action: `bg-primary text-white`, hover — `bg-primary-hover`.
+- Ссылки и action icons используют `text-primary`.
+- Активная навигация, выбранные вкладки, radio и checkbox используют `accent`;
+  залитое выбранное состояние — `bg-accent-soft text-accent`.
+- Focus-visible должен быть заметен и соответствовать смыслу элемента:
+  `primary` для действий и полей, `accent` для навигации и выбора.
+- Disabled-состояние сохраняет читаемую подпись, не реагирует на pointer events и
+  визуально ослабляется.
+
+## Статусы
+
+- `success` — подтверждено, проведено, сохранено, доставлено;
+- `warning` — ожидает ответа или требует внимания;
+- `danger` — ошибка, отказ, отмена или критический конфликт;
+- нейтральное состояние — `muted`.
+
+Статус всегда имеет текстовую подпись или иконку. Один цвет не должен быть
+единственным носителем смысла.
+
+## Типографика и иконки
+
+- Inter-compatible system sans serif, компактный tracking заголовков.
+- Основной текст — `text-ink`, вторичный — `text-muted`.
+- Lucide outline icons; stroke width `1.8`, когда это соответствует макету.
+
+## Правила реализации
+
+- Цвета применяются по назначению, не по конкретной странице.
+- Новые прямые HEX/RGB и palette-классы Tailwind запрещены без документированного
+  обоснования. Цвет сначала добавляется как семантический токен.
+- Глобальный Tailwind `white` не переопределяется.
+- Повторяющиеся поля и поверхности используют общие UI-классы или компоненты.
+- Hover, focus-visible, disabled и backdrop проверяются вместе с обычным
+  состоянием на mobile и desktop.
 
 ## Responsive shell
 
-The same routes and content power both layouts. Below the large breakpoint the
-shell uses a fixed five-item bottom navigation. At the large breakpoint it uses
-a 230 px left sidebar. Desktop-only attention panels do not appear on mobile.
+Одни маршруты и данные обслуживают оба layout. Ниже `lg` используется
+фиксированная навигация из пяти пунктов на `surface-raised`: «Сегодня»,
+«Календарь», «Уведомления», «Ожидание», «Ещё». Иконка «Сегодня» одинакова в
+обоих layout. На ширине `386–450px` нижняя панель немного уменьшает шрифт и
+боковые отступы пунктов. На ширине `385px` и меньше она показывает иконки без
+подписей, сохраняя доступные названия и выделяя активный пункт фоном.
+На ширине `320px` заголовки с действиями и тесные двухколоночные поля
+складываются вертикально, чтобы не обрезать текст и значения.
+Начиная с `lg` — sidebar
+шириной 230 px на `surface`. «Ещё» открывает выезжающую справа полноэкранную
+панель, не новый маршрут; в ней находятся остальные разделы из общего desktop
+navigation в том же порядке и «Моё расписание». Панель закрывается крестиком,
+повторным нажатием «Ещё», Escape или переходом в раздел. «Услуги» доступны из
+навигации обоих layout; экран «Настройки» не совмещает настройки с меню
+разделов. Desktop-only attention panels не появляются на mobile.
 
-Parts 8–10 use presentation fixtures only to verify the approved visual system.
-They do not define scheduling business rules.
+Переходы между экранами и отклик интерактивных элементов короткие и мягкие;
+выезд панели и смена её иконки анимируются. `prefers-reduced-motion` отключает
+эти эффекты.
+
+Числовой бейдж предусмотрен только у «Уведомлений»: desktop sidebar и
+мобильная нижняя панель используют один счётчик непрочитанных. В локальном
+dev-режиме временно показывается тестовое значение `3` для проверки верстки;
+production использует ответ API, включая `0`. Другие пункты бейджа не имеют.
+
+Parts 8–10 используют presentation fixtures только для проверки визуальной
+системы и не определяют scheduling business rules.

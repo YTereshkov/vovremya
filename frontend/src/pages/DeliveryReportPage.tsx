@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useDeliveryReport, useRetryOutboundMessage, type DeliveryReportItem } from '@/features/communications/api'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { formatNumericDateTime } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -36,7 +37,7 @@ function DeliveryCard({ item, onRetry, retrying, timezone }: { item: DeliveryRep
   const label = item.status === 'NO_CHANNEL' ? 'Канал не подключён' : item.status === 'NOT_QUEUED' ? 'Сообщение не поставлено в очередь' : item.status === 'FAILED' ? 'Ошибка отправки' : item.status === 'READ' ? 'Прочитано' : item.status === 'DELIVERED' ? 'Доставлено' : item.status === 'SENT' ? 'Отправлено' : item.status === 'PROCESSING' ? 'Отправляется' : 'Ожидает отправки'
 
   return <article className={resourceSurfaceClass}>
-    <div className="flex items-start gap-3"><span className={`grid size-10 shrink-0 place-items-center rounded-full ${item.status === 'FAILED' || unavailable ? 'bg-danger/10 text-danger' : 'bg-primary-soft text-primary'}`}><StatusIcon className="size-5" /></span><div className="min-w-0 flex-1"><strong className="block truncate">{recipient}</strong><span className="text-sm text-muted">{item.provider ?? 'Нет канала'}{item.firstStartsAt ? ` · ${new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(item.firstStartsAt))}` : ''}</span><p className={`mt-2 text-sm font-medium ${item.status === 'FAILED' || unavailable ? 'text-danger' : 'text-primary'}`}>{label}</p></div></div>
+    <div className="flex items-start gap-3"><span className={`grid size-10 shrink-0 place-items-center rounded-full ${item.status === 'FAILED' || unavailable ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}`}><StatusIcon className="size-5" /></span><div className="min-w-0 flex-1"><strong className="block truncate">{recipient}</strong><span className="text-sm text-muted">{item.provider ?? 'Нет канала'}{item.firstStartsAt ? ` · ${formatNumericDateTime(item.firstStartsAt, timezone)}` : ''}</span><p className={`mt-2 text-sm font-medium ${item.status === 'FAILED' || unavailable ? 'text-danger' : 'text-success'}`}>{label}</p></div></div>
     {item.status === 'SENT' && !item.capabilities.supportsDeliveredStatus ? <p className="mt-3 rounded-xl bg-muted/10 p-3 text-sm text-muted">Канал не сообщает статус доставки или прочтения.</p> : null}
     <p className="mt-3 text-sm text-muted">Ответ клиента: {item.businessResponse ?? 'не запрашивался'}</p>
     {item.lastError ? <p className="mt-2 text-sm text-danger">{item.lastError}</p> : null}

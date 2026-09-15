@@ -23,7 +23,7 @@ export function confirmationStatusLabel(status: ConfirmationStatus) { return lab
 
 export function ConfirmationStatusBadge({ status, compact = false }: { status: ConfirmationStatus; compact?: boolean }) {
   const Icon = icons[status]
-  return <span className={cn('inline-flex items-center gap-1.5 font-medium', compact ? 'text-xs' : 'text-sm', status === 'CONFIRMED' ? 'text-primary' : null, status === 'CANNOT_ATTEND' || status === 'NO_RESPONSE' ? 'text-danger' : 'text-muted')}>
+  return <span className={cn('inline-flex items-center gap-1.5 font-medium', compact ? 'text-xs' : 'text-sm', status === 'CONFIRMED' ? 'text-success' : null, status === 'PENDING' ? 'text-warning' : null, status === 'CANNOT_ATTEND' || status === 'NO_RESPONSE' ? 'text-danger' : 'text-muted')}>
     <Icon aria-hidden="true" className={compact ? 'size-3.5' : 'size-4'} />{labels[status]}
   </span>
 }

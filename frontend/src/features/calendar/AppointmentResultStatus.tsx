@@ -15,5 +15,5 @@ export function appointmentResultLabel(status: AppointmentResultStatus): string 
 
 export function AppointmentResultBadge({ status, compact = false }: { status: AppointmentResultStatus; compact?: boolean }) {
   const negative = status !== 'CONDUCTED'
-  return <span className={cn('inline-flex w-fit items-center rounded-full font-medium', compact ? 'mt-1 px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-sm', negative ? 'bg-danger/10 text-danger' : 'bg-primary-soft text-primary')}>{labels[status]}</span>
+  return <span className={cn('inline-flex w-fit items-center rounded-full font-medium', compact ? 'mt-1 px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-sm', negative ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success')}>{labels[status]}</span>
 }

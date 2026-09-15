@@ -31,17 +31,51 @@ final class OrganizationMessageTemplate implements OrganizationOwned
         private MessageTemplateType $type,
         #[ORM\Column(type: Types::TEXT)]
         private string $body,
+        /** @var array{confirm?: string, cannotAttend?: string, transfer?: string} */
+        #[ORM\Column(name: 'button_labels', type: 'jsonb')]
+        private array $buttonLabels,
         #[ORM\Column(name: 'updated_at', type: Types::DATETIMETZ_IMMUTABLE)]
         private DateTimeImmutable $updatedAt,
     ) {
     }
 
-    public static function create(Organization $organization, MessageTemplateType $type, string $body): self
+    /** @param array<string, mixed> $buttonLabels */
+    public static function create(Organization $organization, MessageTemplateType $type, string $body, array $buttonLabels = []): self
     {
-        $template = new self(new Ulid(), $organization, $type, '', new DateTimeImmutable('now', new DateTimeZone('UTC')));
+        $template = new self(new Ulid(), $organization, $type, '', [], new DateTimeImmutable('now', new DateTimeZone('UTC')));
         $template->changeBody($body);
+        $template->changeButtonLabels($buttonLabels);
 
         return $template;
+    }
+
+    /** @param array<string, mixed> $buttonLabels */
+    public function changeButtonLabels(array $buttonLabels): void
+    {
+        if ([] !== $buttonLabels && MessageTemplateType::CONFIRMATION !== $this->type) {
+            throw new \InvalidArgumentException('Кнопки доступны только для шаблона подтверждения.');
+        }
+        if ([] !== $buttonLabels) {
+            $keys = array_keys($buttonLabels);
+            sort($keys);
+            if (['cannotAttend', 'confirm', 'transfer'] !== $keys) {
+                throw new \InvalidArgumentException('Укажите названия всех кнопок подтверждения.');
+            }
+        }
+
+        $normalized = [];
+        foreach ($buttonLabels as $key => $label) {
+            if (!is_string($label)) {
+                throw new \InvalidArgumentException('Название кнопки должно быть строкой.');
+            }
+            $label = trim($label);
+            if ('' === $label || 20 < mb_strlen($label)) {
+                throw new \InvalidArgumentException('Название кнопки должно содержать от 1 до 20 символов.');
+            }
+            $normalized[$key] = $label;
+        }
+        $this->buttonLabels = $normalized;
+        $this->updatedAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
     }
 
     public function changeBody(string $body): void
@@ -74,4 +108,6 @@ final class OrganizationMessageTemplate implements OrganizationOwned
     public function organizationId(): Ulid { return $this->organization->id(); }
     public function type(): MessageTemplateType { return $this->type; }
     public function body(): string { return $this->body; }
+    /** @return array{confirm?: string, cannotAttend?: string, transfer?: string} */
+    public function buttonLabels(): array { return $this->buttonLabels; }
 }

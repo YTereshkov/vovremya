@@ -5,8 +5,10 @@ import { Trash2 } from 'lucide-react'
 
 import { useCatalogKey, useService, type ServiceDefinition, type ServiceInput } from '@/features/catalog/api'
 import { useMessageTemplates } from '@/features/communications/api'
+import { renderTemplatePreview } from '@/features/communications/templatePreview'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
+import { InfoHint } from '@/shared/ui/InfoHint'
 import { ResourceFeedback, ResourceFrame, ResourceModal, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
 export function ServiceFormPage() {
@@ -52,19 +54,20 @@ function ServiceForm({ initial }: { initial?: ServiceDefinition }) {
   }
 
   return <ResourceFrame title={initial ? 'Редактировать услугу' : 'Новая услуга'} back="/settings/services">
-    <form className="max-w-2xl space-y-6" onSubmit={submit}>
+    <form className="space-y-6" onSubmit={submit}>
       <label className="block space-y-2"><span>Название</span><input autoFocus className={resourceFieldClass} maxLength={160} required value={name} onChange={(event) => setName(event.target.value)} placeholder="Название услуги" /></label>
       <fieldset className={resourceSurfaceClass} disabled={save.isPending}>
-        <legend className="mb-1 text-lg font-semibold">Длительность</legend>
+        <legend className="mb-1"><span className="flex items-center gap-2 text-lg font-semibold">Длительность<InfoHint label="Диапазон длительности">Значение по умолчанию подставляется при создании занятия. Минимум и максимум ограничивают ручное изменение длительности.</InfoHint></span></legend>
         <DurationField label="По умолчанию" required value={duration} onChange={(value) => setDuration(value ?? 0)} />
         <DurationField label="Минимум" value={minimum} onChange={setMinimum} />
         <DurationField label="Максимум" value={maximum} onChange={setMaximum} />
       </fieldset>
       <fieldset className={resourceSurfaceClass}>
-        <legend className="mb-3 text-lg font-semibold">Шаблон подтверждения</legend>
-        <label className="flex min-h-12 items-center gap-3"><input checked={!customTemplate} className="size-5 accent-primary" name="template-mode" onChange={() => setCustomTemplate(false)} type="radio" /><span>Использовать общий шаблон</span></label>
-        <label className="flex min-h-12 items-center gap-3 border-t border-border"><input checked={customTemplate} className="size-5 accent-primary" name="template-mode" onChange={() => setCustomTemplate(true)} type="radio" /><span>Свой шаблон для услуги</span></label>
-        {customTemplate ? <textarea aria-label="Свой шаблон подтверждения" className={`${resourceFieldClass} mt-4 min-h-40 py-3`} maxLength={4000} required value={confirmationTemplate} onChange={(event) => setConfirmationTemplate(event.target.value)} /> : <div className="mt-4 rounded-lg border border-border bg-white/60 p-4 text-sm leading-relaxed text-muted">{templates.data?.find((template) => template.type === 'CONFIRMATION')?.body ?? 'Загружаем общий шаблон...'}</div>}
+        <legend className="mb-3"><span className="flex items-center gap-2 text-lg font-semibold">Шаблон подтверждения<InfoHint label="Шаблон услуги">Собственный текст используется только для подтверждений этой услуги. Остальные сообщения используют общие шаблоны организации.</InfoHint></span></legend>
+        <label className="flex min-h-12 items-center gap-3"><input checked={!customTemplate} className="size-5 accent-accent" name="template-mode" onChange={() => setCustomTemplate(false)} type="radio" /><span>Использовать общий шаблон</span></label>
+        <label className="flex min-h-12 items-center gap-3 border-t border-border"><input checked={customTemplate} className="size-5 accent-accent" name="template-mode" onChange={() => setCustomTemplate(true)} type="radio" /><span>Свой шаблон для услуги</span></label>
+        {customTemplate ? <textarea aria-label="Свой шаблон подтверждения" className={`${resourceFieldClass} mt-4 min-h-40 py-3`} maxLength={4000} required value={confirmationTemplate} onChange={(event) => setConfirmationTemplate(event.target.value)} /> : null}
+        <div className="mt-4 rounded-lg border border-border bg-primary-soft p-4 text-sm leading-relaxed">{renderTemplatePreview(customTemplate ? confirmationTemplate : templates.data?.find((template) => template.type === 'CONFIRMATION')?.body ?? 'Загружаем общий шаблон...')}</div>
         <p className="mt-3 text-sm text-muted">Доступны: {'{date}'}, {'{time}'}, {'{service}'}, {'{client_name}'}, {'{contact_name}'}</p>
       </fieldset>
       <ResourceFeedback error={save.error} />

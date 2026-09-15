@@ -16,7 +16,7 @@ export function ServicesPage() {
     {query.isPending ? <p role="status" className="text-muted">Загружаем услуги...</p> : null}
     {!query.isPending && !query.error && query.data?.length === 0 ? <p className="text-muted">Пока нет услуг. Добавьте первую.</p> : null}
     <div className="space-y-3">
-      {query.data?.map((service) => <Link className={`${resourceSurfaceClass} flex items-center gap-4 transition-colors hover:bg-white`} key={service.id} to={`/settings/services/${service.id}`}>
+      {query.data?.map((service) => <Link className={`${resourceSurfaceClass} flex items-center gap-4 transition-colors hover:bg-surface-raised`} key={service.id} to={`/settings/services/${service.id}`}>
         <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><ClipboardList className="size-6" /></span>
         <span className="min-w-0 flex-1">
           <strong className="block break-words">{service.name}</strong>

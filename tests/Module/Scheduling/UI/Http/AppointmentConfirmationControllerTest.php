@@ -132,7 +132,9 @@ final class AppointmentConfirmationControllerTest extends WebTestCase
             $request,
             new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
         );
-        self::assertSame(1, $this->countRows('communication_outbox'));
+        self::assertSame(2, $this->countRows('communication_outbox'));
+        self::assertNotNull($request->reminderSentAt());
+        self::assertSame(['CONFIRMATION_REQUESTED', 'CONFIRMATION_CONFIRMED', 'REMINDER_SENT'], $this->eventTypes());
 
         $consumer->consume($this->event($cannotAction, $this->channel->id(), 'callback-2'));
         $this->entityManager->clear();

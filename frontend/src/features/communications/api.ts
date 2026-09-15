@@ -8,6 +8,7 @@ export type MessageTemplateType = 'CONFIRMATION' | 'TRANSFER' | 'FREE_WINDOW' | 
 export interface MessageTemplate {
   type: MessageTemplateType
   body: string
+  buttons: { confirm: string; cannotAttend: string; transfer: string } | null
   isDefault: boolean
 }
 

@@ -18,7 +18,7 @@ import { ApiError } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, resourceFieldClass } from '@/shared/ui/ResourceLayout'
 
-const cardClass = 'rounded-2xl border border-border bg-white/75 p-4 shadow-surface sm:p-5'
+const cardClass = 'rounded-2xl border border-border bg-surface p-4 shadow-surface sm:p-5'
 
 function todayIn(timezone: string): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -53,7 +53,7 @@ function DecisionDialog({
     return () => dialog.current?.close()
   }, [])
 
-  return <dialog ref={dialog} onCancel={close} aria-label={soft ? 'Предупреждение о времени' : 'Время недоступно'} className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-32px)] max-w-lg overflow-auto rounded-3xl border-0 bg-[#f8faf8] p-6 text-ink shadow-2xl backdrop:bg-ink/70 sm:p-8">
+  return <dialog ref={dialog} onCancel={close} aria-label={soft ? 'Предупреждение о времени' : 'Время недоступно'} className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-32px)] max-w-lg overflow-auto rounded-3xl border border-border bg-surface-raised p-6 text-ink shadow-surface backdrop:bg-ink/60 sm:p-8">
     <div className={`mx-auto grid size-16 place-items-center rounded-full border-2 ${soft ? 'border-warning text-warning' : 'border-danger text-danger'}`}>
       <span className="text-4xl leading-none">{soft ? '!' : '×'}</span>
     </div>
@@ -143,8 +143,8 @@ export function AppointmentFormPage() {
         <h1 className="text-2xl font-semibold">Новое занятие</h1>
       </header>
 
-      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-white/75 p-2">
-        <span className="flex h-14 items-center justify-center gap-2 rounded-xl bg-primary-soft font-medium text-primary"><CalendarDays className="size-5" />Разовое</span>
+      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-surface p-2">
+        <span className="flex h-14 items-center justify-center gap-2 rounded-xl bg-accent-soft font-medium text-accent"><CalendarDays className="size-5" />Разовое</span>
         <Link className="flex h-14 items-center justify-center gap-2 text-muted" to="/regular-schedules/new"><RefreshCcw className="size-5" />Регулярное</Link>
       </div>
 
@@ -163,14 +163,14 @@ export function AppointmentFormPage() {
 
         <label className={`${cardClass} block`}><span className="mb-2 flex items-center gap-3 text-sm text-muted"><CalendarDays className="size-5 text-primary" />Дата</span><input aria-label="Дата" className={`${resourceFieldClass} border-0 bg-transparent px-0 text-lg font-semibold focus:ring-0`} required type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 min-[420px]:grid-cols-2">
           <label className={cardClass}><span className="mb-2 flex items-center gap-2 text-sm text-muted"><Clock3 className="size-5 text-primary" />Начало</span><input ref={timeInput} aria-label="Начало" className={`${resourceFieldClass} border-0 bg-transparent px-0 text-lg font-semibold focus:ring-0`} required type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
           <label className={cardClass}><span className="mb-2 flex items-center gap-2 text-sm text-muted"><Hourglass className="size-5 text-primary" />Продолжительность</span><input aria-label="Продолжительность" className={`${resourceFieldClass} border-0 bg-transparent px-0 text-lg font-semibold focus:ring-0`} max={selectedService?.maximumDurationMinutes ?? 1440} min={selectedService?.minimumDurationMinutes ?? 1} required type="number" value={durationValue} onChange={(event) => setDuration(event.target.value)} /><span className="mt-2 block text-xs text-muted">{selectedService ? `Из услуги · допустимо ${selectedService.minimumDurationMinutes ?? 1}–${selectedService.maximumDurationMinutes ?? 1440} минут` : 'Выберите услугу'}</span></label>
         </div>
 
         {loading ? <p role="status" className="text-muted">Загружаем данные...</p> : null}
         {!loading && !ready ? <p role="alert" className="text-danger">Для занятия нужны специалист, клиент и услуга.</p> : null}
-        {created ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-white/75 p-4 text-success"><span>Занятие «{created.service.name}» создано.</span><Link className="font-medium underline" to={`/appointments/${created.id}`}>Открыть занятие</Link></div> : null}
+        {created ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-primary-soft p-4 text-success"><span>Занятие «{created.service.name}» создано.</span><Link className="font-medium underline" to={`/appointments/${created.id}`}>Открыть занятие</Link></div> : null}
         <ResourceFeedback error={error} />
         <Button className="w-full" disabled={loading || !ready || mutation.isPending} type="submit">{mutation.isPending ? 'Создаём...' : 'Создать занятие'}</Button>
         <Button asChild className="w-full" variant="outline"><Link to="/calendar">Отмена</Link></Button>

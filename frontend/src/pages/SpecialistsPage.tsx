@@ -26,7 +26,7 @@ export function SpecialistsPage() {
       const group = filtered.filter((s) => (s.todayIntervals.length > 0) === working)
       return group.length ? <section key={String(working)} className="mt-7">
         <h2 className="mb-4 text-lg font-semibold">{working ? 'Работают сегодня' : 'Сегодня не работают'}</h2>
-        <div className="space-y-3">{group.map((s) => <Link className={`${surfaceClass} flex items-center gap-4 transition-colors hover:bg-white`} key={s.id} to={`/specialists/${s.id}`}>
+        <div className="space-y-3">{group.map((s) => <Link className={`${surfaceClass} flex items-center gap-4 transition-colors hover:bg-surface-raised`} key={s.id} to={`/specialists/${s.id}`}>
           <Avatar name={s.name} /><div className="min-w-0 flex-1"><p className="break-words font-semibold">{s.name} <span className="font-normal text-muted">· {s.specialization}</span></p>
             <p className="mt-1 text-sm text-muted">{working ? `Сегодня ${s.todayIntervals.map((i) => `${i.start}–${i.end}`).join(', ')}` : 'Нет рабочих часов на сегодня'}</p>
             {s.administratorId ? <span className="mt-3 inline-block rounded bg-primary-soft px-2 py-1 text-xs text-primary">Также администратор</span> : null}

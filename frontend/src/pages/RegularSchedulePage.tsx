@@ -13,6 +13,7 @@ import {
   type RegularScheduleDay,
 } from '@/features/regular-schedules/api'
 import { useSpecialists } from '@/features/workforce/api'
+import { formatNumericDate } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, ResourceModal, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -25,7 +26,7 @@ function todayIn(timezone: string): string {
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
+  return formatNumericDate(date)
 }
 
 export function RegularSchedulePage() {
@@ -66,10 +67,10 @@ export function RegularSchedulePage() {
           <div className="min-w-0 flex-1"><p className="font-semibold">{weekdays[day.weekday - 1]}</p><p className="mt-1 flex items-center gap-2 text-muted"><Clock3 className="size-4" />{day.startTime} · {day.durationMinutes} минут</p></div>
           {schedule.data.active ? <div className="flex gap-1"><button aria-label={`Изменить ${weekdays[day.weekday - 1]}`} className="grid size-11 place-items-center text-primary" onClick={() => setEditingDay(day)} type="button"><Pencil className="size-5" /></button><button aria-label={`Удалить ${weekdays[day.weekday - 1]}`} className="grid size-11 place-items-center text-danger" onClick={() => setEndingDay(day)} type="button"><Trash2 className="size-5" /></button></div> : null}
         </article>)}</div>
-        {!schedule.data.days.length ? <p className="rounded-lg border border-border bg-white/70 p-4 text-muted">Активных дней нет.</p> : null}
+        {!schedule.data.days.length ? <p className="rounded-lg border border-border bg-surface p-4 text-muted">Активных дней нет.</p> : null}
       </section>
 
-      {schedule.data.issues.length ? <section className="rounded-lg border border-warning/40 bg-white/80 p-5">
+      {schedule.data.issues.length ? <section className="rounded-lg border border-warning/40 bg-surface-raised p-5">
         <h2 className="flex items-center gap-2 font-semibold text-warning"><AlertTriangle className="size-5" />Требуют решения</h2>
         <ul className="mt-4 space-y-4">{schedule.data.issues.map((issue) => <li className="flex flex-wrap items-center gap-3 border-t border-border pt-4 first:border-0 first:pt-0" key={issue.id}><div className="min-w-0 flex-1"><p className="font-semibold">{formatDate(issue.date)}</p><p className="text-sm text-muted">{issue.message}</p></div><Button disabled={retry.isPending} onClick={() => retry.mutate(issue.id)} variant="outline">Проверить снова</Button></li>)}</ul>
         <ResourceFeedback error={retry.error} />

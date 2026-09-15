@@ -8,10 +8,11 @@ import { useAppointment } from '@/features/calendar/api'
 import { useClient } from '@/features/clients/api'
 import { cancelTransfer, offerTransferOptions, useTransferState, type TransferOptionInput, type TransferState } from '@/features/transfers/api'
 import { ApiError } from '@/shared/api/request'
+import { formatNumericDate, formatNumericDateTime } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, resourceFieldClass } from '@/shared/ui/ResourceLayout'
 
-const cardClass = 'rounded-2xl border border-border bg-white/80 p-4 shadow-surface'
+const cardClass = 'rounded-2xl border border-border bg-surface p-4 shadow-surface'
 
 function nextDate(date: string, days: number): string {
   const value = new Date(`${date}T12:00:00Z`)
@@ -83,14 +84,14 @@ export function AppointmentTransferPage() {
       {appointment.data ? <section className={`${cardClass} mt-6`}>
         <p className="text-xl font-semibold">{appointment.data.client.name}</p>
         <p className="mt-1 text-muted">{appointment.data.service.name}</p>
-        <p className="mt-3 font-medium">{appointment.data.date} · {appointment.data.startTime}–{appointment.data.endTime}</p>
+        <p className="mt-3 font-medium">{formatNumericDate(appointment.data.date)} · {appointment.data.startTime}–{appointment.data.endTime}</p>
         <p className="mt-2 text-sm text-muted">Существующее время сохраняется до выбора нового.</p>
       </section> : null}
       <ResourceFeedback error={appointment.error ?? transfer.error} />
 
       {active?.status === 'OPTIONS_SENT' ? <section className={`${cardClass} mt-5`}>
         <h2 className="text-lg font-semibold">Варианты отправлены</h2>
-        <div className="mt-4 space-y-3">{transfer.data?.options.map((option) => <div className="rounded-xl border border-border p-3" key={option.id}>{new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(option.startsAt))}</div>)}</div>
+        <div className="mt-4 space-y-3">{transfer.data?.options.map((option) => <div className="rounded-xl border border-border p-3" key={option.id}>{formatNumericDateTime(option.startsAt, 'Europe/Moscow')}</div>)}</div>
         <p className="mt-4 text-sm text-muted">Автоматического срока ожидания нет. Предложенные варианты не удерживают время.</p>
         <Button className="mt-5 w-full" disabled={cancel.isPending} onClick={() => cancel.mutate(active.id)} variant="outline">Отменить предложение</Button>
         <ResourceFeedback error={cancel.error} />

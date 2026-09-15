@@ -21,7 +21,7 @@ export function ClientsPage() {
     <div className="mt-7 space-y-3">
       {query.data?.map((client) => {
         const primary = client.channels.find((channel) => channel.primary)
-        return <Link className={`${resourceSurfaceClass} flex items-center gap-4 transition-colors hover:bg-white`} key={client.id} to={`/clients/${client.id}`}>
+        return <Link className={`${resourceSurfaceClass} flex items-center gap-4 transition-colors hover:bg-surface-raised`} key={client.id} to={`/clients/${client.id}`}>
           <ResourceAvatar name={client.name} />
           <span className="min-w-0 flex-1">
             <strong className="block break-words">{client.name}</strong>

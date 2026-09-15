@@ -63,6 +63,7 @@ export function App() {
           <Route path="specialists/:id/hours" element={<WorkingHoursPage />} />
           <Route path="specialists/:id/absence" element={<SpecialistAbsencePage />} />
           <Route path="statistics" element={<StatisticsPage />} />
+          <Route path="more" element={<Navigate to="/" replace />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/services" element={<ServicesPage />} />
           <Route path="settings/services/new" element={<ServiceFormPage />} />

@@ -47,17 +47,21 @@ final class MessageTemplateControllerTest extends WebTestCase
         self::assertCount(4, $defaults);
         self::assertSame(['CONFIRMATION', 'TRANSFER', 'FREE_WINDOW', 'PERMANENT_PLACE'], array_column($defaults, 'type'));
         self::assertTrue($defaults[0]['isDefault']);
+        self::assertSame(['confirm' => 'Будем', 'cannotAttend' => 'Не сможем', 'transfer' => 'Хотим перенести'], $defaults[0]['buttons']);
 
         $custom = 'Здравствуйте, {contact_name}. {date} в {time} — {service} для {client_name}.';
-        $saved = $this->send('PUT', '/api/communications/templates/confirmation', ['body' => $custom]);
+        $buttons = ['confirm' => 'Придём', 'cannotAttend' => 'Не придём', 'transfer' => 'Перенести'];
+        $saved = $this->send('PUT', '/api/communications/templates/confirmation', ['body' => $custom, 'buttons' => $buttons]);
         self::assertResponseIsSuccessful();
         self::assertSame($custom, $saved['body']);
+        self::assertSame($buttons, $saved['buttons']);
         self::assertFalse($saved['isDefault']);
 
         $restored = $this->send('DELETE', '/api/communications/templates/confirmation');
         self::assertResponseIsSuccessful();
         self::assertTrue($restored['isDefault']);
         self::assertNotSame($custom, $restored['body']);
+        self::assertSame(['confirm' => 'Будем', 'cannotAttend' => 'Не сможем', 'transfer' => 'Хотим перенести'], $restored['buttons']);
     }
 
     public function testTemplateValidationAndTenantIsolation(): void
@@ -68,6 +72,8 @@ final class MessageTemplateControllerTest extends WebTestCase
         $this->send('PUT', '/api/communications/templates/confirmation', ['body' => 'Ошибка: {{date}}.']);
         self::assertResponseStatusCodeSame(422);
         $this->send('PUT', '/api/communications/templates/confirmation', ['body' => 'Ошибка: {unknown}.']);
+        self::assertResponseStatusCodeSame(422);
+        $this->send('PUT', '/api/communications/templates/confirmation', ['body' => 'Текст.', 'buttons' => ['confirm' => 'Да']]);
         self::assertResponseStatusCodeSame(422);
 
         $this->login($this->otherAdministrator);

@@ -36,7 +36,12 @@ final readonly class MessageTemplateController
                 throw new \InvalidArgumentException('Укажите текст шаблона.');
             }
 
-            return $this->templates->save($actor, MessageTemplateType::from(strtoupper($type)), $data['body']);
+            $buttons = $data['buttons'] ?? null;
+            if (null !== $buttons && !is_array($buttons)) {
+                throw new \InvalidArgumentException('Некорректные названия кнопок.');
+            }
+
+            return $this->templates->save($actor, MessageTemplateType::from(strtoupper($type)), $data['body'], $buttons);
         });
     }
 
@@ -56,7 +61,7 @@ final readonly class MessageTemplateController
         $this->checkCsrf($request);
         try { $data = json_decode($request->getContent(), true, 16, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new \InvalidArgumentException('Некорректный JSON.'); }
-        if (!is_array($data) || array_is_list($data) || array_diff(array_keys($data), ['body'])) {
+        if (!is_array($data) || array_is_list($data) || array_diff(array_keys($data), ['body', 'buttons'])) {
             throw new \InvalidArgumentException('Некорректные поля запроса.');
         }
 

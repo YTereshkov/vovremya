@@ -1,3 +1,5 @@
+import { formatNumericDate } from '@/shared/lib/date'
+
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>()
 
 export function todayInTimezone(timezone: string): string {
@@ -38,5 +40,5 @@ export function formatDate(date: string, options: Intl.DateTimeFormatOptions): s
 }
 
 export function longDate(date: string): string {
-  return formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })
+  return formatNumericDate(date)
 }

@@ -13,9 +13,12 @@ snapshots and appointment references are introduced by later Scheduling parts.
 
 ## Clients and recipients
 
-`Clients` owns clients, optional contact people, and channel connections. A
-client can exist without a contact person and can itself be the recipient of a
-channel. A connection records its provider, provisional or verified address,
+`Clients` owns clients, contact people, and channel connections. The create
+workflow requires one primary channel. A child has no direct phone in this
+workflow: one parent with a required phone is created as the channel recipient.
+An adult has a required own phone, no contact person, and receives messages
+directly. Later card-level management still supports adding and removing extra
+contacts and channels. A connection records its provider, provisional or verified address,
 recipient ownership, activation state, tenant-bound webhook routing identity,
 and hashed secret/token material. Provider behavior and capabilities remain in
 the `Communications` adapters from parts 28–31.
@@ -56,9 +59,10 @@ Client list search is server-side and treats `%` and `_` as literal characters.
 - `GET/PUT/DELETE /api/communications/templates[/{type}]`
 
 The React service screens follow mockups 37–40. Client list, create form, card,
-and absence flow follow the approved mockups. ContactPerson remains optional;
-the absence notification recipient is resolved from the client's active primary
-ChannelConnection and may be either the client or a contact.
+and absence flow follow the approved mockups. The create form derives the
+recipient from client type and does not expose optional contact/channel toggles.
+The absence notification recipient is resolved from the client's active primary
+ChannelConnection and may be either the adult client or a child's parent.
 The service-specific confirmation-template section from mockups 38 and 40 uses
 the organization template by default and may store one service override. Client
 forms use the organization's configured default provider while the client card

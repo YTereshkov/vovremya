@@ -13,11 +13,12 @@ import {
 } from '@/features/regular-schedules/api'
 import { useSpecialists } from '@/features/workforce/api'
 import { ApiError } from '@/shared/api/request'
+import { formatNumericDate } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, resourceFieldClass } from '@/shared/ui/ResourceLayout'
 
 const weekdays = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
-const cardClass = 'rounded-2xl border border-border bg-white/75 p-4 shadow-surface sm:p-5'
+const cardClass = 'rounded-2xl border border-border bg-surface p-4 shadow-surface sm:p-5'
 
 interface DayInput {
   key: number
@@ -118,9 +119,9 @@ export function RegularScheduleFormPage() {
         <h1 className="text-2xl font-semibold">Новое занятие</h1>
       </header>
 
-      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-white/75 p-2">
+      <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-border bg-surface p-2">
         <Link className="flex h-14 items-center justify-center gap-2 text-muted" to="/appointments/new"><CalendarDays className="size-5" />Разовое</Link>
-        <span className="flex h-14 items-center justify-center gap-2 rounded-xl bg-primary-soft font-medium text-primary"><RefreshCcw className="size-5" />Регулярное</span>
+        <span className="flex h-14 items-center justify-center gap-2 rounded-xl bg-accent-soft font-medium text-accent"><RefreshCcw className="size-5" />Регулярное</span>
       </div>
 
       <form className="mt-6 space-y-4" onSubmit={submit}>
@@ -154,12 +155,12 @@ export function RegularScheduleFormPage() {
 
         {loading ? <p role="status" className="text-muted">Загружаем данные...</p> : null}
         {!loading && !ready ? <p role="alert" className="text-danger">Нужны специалист, клиент, услуга и хотя бы один день.</p> : null}
-        {conflict ? <section role="alert" className="rounded-2xl border border-danger/30 bg-white/80 p-4">
+        {conflict ? <section role="alert" className="rounded-2xl border border-danger/30 bg-surface-raised p-4">
           <h2 className="font-semibold text-danger">Есть недоступные даты</h2>
           <p className="mt-1 text-sm text-muted">Регулярное расписание не создано. Измените день или время.</p>
-          <ul className="mt-3 space-y-2">{conflict.conflicts?.map((item) => <li key={`${item.date}-${item.time}`}><strong>{item.date}, {item.time}</strong><span className="block text-sm text-muted">{item.message}</span></li>)}</ul>
+          <ul className="mt-3 space-y-2">{conflict.conflicts?.map((item) => <li key={`${item.date}-${item.time}`}><strong>{formatNumericDate(item.date)}, {item.time}</strong><span className="block text-sm text-muted">{item.message}</span></li>)}</ul>
         </section> : null}
-        {created ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-white/75 p-4 text-success"><span>Регулярное расписание создано.</span><Link className="font-medium underline" to={`/regular-schedules/${created.id}`}>Открыть расписание</Link></div> : null}
+        {created ? <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-primary-soft p-4 text-success"><span>Регулярное расписание создано.</span><Link className="font-medium underline" to={`/regular-schedules/${created.id}`}>Открыть расписание</Link></div> : null}
         <ResourceFeedback error={conflict ? null : mutation.error} />
         <Button className="w-full" disabled={loading || !ready || mutation.isPending} type="submit">{mutation.isPending ? 'Создаём...' : 'Создать расписание'}</Button>
         <Button asChild className="w-full" variant="outline"><Link to="/calendar">Отмена</Link></Button>

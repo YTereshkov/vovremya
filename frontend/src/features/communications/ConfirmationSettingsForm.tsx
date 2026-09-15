@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCommunicationsKey, useConfirmationSettings, type ConfirmationSettings } from '@/features/communications/api'
 import { apiRequest } from '@/shared/api/request'
 import { Button } from '@/shared/ui/Button'
+import { InfoHint } from '@/shared/ui/InfoHint'
 import { ResourceFeedback, resourceFieldClass, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
 const defaultSettings: ConfirmationSettings = {
@@ -36,25 +37,26 @@ export function ConfirmationSettingsForm() {
 
   if (query.isPending) return <p className="mt-3 text-sm text-muted" role="status">Загружаем настройки...</p>
 
-  return <form className={`${resourceSurfaceClass} mt-3 max-w-xl space-y-5`} onSubmit={submit}>
+  return <form className={`${resourceSurfaceClass} mt-3 space-y-5`} onSubmit={submit}>
+    <div className="flex items-center gap-2"><h3 className="font-medium">Запрос подтверждения</h3><InfoHint label="Запрос подтверждения">Система накануне занятия попросит клиента подтвердить визит. Если ответа не будет до заданного времени, появится уведомление.</InfoHint></div>
     <div className="grid gap-4 sm:grid-cols-2">
       <TimeField label="Запросить подтверждение накануне в" value={settings.requestTime} onChange={(value) => update('requestTime', value)} />
       <TimeField label="Считать, что ответа нет, в" value={settings.noResponseTime} onChange={(value) => update('noResponseTime', value)} />
     </div>
-    <label className="flex items-center gap-3"><input className="size-5 accent-primary" checked={settings.reminderEnabled} onChange={(event) => update('reminderEnabled', event.target.checked)} type="checkbox" /><span className="font-medium">Повторное напоминание</span></label>
+    <div className="flex items-center gap-2"><label className="flex items-center gap-3"><input className="size-5 accent-accent" checked={settings.reminderEnabled} onChange={(event) => update('reminderEnabled', event.target.checked)} type="checkbox" /><span className="font-medium">Повторное напоминание</span></label><InfoHint label="Повторное напоминание">Напоминание отправляется ожидающим ответа и подтвердившим посещение. Оно не отправляется после отмены занятия или ответа «не сможем».</InfoHint></div>
     {settings.reminderEnabled ? <div className="grid gap-4 sm:grid-cols-2">
       <label><span className="mb-2 block text-sm text-muted">За сколько минут до занятия</span><input className={resourceFieldClass} min={15} max={1440} required type="number" value={settings.reminderLeadMinutes} onChange={(event) => update('reminderLeadMinutes', Number(event.target.value))} /></label>
       <TimeField label="Но не раньше" value={settings.reminderNotBefore} onChange={(value) => update('reminderNotBefore', value)} />
     </div> : null}
     <div>
-      <h3 className="font-medium">Не отправлять сообщения</h3>
+      <div className="flex items-center gap-2"><h3 className="font-medium">Не отправлять сообщения</h3><InfoHint label="Период тишины">В этот период автоматические сообщения не отправляются. Они будут обработаны после окончания периода тишины.</InfoHint></div>
       <div className="mt-3 grid grid-cols-2 gap-4">
         <TimeField label="С" value={settings.quietHoursStart} onChange={(value) => update('quietHoursStart', value)} />
         <TimeField label="До" value={settings.quietHoursEnd} onChange={(value) => update('quietHoursEnd', value)} />
       </div>
     </div>
     <ResourceFeedback error={query.error ?? save.error} />
-    {save.isSuccess ? <p className="text-sm text-primary" role="status">Настройки сохранены.</p> : null}
+    {save.isSuccess ? <p className="text-sm text-success" role="status">Настройки сохранены.</p> : null}
     <Button disabled={save.isPending} type="submit">{save.isPending ? 'Сохраняем...' : 'Сохранить'}</Button>
   </form>
 }

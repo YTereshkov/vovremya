@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useMarkAllNotificationsRead, useNotificationCenter, type NotificationCenterItem } from '@/features/communications/api'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { formatNumericDateTime } from '@/shared/lib/date'
 import { ResourceFeedback, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
 const icons = {
@@ -38,7 +39,7 @@ export function NotificationsPage() {
       <NotificationGroup items={grouped.today} label="Сегодня" timezone={timezone} />
       <NotificationGroup items={grouped.earlier} label="Ранее" timezone={timezone} />
     </div> : null}
-    {!query.isPending && !query.error && !query.data?.items.length ? <div className="mt-6 grid min-h-52 place-items-center rounded-lg border border-border bg-white/70 p-8 text-center text-muted"><div><Bell className="mx-auto size-8" /><p className="mt-3">Новых уведомлений нет</p></div></div> : null}
+    {!query.isPending && !query.error && !query.data?.items.length ? <div className="mt-6 grid min-h-52 place-items-center rounded-lg border border-border bg-surface p-8 text-center text-muted"><div><Bell className="mx-auto size-8" /><p className="mt-3">Новых уведомлений нет</p></div></div> : null}
   </section>
 }
 
@@ -50,7 +51,7 @@ function NotificationGroup({ items, label, timezone }: { items: NotificationCent
     const startsAt = item.metadata.startsAt
     return <Link className={`${resourceSurfaceClass} flex items-center gap-4 hover:border-primary/40`} key={`${item.type}-${item.id}`} to={item.href}>
       <span className={`grid size-11 shrink-0 place-items-center rounded-full ${item.severity === 'danger' ? 'bg-danger/10 text-danger' : item.severity === 'success' ? 'bg-success/10 text-success' : 'bg-primary-soft text-primary'}`}><Icon className="size-5" /></span>
-      <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><strong className="truncate">{item.title}</strong>{item.unread ? <span aria-label="Не прочитано" className="size-2 shrink-0 rounded-full bg-primary" /> : null}</span><span className="mt-1 block text-sm text-muted">{item.subtitle}{startsAt ? ` · ${new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(startsAt))}` : ''}</span></span>
+      <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><strong className="truncate">{item.title}</strong>{item.unread ? <span aria-label="Не прочитано" className="size-2 shrink-0 rounded-full bg-primary" /> : null}</span><span className="mt-1 block text-sm text-muted">{item.subtitle}{startsAt ? ` · ${formatNumericDateTime(startsAt, timezone)}` : ''}</span></span>
       <ChevronRight className="size-5 shrink-0 text-muted" />
     </Link>
   })}</div></section>

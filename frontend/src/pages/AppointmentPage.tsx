@@ -9,6 +9,7 @@ import { AppointmentResultBadge } from '@/features/calendar/AppointmentResultSta
 import { ConfirmationStatusBadge } from '@/features/calendar/ConfirmationStatus'
 import { longDate } from '@/features/calendar/date'
 import { apiRequest } from '@/shared/api/request'
+import { formatNumericDateTime } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import { ResourceFeedback, ResourceFrame, resourceSurfaceClass } from '@/shared/ui/ResourceLayout'
 
@@ -67,7 +68,7 @@ export function AppointmentPage() {
         <div className="my-6 border-t border-border" />
         <h2 className="text-sm font-semibold">История</h2>
         {history.isPending ? <p className="mt-3 text-sm text-muted">Загружаем...</p> : null}
-        {history.data?.length ? <ol className="mt-3 space-y-3">{history.data.map((event) => <li className="border-l-2 border-border pl-3 text-sm" key={event.id}><p>{historyLabel(event.type)}</p>{event.type === 'APPOINTMENT_RESCHEDULED' ? <TransferTimes payload={event.payload} timezone={user?.organization.timezone ?? 'UTC'} /> : null}<time className="text-xs text-muted">{new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short', timeZone: user?.organization.timezone ?? 'UTC' }).format(new Date(event.occurredAt))}</time></li>)}</ol> : !history.isPending ? <p className="mt-3 text-sm text-muted">Событий пока нет</p> : null}
+        {history.data?.length ? <ol className="mt-3 space-y-3">{history.data.map((event) => <li className="border-l-2 border-border pl-3 text-sm" key={event.id}><p>{historyLabel(event.type)}</p>{event.type === 'APPOINTMENT_RESCHEDULED' ? <TransferTimes payload={event.payload} timezone={user?.organization.timezone ?? 'UTC'} /> : null}<time className="text-xs text-muted">{formatNumericDateTime(event.occurredAt, user?.organization.timezone ?? 'UTC')}</time></li>)}</ol> : !history.isPending ? <p className="mt-3 text-sm text-muted">Событий пока нет</p> : null}
         <ResourceFeedback error={history.error} />
         <div className="my-6 border-t border-border" />
         <h2 className="text-sm font-semibold">Данные услуги на момент записи</h2>
@@ -113,7 +114,7 @@ function historyLabel(type: string): string {
 
 function TransferTimes({ payload, timezone }: { payload: Record<string, unknown>; timezone: string }) {
   if (typeof payload.from !== 'string' || typeof payload.to !== 'string') return null
-  const format = (value: string) => new Intl.DateTimeFormat('ru-RU', { dateStyle: 'long', timeStyle: 'short', timeZone: timezone }).format(new Date(value))
+  const format = (value: string) => formatNumericDateTime(value, timezone)
   return <p className="my-1 text-xs text-muted">Было: {format(payload.from)}<br />Стало: {format(payload.to)}</p>
 }
 

@@ -22,7 +22,7 @@ test('creates one-off appointments and distinguishes soft warnings from hard con
 
   await page.getByLabel('Начало').fill('10:00')
   await page.getByRole('button', { name: 'Создать занятие', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('создано')
+  await expect(page.getByRole('status').filter({ hasText: 'создано' })).toContainText('создано')
 
   await page.getByLabel('Начало').fill('10:55')
   await page.getByRole('button', { name: 'Создать занятие', exact: true }).click()

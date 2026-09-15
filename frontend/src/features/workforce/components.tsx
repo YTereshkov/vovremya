@@ -2,13 +2,14 @@ import { ArrowLeft, X } from 'lucide-react'
 import { useEffect, useRef, type ReactNode, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthProvider'
+import { formatNumericDate } from '@/shared/lib/date'
 import { Button } from '@/shared/ui/Button'
 import type { Interval, ProfileInput, Specialist } from './api'
 
 export const dayNames = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
 export const shortDays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС']
-export const fieldClass = 'h-11 min-w-0 w-full rounded-lg border border-border bg-white/90 px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20'
-export const surfaceClass = 'rounded-2xl border border-border bg-white/75 p-5 shadow-surface'
+export const fieldClass = 'h-11 min-w-0 w-full rounded-lg border border-border bg-surface-raised px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:bg-surface disabled:text-muted'
+export const surfaceClass = 'rounded-2xl border border-border bg-surface p-5 shadow-surface'
 
 export function WorkforceFrame({ title, back, action, children }: { title: string; back?: string; action?: ReactNode; children: ReactNode }) {
   return <section className="mx-auto min-h-screen w-full max-w-5xl px-4 pb-28 pt-[calc(env(safe-area-inset-top)+24px)] sm:px-8 lg:py-8">
@@ -30,7 +31,7 @@ export function Feedback({ error }: { error: unknown }) {
 export function Modal({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => { const dialog = ref.current; dialog?.showModal(); return () => dialog?.close() }, [])
-  return <dialog ref={ref} onCancel={close} aria-label={title} className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-32px)] max-w-lg overflow-auto rounded-2xl border border-border bg-[#f8faf8] p-5 text-ink shadow-xl backdrop:bg-ink/30">
+  return <dialog ref={ref} onCancel={close} aria-label={title} className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-32px)] max-w-lg overflow-auto rounded-2xl border border-border bg-surface-raised p-5 text-ink shadow-surface backdrop:bg-ink/40">
     <header className="mb-6 flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{title}</h2><button type="button" aria-label="Закрыть" onClick={close}><X /></button></header>
     {children}
   </dialog>
@@ -48,7 +49,7 @@ export function ProfileForm({ initial, onSave, close, pending, error }: { initia
   return <form onSubmit={submit} className="space-y-5">
     <label className="block space-y-2"><span>Имя специалиста</span><input className={fieldClass} value={name} onChange={(event) => setName(event.target.value)} maxLength={160} required autoFocus /></label>
     <label className="block space-y-2"><span>Специализация</span><input className={fieldClass} value={specialization} onChange={(event) => setSpecialization(event.target.value)} maxLength={100} required placeholder="Логопед" /></label>
-    {!initial?.administratorId || initial.administratorId === user?.id ? <label className="flex items-center gap-3"><input type="checkbox" className="size-5 accent-primary" checked={isMe} onChange={(event) => setIsMe(event.target.checked)} /><span>Это мой профиль специалиста</span></label> : <p className="text-muted">Также администратор</p>}
+    {!initial?.administratorId || initial.administratorId === user?.id ? <label className="flex items-center gap-3"><input type="checkbox" className="size-5 accent-accent" checked={isMe} onChange={(event) => setIsMe(event.target.checked)} /><span>Это мой профиль специалиста</span></label> : <p className="text-muted">Также администратор</p>}
     <Feedback error={error} />
     <Button className="w-full" type="submit" disabled={pending}>{pending ? 'Сохраняем...' : 'Сохранить специалиста'}</Button>
     <Button className="w-full" type="button" variant="outline" onClick={close} disabled={pending}>Отмена</Button>
@@ -64,5 +65,5 @@ export function TimeFields({ value, onChange, label }: { value: Interval; onChan
 }
 
 export function formatDate(date: string) {
-  return new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
+  return formatNumericDate(date)
 }

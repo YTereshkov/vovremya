@@ -40,17 +40,20 @@ final class ClientControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testClientCanExistWithoutContactOrChannel(): void
+    public function testNewClientRequiresTheCorrectRecipientAndPrimaryChannel(): void
     {
-        $client = $this->send('POST', '/api/clients', [
+        $this->send('POST', '/api/clients', [
             'name' => 'Анна Сидорова', 'type' => 'ADULT', 'phone' => null, 'note' => null,
             'contactPerson' => null, 'primaryChannel' => null,
         ]);
+        self::assertResponseStatusCodeSame(422);
 
-        self::assertResponseStatusCodeSame(201);
-        self::assertSame([], $client['contacts']);
-        self::assertSame([], $client['channels']);
-        self::assertNull($client['primaryChannelId']);
+        $this->send('POST', '/api/clients', [
+            'name' => 'Петя Сидоров', 'type' => 'CHILD', 'phone' => null, 'note' => null,
+            'contactPerson' => ['name' => 'Анна Сидорова', 'phone' => null],
+            'primaryChannel' => ['recipient' => 'CONTACT_PERSON', 'provider' => 'MAX', 'address' => '+7 900 100-00-00'],
+        ]);
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testCreatesSelfRecipientAndContactPersonRecipient(): void
@@ -86,11 +89,11 @@ final class ClientControllerTest extends WebTestCase
             'contactPersonId' => $contactId, 'provider' => 'WHATSAPP', 'address' => '+7 900 000-00-00', 'primary' => true,
         ]);
         self::assertResponseStatusCodeSame(201);
-        $channelId = $withChannel['channels'][0]['id'];
+        $channelId = $this->channelIdByAddress($withChannel, '+7 900 000-00-00');
         self::assertSame($channelId, $withChannel['primaryChannelId']);
-        self::assertSame('PENDING', $withChannel['channels'][0]['status']);
+        self::assertSame('PENDING', $this->channelByAddress($withChannel, '+7 900 000-00-00')['status']);
         $configured = $this->send('PUT', "/api/clients/$id/channels/$channelId/webhook-secret", ['secret' => 'channel-secret']);
-        self::assertSame('PENDING', $configured['channels'][0]['status']);
+        self::assertSame('PENDING', $this->channelByAddress($configured, '+7 900 000-00-00')['status']);
 
         $this->client->request('GET', '/api/clients?search='.urlencode('иван'));
         self::assertCount(1, $this->json());
@@ -103,7 +106,7 @@ final class ClientControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $this->send('DELETE', "/api/clients/$id/contacts/$contactId");
         self::assertResponseIsSuccessful();
-        self::assertSame([], $this->json()['channels']);
+        self::assertCount(1, $this->json()['channels']);
         self::assertNull($this->json()['primaryChannelId']);
 
         $this->send('DELETE', "/api/clients/$id");
@@ -120,7 +123,7 @@ final class ClientControllerTest extends WebTestCase
         $foreignWithChannel = $this->send('POST', '/api/clients/'.$foreign['id'].'/channels', [
             'contactPersonId' => null, 'provider' => 'MAX', 'address' => 'foreign', 'primary' => true,
         ]);
-        $foreignChannelId = $foreignWithChannel['channels'][0]['id'];
+        $foreignChannelId = $this->channelIdByAddress($foreignWithChannel, 'foreign');
 
         $this->login($this->administrator);
         $this->client->request('GET', '/api/clients/'.$foreign['id']);
@@ -148,7 +151,7 @@ final class ClientControllerTest extends WebTestCase
         $withChannel = $this->send('POST', '/api/clients/'.$client['id'].'/channels', [
             'contactPersonId' => null, 'provider' => 'MAX', 'address' => '+7 900 000-00-00', 'primary' => true,
         ]);
-        $channelId = $withChannel['channels'][0]['id'];
+        $channelId = $this->channelIdByAddress($withChannel, '+7 900 000-00-00');
 
         $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
         self::assertResponseStatusCodeSame(409);
@@ -185,7 +188,7 @@ final class ClientControllerTest extends WebTestCase
         ));
 
         $disabled = $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/deactivate");
-        self::assertSame('DISABLED', $disabled['channels'][0]['status']);
+        self::assertSame('DISABLED', $this->channelByAddress($disabled, '123456789')['status']);
 
         $this->login($this->otherAdministrator);
         $this->send('POST', "/api/clients/{$client['id']}/channels/$channelId/activation");
@@ -209,9 +212,30 @@ final class ClientControllerTest extends WebTestCase
     private function createClientRecord(string $name): array
     {
         return $this->send('POST', '/api/clients', [
-            'name' => $name, 'type' => 'ADULT', 'phone' => null, 'note' => null,
-            'contactPerson' => null, 'primaryChannel' => null,
+            'name' => $name, 'type' => 'ADULT', 'phone' => '+7 999 000-00-00', 'note' => null,
+            'contactPerson' => null,
+            'primaryChannel' => ['recipient' => 'CLIENT', 'provider' => 'MAX', 'address' => '+7 999 000-00-00'],
         ]);
+    }
+
+    /** @param array<string, mixed> $client */
+    private function channelIdByAddress(array $client, string $address): string
+    {
+        return $this->channelByAddress($client, $address)['id'];
+    }
+
+    /** @param array<string, mixed> $client
+     *  @return array<string, mixed>
+     */
+    private function channelByAddress(array $client, string $address): array
+    {
+        foreach ($client['channels'] as $channel) {
+            if ($address === $channel['address']) {
+                return $channel;
+            }
+        }
+
+        throw new \RuntimeException('Expected channel not found.');
     }
 
     private function login(AdministratorAccount $administrator): void

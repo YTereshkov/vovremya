@@ -28,11 +28,8 @@ test('manages services and creates a client with a contact recipient', async ({ 
 
   await page.goto('/clients/new')
   await page.getByLabel('Имя клиента').fill('Петя Сидоров')
-  await page.getByLabel('Добавить контактное лицо').check()
-  await page.getByLabel('Имя контактного лица').fill('Анна Сидорова')
-  await page.getByLabel('Телефон контактного лица').fill('+7 999 123-45-67')
-  await page.getByLabel('Добавить основной канал').check()
-  await page.getByLabel('Получатель').selectOption({ label: 'Контактное лицо' })
+  await page.getByLabel('Имя родителя').fill('Анна Сидорова')
+  await page.getByLabel('Телефон родителя').fill('+7 999 123-45-67')
   await page.getByRole('button', { name: 'Telegram', exact: true }).click()
   await page.getByLabel('Телефон или адрес канала').fill('@anna_sidorova')
   await page.getByRole('button', { name: 'Сохранить клиента' }).click()

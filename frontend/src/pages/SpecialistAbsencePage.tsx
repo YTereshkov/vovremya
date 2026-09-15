@@ -43,7 +43,7 @@ export function SpecialistAbsencePage() {
       <section className="rounded-2xl border border-primary/20 bg-primary-soft p-5">
         <div className="flex items-start gap-3"><Info className="mt-0.5 size-6 shrink-0 text-primary" /><div className="space-y-3"><p className="flex items-center gap-2"><CalendarDays className="size-5" /><strong>{impact.data?.appointments ?? '—'} занятий в периоде будут отменены</strong></p><p>Свободные окна не создаются — специалист не работает.</p><p>Регулярные расписания продолжатся после отсутствия.</p></div></div>
       </section>
-      <label className={`${resourceSurfaceClass} flex items-center justify-between gap-3`}><span>Уведомить затронутых клиентов</span><input className="size-6 accent-primary" checked={notifyClients} onChange={(event) => setNotifyClients(event.target.checked)} type="checkbox" /></label>
+      <label className={`${resourceSurfaceClass} flex items-center justify-between gap-3`}><span>Уведомить затронутых клиентов</span><input className="size-6 accent-accent" checked={notifyClients} onChange={(event) => setNotifyClients(event.target.checked)} type="checkbox" /></label>
       <ResourceFeedback error={save.error ?? impact.error} />
       <Button className="w-full" disabled={save.isPending || !profile || endsOn < startsOn}>{save.isPending ? 'Сохраняем...' : 'Сохранить отсутствие'}</Button>
       <Button className="w-full" type="button" variant="outline" onClick={() => navigate(`/specialists/${id}`)}>Отмена</Button>

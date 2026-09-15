@@ -39,7 +39,7 @@ export function LoginPage() {
 
   return (
     <main className="app-backdrop grid min-h-screen place-items-center px-5 py-8">
-      <section className="w-full max-w-[420px] rounded-lg border border-border bg-white/80 p-6 shadow-surface sm:p-8">
+      <section className="w-full max-w-[420px] rounded-lg border border-border bg-surface p-6 shadow-surface sm:p-8">
         <p className="text-2xl font-semibold text-primary">Vovremya</p>
         <h1 className="mt-8 text-2xl font-semibold">Вход в кабинет</h1>
         <p className="mt-2 text-sm text-muted">Используйте email администратора.</p>
@@ -48,7 +48,7 @@ export function LoginPage() {
             Email
             <input
               autoComplete="username"
-              className="mt-2 h-12 w-full rounded-lg border border-border bg-white px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="mt-2 h-12 w-full rounded-lg border border-border bg-surface-raised px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               onChange={(event) => setEmail(event.target.value)}
               required
               type="email"
@@ -59,7 +59,7 @@ export function LoginPage() {
             Пароль
             <input
               autoComplete="current-password"
-              className="mt-2 h-12 w-full rounded-lg border border-border bg-white px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="mt-2 h-12 w-full rounded-lg border border-border bg-surface-raised px-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               onChange={(event) => setPassword(event.target.value)}
               required
               type="password"
