@@ -13,182 +13,191 @@ Vovremya — сервис для частных специалистов, кот
 Проект объединяет календарь, клиентскую базу, услуги и коммуникации, чтобы
 специалисту было проще управлять расписанием и согласовывать встречи с клиентами.
 
-Backend построен на Symfony 7.4 и PHP 8.4, frontend — на React и TypeScript.
-Репозиторий также содержит утверждённые макеты интерфейса.
+Серверная часть построена на Symfony 7.4 и PHP 8.4, клиентская — на React
+и TypeScript. Репозиторий также содержит утверждённые макеты интерфейса.
 
-## Local development
+## Локальная разработка
 
-Start the development environment:
+Запустите окружение для разработки:
 
 ```bash
 docker compose up --build -d
 ```
 
-Check container status:
+Проверьте состояние контейнеров:
 
 ```bash
 docker compose ps
 ```
 
-Open the backend health endpoint:
+Откройте адрес проверки работоспособности серверной части:
 
 ```text
 http://localhost:8080/health
 ```
 
-Open the React application:
+Откройте приложение React:
 
 ```text
 http://localhost:5173
 ```
 
-Run Symfony console commands:
+Запускайте консольные команды Symfony:
 
 ```bash
 docker compose exec php php bin/console
 ```
 
-Check Doctrine configuration and migration state:
+Проверьте конфигурацию Doctrine и состояние миграций:
 
 ```bash
 docker compose exec php php bin/console doctrine:schema:validate
 docker compose exec php php bin/console doctrine:migrations:status
 ```
 
-## Redis and background processes
+## Redis и фоновые процессы
 
-Application cache, short-lived data, rate limiter state, and scheduler state use
-separate namespaced Redis pools. Messenger uses separate Redis Streams for the
-`async` and `failed` transports.
+Кэш приложения, краткоживущие данные, состояние ограничителя запросов
+и планировщика используют отдельные пулы Redis с собственными пространствами
+имён. Для транспортов `async` и `failed` Messenger использует отдельные
+потоки Redis Streams.
 
-The default Compose stack runs two background processes:
+По умолчанию окружение Docker Compose запускает два фоновых процесса:
 
-- `messenger` consumes application messages from `async`;
-- `scheduler` produces scheduled messages from `scheduler_infrastructure`,
-  `scheduler_regular_scheduling`, and `scheduler_communications`.
+- `messenger` обрабатывает сообщения приложения из `async`;
+- `scheduler` создаёт сообщения по расписаниям `scheduler_infrastructure`,
+  `scheduler_regular_scheduling` и `scheduler_communications`.
 
-Inspect queues and the schedule:
+Проверьте очереди и расписание:
 
 ```bash
 docker compose exec php php bin/console messenger:stats
 docker compose exec php php bin/console debug:scheduler
 ```
 
-Dispatch and inspect the infrastructure heartbeat:
+Отправьте контрольный сигнал инфраструктуры и проверьте его состояние:
 
 ```bash
 docker compose exec php php bin/console app:infrastructure:heartbeat
 docker compose exec php php bin/console app:infrastructure:heartbeat --status
 ```
 
-Every Redis Messenger worker must have a unique
-`MESSENGER_CONSUMER_NAME`. The Compose configuration provides stable names for
-its single local worker; deployments with multiple worker replicas must override
-them per process.
+Каждый обработчик Redis Messenger должен иметь уникальное значение
+`MESSENGER_CONSUMER_NAME`. Конфигурация Docker Compose задаёт постоянные имена
+для локального окружения с одним обработчиком. При запуске нескольких экземпляров
+задайте отдельное имя для каждого процесса.
 
-Module ownership and dependency rules are documented in
-[`docs/architecture/modules.md`](docs/architecture/modules.md).
-Infrastructure conventions are documented in
-[`docs/architecture/infrastructure.md`](docs/architecture/infrastructure.md).
-Frontend visual conventions are documented in
-[`docs/frontend/design-system.md`](docs/frontend/design-system.md).
+Границы ответственности модулей и правила зависимостей описаны
+в [документации модулей](docs/architecture/modules.md).
+Соглашения по инфраструктуре —
+в [документации инфраструктуры](docs/architecture/infrastructure.md).
+Визуальные правила клиентской части —
+в [дизайн-системе](docs/frontend/design-system.md).
 
-## Build and tests
+## Сборка и тесты
 
-Run backend tests. The command creates the isolated test database when needed
-and applies pending migrations before PHPUnit starts:
+Запустите тесты серверной части. Команда при необходимости создаёт отдельную
+тестовую базу данных и применяет ожидающие миграции перед запуском PHPUnit:
 
 ```bash
 docker compose exec php composer test:backend
 ```
 
-Create the first organization administrator. The password is requested twice
-through hidden interactive input and is never accepted as a CLI argument:
+Создайте первого администратора организации. Пароль запрашивается дважды
+в интерактивном режиме со скрытым вводом и не принимается как аргумент команды:
 
 ```bash
 docker compose exec php php bin/console app:admin:create
 ```
 
-Check and build the React application:
+Проверьте типы и соберите приложение React:
 
 ```bash
 docker compose exec node npm run typecheck
 docker compose exec node npm run build
 ```
 
-Run Playwright smoke tests in the dedicated Compose profile:
+Запустите базовые проверки работоспособности Playwright в отдельном профиле
+Docker Compose:
 
 ```bash
 docker compose --profile test run --rm playwright npm run test:e2e
 ```
 
-Run authenticated specialist and working-hours scenarios on desktop and mobile:
+Запустите сценарии специалистов и рабочих часов с авторизацией
+на компьютере и мобильном устройстве:
 
 ```bash
 bash bin/test-workforce-e2e
 ```
 
-Run authenticated service and client-directory scenarios:
+Запустите сценарии услуг и клиентского справочника с авторизацией:
 
 ```bash
 bash bin/test-catalog-clients-e2e
 ```
 
-Run one-off appointment creation, soft-warning, and hard-conflict scenarios:
+Запустите сценарии создания разовых записей, предупреждений
+и блокирующих конфликтов:
 
 ```bash
 bash bin/test-appointments-e2e
 ```
 
-Run responsive calendar, specialist-filter, and appointment-details scenarios:
+Запустите сценарии адаптивного календаря, фильтра по специалисту
+и просмотра записи:
 
 ```bash
 bash bin/test-calendar-e2e
 ```
 
-Run regular-schedule creation, day changes, materialization, and termination:
+Запустите сценарии создания регулярного расписания, изменения отдельных дней,
+формирования записей и завершения расписания:
 
 ```bash
 bash bin/test-regular-schedules-e2e
 ```
 
-This runner migrates the development database, creates disposable test
-organizations, runs Playwright, and removes only those marked organizations on
-exit. Without the runner, authenticated Workforce scenarios are skipped; the
-public smoke tests still run. Do not use these fixtures against production.
+Сценарий запуска применяет миграции к базе разработки, создаёт временные тестовые
+организации, запускает Playwright и при завершении удаляет только эти помеченные
+организации. Без соответствующего сценария запуска проверки модуля Workforce
+с авторизацией пропускаются; общедоступные базовые проверки продолжают работать.
+Не запускайте эти тестовые сценарии на рабочем окружении.
 
-Specialist profiles, weekly working hours, per-day lunches, and additional
-working days are available under **Settings → Specialists**. Link a specialist
-to the signed-in administrator to use **My schedule**. The Workforce model and
-API conventions are documented in
-[`docs/architecture/workforce.md`](docs/architecture/workforce.md).
+Профили специалистов, недельное расписание, обеденные перерывы по дням
+и дополнительные рабочие дни доступны в разделе **Настройки → Специалисты**.
+Чтобы использовать **Моё расписание**, свяжите специалиста с текущим
+администратором. Модель модуля Workforce и соглашения по программному интерфейсу
+описаны в [документации специалистов](docs/architecture/workforce.md).
 
-Service definitions are managed under **Settings → Services**. The **Clients**
-section provides client search, optional contact people, channel metadata, and
-primary-recipient selection. Catalog and Clients ownership rules are documented
-in [`docs/architecture/catalog-clients.md`](docs/architecture/catalog-clients.md).
+Услуги настраиваются в разделе **Настройки → Услуги**. Раздел **Клиенты**
+позволяет искать клиентов, добавлять контактных лиц, хранить данные каналов связи
+и выбирать основного получателя сообщений. Границы ответственности модулей
+Catalog и Clients описаны
+в [документации услуг и клиентов](docs/architecture/catalog-clients.md).
 
-Scheduling occupancy and hard availability are backed by PostgreSQL exclusion
-constraints. The check endpoint and concurrency guarantees are documented in
-[`docs/architecture/scheduling-availability.md`](docs/architecture/scheduling-availability.md).
-The calendar read model, organization-timezone boundaries, and responsive views
-are documented in the same architecture note. The same note documents regular
-rules, configurable `REGULAR_SCHEDULE_HORIZON_DAYS`, materialization, and
-`ScheduleGenerationIssue`.
+Занятость в расписании и обязательные ограничения доступности обеспечиваются
+ограничениями исключения PostgreSQL. Проверка доступности и гарантии
+при одновременных запросах описаны
+в [документации доступности расписания](docs/architecture/scheduling-availability.md).
+Там же описаны модель чтения календаря, учёт часового пояса организации
+и адаптивные представления, а также правила регулярных записей, настройка
+`REGULAR_SCHEDULE_HORIZON_DAYS`, формирование записей и `ScheduleGenerationIssue`.
 
-Provider-neutral notification intents, transactional outbox delivery, and
-idempotent webhook ingestion are documented in
-[`docs/architecture/communications.md`](docs/architecture/communications.md).
+Намерения отправки уведомлений без привязки к провайдеру, доставка через
+транзакционный журнал исходящих сообщений и обработка входящих событий
+без повторного применения описаны
+в [документации коммуникаций](docs/architecture/communications.md).
 
-Stop the environment without deleting database or Redis data:
+Остановите окружение без удаления данных PostgreSQL и Redis:
 
 ```bash
 docker compose down
 ```
 
-Host ports can be changed through `APP_HTTP_PORT`, `VITE_PORT`,
-`POSTGRES_PORT`, and `REDIS_PORT` environment variables.
+Порты на основной машине можно изменить через переменные окружения
+`APP_HTTP_PORT`, `VITE_PORT`, `POSTGRES_PORT` и `REDIS_PORT`.
 
-Default host ports are `8080` for HTTP, `5173` for Vite, `54329` for
-PostgreSQL, and `63799` for Redis. Containers use the standard service ports
-internally.
+По умолчанию используются порты `8080` для HTTP, `5173` для Vite, `54329`
+для PostgreSQL и `63799` для Redis. Внутри контейнеров сервисы используют
+стандартные порты.
