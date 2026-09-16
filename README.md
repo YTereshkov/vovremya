@@ -1,7 +1,20 @@
 # Vovremya
 
-Vovremya is a Symfony 7.4 application running on PHP 8.4. The repository also
-contains the approved UI mockups used as the visual source of truth.
+Vovremya — сервис для частных специалистов, которые принимают клиентов по записи:
+репетиторов, психологов, тренеров, мастеров и других специалистов. Он помогает
+планировать рабочее время, вести календарь приёмов и хранить записи и контакты
+клиентов в одном месте.
+
+Специалист задаёт рабочие часы и перерывы, создаёт разовые и регулярные записи,
+переносит или отменяет встречи. Клиенты получают уведомления и напоминания
+в мессенджерах и могут подтвердить запись. Лист ожидания помогает предложить
+освободившееся время другим клиентам.
+
+Проект объединяет календарь, клиентскую базу, услуги и коммуникации, чтобы
+специалисту было проще управлять расписанием и согласовывать встречи с клиентами.
+
+Backend построен на Symfony 7.4 и PHP 8.4, frontend — на React и TypeScript.
+Репозиторий также содержит утверждённые макеты интерфейса.
 
 ## Local development
 
@@ -166,24 +179,6 @@ rules, configurable `REGULAR_SCHEDULE_HORIZON_DAYS`, materialization, and
 Provider-neutral notification intents, transactional outbox delivery, and
 idempotent webhook ingestion are documented in
 [`docs/architecture/communications.md`](docs/architecture/communications.md).
-
-## Production VPS
-
-Production uses a separate immutable PHP-FPM image and a Caddy image containing
-the built React SPA. Copy `.env.prod.example` to the ignored
-`.env.prod.local`, set real secrets, and deploy:
-
-```bash
-chmod 600 .env.prod.local
-bash bin/validate-production-env
-bash bin/deploy-production
-```
-
-The production Compose stack does not publish PostgreSQL or Redis ports. Caddy
-terminates HTTPS, migrations run once before application containers start, and
-Messenger/Scheduler run as separate restartable processes. VPS preparation,
-backup, monitoring, and rollback procedures are documented in
-[`docs/deployment-vps.md`](docs/deployment-vps.md).
 
 Stop the environment without deleting database or Redis data:
 
